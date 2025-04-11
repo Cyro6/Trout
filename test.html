@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Total Analysis Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        table {
+            width: 100%;
+            max-width: 1200px;
+            margin: 20px auto;
+            border-collapse: collapse;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .loading {
+            text-align: center;
+            font-size: 1.2em;
+            color: #555;
+        }
+        .error {
+            text-align: center;
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>Total Analysis Data</h1>
+    <div id="loading" class="loading">Loading data...</div>
+    <div id="error" class="error"></div>
+    <table id="data-table" style="display: none;">
+        <thead id="table-header"></thead>
+        <tbody id="table-body"></tbody>
+    </table>
+
+    <script>
+        // Replace with your Google Sheets ID and Sheet GID for "Total Analysis"
+        const SHEET_ID = '1RDZny6ZfKGXJOKIgoRo47knNJmmtDT2WTrNvOmQ0lwUiznaF1McQVgpTUa1kTMUpq5X6c3b888BGwz';
+        const SHEET_GID = '1778674026'; // Replace with the actual GID of "Total Analysis" sheet
+        const API_KEY = 'YOUR_API_KEY'; // Optional: Needed only if using Google Sheets API
+
+        // Use the public CSV export link for the specific sheet
+        const DATA_URL = `https://docs.google.com/spreadsheets/d/e/2PACX-${SHEET_ID}/pub?gid=${SHEET_GID}&single=true&output=csv`;
+
+        async function fetchSheetData() {
+            try {
+                const response = await fetch(DATA_URL);
+                if (!response.ok) throw new Error('Failed to fetch data');
+                const csvText = await response.text();
+                const data = parseCSV(csvText);
+                displayData(data);
+            } catch (error) {
+                document.getElementById('error').textContent = `Error: ${error.message}`;
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function parseCSV(csvText) {
+            const lines = csvText.split('\n').filter(line => line.trim() !== '');
+            const headers = lines[0].split(',').map(header => header.trim());
+            const rows = lines.slice(1).map(line => {
+                const values = [];
+                let current = '';
+                let insideQuotes = false;
+                for (let char of line) {
+                    if (char === '"') {
+                        insideQuotes = !insideQuotes;
+                    } else if (char === ',' && !insideQuotes) {
+                        values.push(current.trim());
+                        current = '';
+                    } else {
+                        current += char;
+                    }
+                }
+                values.push(current.trim());
+                return values;
+            });
+            return { headers, rows };
+        }
+
+        function displayData({ headers, rows }) {
+            const tableHeader = document.getElementById('table-header');
+            const tableBody = document.getElementById('table-body');
+            const table = document.getElementById('data-table');
+
+            // Populate headers
+            const headerRow = document.createElement('tr');
+            headers.forEach(header => {
+                const th = document.createElement('th');
+                th.textContent = header;
+                headerRow.appendChild(th);
+            });
+            tableHeader.appendChild(headerRow);
+
+            // Populate rows
+            rows.forEach(row => {
+                const tr = document.createElement('tr');
+                row.forEach(cell => {
+                    const td = document.createElement('td');
+                    td.textContent = cell;
+                    tr.appendChild(td);
+                });
+                tableBody.appendChild(tr);
+            });
+
+            // Show the table
+            table.style.display = 'table';
+        }
+
+        // Fetch data when the page loads
+        fetchSheetData();
+    </script>
+</body>
+</html>
