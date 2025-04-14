@@ -208,11 +208,20 @@
             });
         }
 
-        // Populate month dropdown
+        // Populate month dropdown in chronological order
         function populateMonthDropdown() {
             if (!processedData) return;
+
+            // Define month order for chronological sorting
+            const monthOrder = [
+                'January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'
+            ];
+
             const monthSelect = document.getElementById('month-select');
-            const months = [...new Set(processedData.map(row => row[0]))].sort();
+            const months = [...new Set(processedData.map(row => row[0]))] // Get unique months
+                .sort((a, b) => monthOrder.indexOf(a) - monthOrder.indexOf(b)); // Sort by month order
+
             months.forEach(month => {
                 const option = document.createElement('option');
                 option.value = month;
