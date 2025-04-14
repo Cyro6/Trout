@@ -169,7 +169,7 @@
                     }
                 }
 
-                return [month, stream, visits, roundedAvg, sectionResult, spots];
+                return [month, stream, visits, roundedAvg, sectionResult];
             });
 
             // Group by stream only (for ALL data)
@@ -209,7 +209,7 @@
                     }
                 }
 
-                return [stream, visits, roundedAvg, sectionResult, spots];
+                return [stream, visits, roundedAvg, sectionResult];
             });
         }
 
@@ -243,11 +243,11 @@
             let rowsToDisplay;
 
             if (selectedMonth === 'ALL') {
-                rowsToDisplay = allData;
+                rowsToDisplay = allData.map(row => row.slice(0, 4)); // Exclude spots
             } else {
                 rowsToDisplay = processedData
                     .filter(row => row[0] === selectedMonth)
-                    .map(row => row.slice(1));
+                    .map(row => row.slice(1, 5)); // Exclude month and spots
             }
 
             // Apply column filters
