@@ -46,9 +46,9 @@
 
     <div id="month" class="tab-content">
         <div class="filter">
-            <label for="month-select">Select Month: </label>
+            <label for="month-select">Select Period: </label>
             <select id="month-select" onchange="filterMonthData()">
-                <option value="">Select a month</option>
+                <option value="ALL">ALL</option>
                 <!-- Populated dynamically -->
             </select>
         </div>
@@ -56,9 +56,7 @@
         <div id="month-error" class="error"></div>
         <table id="month-table" style="display: none;">
             <thead id="month-header">
-                <!-- Filter row will be added here -->
                 <tr class="filter-row" id="month-filter-row"></tr>
-                <!-- Header row -->
                 <tr id="month-header-row"></tr>
             </thead>
             <tbody id="month-body"></tbody>
@@ -73,7 +71,8 @@
         const SOURCE_URL = `https://docs.google.com/spreadsheets/d/e/2PACX-${SHEET_ID}/pub?gid=${SOURCE_GID}&single=true&output=csv`;
 
         let sourceData = null; // Store Rons Spots GPS data
-        let processedData = null; // Store processed data
+        let processedData = null; // Store month-specific data
+        let allData = null; // Store aggregated data across all months
         let sortColumn = 'Stream'; // Default sort column
         let sortDirection = 1; // 1 for ascending, -1 for descending
         let filters = { Stream: '', Visits: '', Rating: '', Section: '' }; // Store filter values
@@ -148,24 +147,18 @@
         function processSourceData() {
             if (!sourceData) return;
 
-            // Map ratings: E=0, D=1, C=2, B=3, A=4, S=5, else -1
             const ratingMap = { 'E': 0, 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5 };
             const excludedStreams = ['Unknown', 'Central Sands', 'Minnesota', 'Southern WI'];
 
             // Filter valid data
             const validData = sourceData.rows
                 .filter(row => {
-                    // Skip rows with insufficient columns
                     if (row.length < 18) return false;
-
-                    const date = new Date(row[0].replace(/(\d+)\/(\d+)\/(\d+)/, '$3-$1-$2')); // Parse MM/DD/YYYY
-                    const stream = row[2]?.trim() || ''; // Column C (Stream Name)
-                    const rating = row[17]?.toUpperCase(); // Column R (Rating)
-                    const section = row[15]?.trim(); // Column P (Stream Section)
-
-                    // Check if rating is valid (S, A, B, C, D, E)
+                    const date = new Date(row[0].replace(/(\d+)\/(\d+)\/(\d+)/, '$3-$1-$2'));
+                    const stream = row[2]?.trim() || '';
+                    const rating = row[17]?.toUpperCase();
+                    const section = row[15]?.trim();
                     const validRating = /^[SABCDE]$/.test(rating);
-                    // Exclude certain streams
                     const validStream = !excludedStreams.some(excluded => stream.includes(excluded));
                     return validRating && validStream && !isNaN(date.getTime());
                 })
@@ -178,19 +171,19 @@
                     return [month, stream, rating, section];
                 });
 
-            // Group by stream and month
-            const groupedData = {};
+            // Group by stream and month (for month-specific data)
+            const groupedDataByMonth = {};
             validData.forEach(([month, stream, rating, section]) => {
                 const key = `${month}|${stream}`;
-                if (!groupedData[key]) {
-                    groupedData[key] = { month, stream, ratings: [], sections: [] };
+                if (!groupedDataByMonth[key]) {
+                    groupedDataByMonth[key] = { month, stream, ratings: [], sections: [] };
                 }
-                groupedData[key].ratings.push(rating);
-                groupedData[key].sections.push(section);
+                groupedDataByMonth[key].ratings.push(rating);
+                groupedDataByMonth[key].sections.push(section);
             });
 
-            // Calculate aggregates
-            processedData = Object.values(groupedData).map(({ month, stream, ratings, sections }) => {
+            // Compute month-specific data
+            processedData = Object.values(groupedDataByMonth).map(({ month, stream, ratings, sections }) => {
                 const visits = ratings.length;
                 const avgRating = ratings.reduce((sum, r) => sum + r, 0) / ratings.length;
                 const roundedAvg = Math.round(avgRating * 100) / 100;
@@ -215,6 +208,43 @@
 
                 return [month, stream, visits, roundedAvg, sectionResult];
             });
+
+            // Group by stream only (for ALL data)
+            const groupedDataAll = {};
+            validData.forEach(([month, stream, rating, section]) => {
+                if (!groupedDataAll[stream]) {
+                    groupedDataAll[stream] = { stream, ratings: [], sections: [] };
+                }
+                groupedDataAll[stream].ratings.push(rating);
+                groupedDataAll[stream].sections.push(section);
+            });
+
+            // Compute ALL data
+            allData = Object.values(groupedDataAll).map(({ stream, ratings, sections }) => {
+                const visits = ratings.length;
+                const avgRating = ratings.reduce((sum, r) => sum + r, 0) / ratings.length;
+                const roundedAvg = Math.round(avgRating * 100) / 100;
+
+                const counts = { LOWER: 0, MIDDLE: 0, UPPER: 0 };
+                sections.forEach(section => {
+                    if (section in counts) counts[section]++;
+                    else counts['UNKNOWN'] = (counts['UNKNOWN'] || 0) + 1;
+                });
+                const maxCount = Math.max(counts.LOWER, counts.MIDDLE, counts.UPPER);
+                const tieCheck = (counts.LOWER === maxCount ? 1 : 0) +
+                                 (counts.MIDDLE === maxCount ? 1 : 0) +
+                                 (counts.UPPER === maxCount ? 1 : 0);
+                let sectionResult = 'Mixed';
+                if (maxCount > 0) {
+                    if (tieCheck === 1) {
+                        if (counts.LOWER === maxCount) sectionResult = 'Lower';
+                        else if (counts.MIDDLE === maxCount) sectionResult = 'Middle';
+                        else if (counts.UPPER === maxCount) sectionResult = 'Upper';
+                    }
+                }
+
+                return [stream, visits, roundedAvg, sectionResult];
+            });
         }
 
         // Populate month dropdown in chronological order
@@ -238,18 +268,24 @@
             });
         }
 
-        // Filter and display Month Analysis by selected month
+        // Filter and display Month Analysis by selected month or ALL
         function filterMonthData() {
             const monthSelect = document.getElementById('month-select');
             const selectedMonth = monthSelect.value;
-            if (!processedData) return;
+            if (!processedData || !allData) return;
 
-            let filteredRows = selectedMonth
-                ? processedData.filter(row => row[0] === selectedMonth).map(row => row.slice(1))
-                : processedData.map(row => row.slice(1));
+            let rowsToDisplay;
+
+            if (selectedMonth === 'ALL') {
+                rowsToDisplay = allData; // Use aggregated data across all months
+            } else {
+                rowsToDisplay = processedData
+                    .filter(row => row[0] === selectedMonth)
+                    .map(row => row.slice(1)); // Use month-specific data
+            }
 
             // Apply column filters
-            filteredRows = filteredRows.filter(row => {
+            rowsToDisplay = rowsToDisplay.filter(row => {
                 const stream = row[0].toLowerCase();
                 const visits = parseFloat(row[1]);
                 const rating = parseFloat(row[2]);
@@ -267,7 +303,7 @@
             });
 
             // Sort by default (Stream, ascending) on initial load
-            filteredRows.sort((a, b) => {
+            rowsToDisplay.sort((a, b) => {
                 const valueA = a[0]; // Stream
                 const valueB = b[0];
                 return sortDirection * (valueA.localeCompare(valueB));
@@ -275,7 +311,7 @@
 
             displayData({
                 headers: ['Stream', 'Visits', 'Rating', 'Section'],
-                rows: filteredRows
+                rows: rowsToDisplay
             }, 'month');
         }
 
@@ -286,12 +322,10 @@
             const tableBody = document.getElementById(`${prefix}-body`);
             const table = document.getElementById(`${prefix}-table`);
 
-            // Clear existing content
             tableHeader.innerHTML = '';
             filterRow.innerHTML = '';
             tableBody.innerHTML = '';
 
-            // Add filter row
             headers.forEach((header, index) => {
                 const th = document.createElement('th');
                 const input = document.createElement('input');
@@ -306,44 +340,38 @@
                 filterRow.appendChild(th);
             });
 
-            // Add header row with sorting
             headers.forEach((header, index) => {
                 const th = document.createElement('th');
                 th.textContent = header;
                 th.onclick = () => {
-                    // Toggle sort direction if clicking the same column, otherwise reset to ascending
                     if (sortColumn === header) {
                         sortDirection = -sortDirection;
                     } else {
                         sortColumn = header;
                         sortDirection = 1;
                     }
-                    // Re-display with new sort
                     filterMonthData();
                 };
-                // Add sort indicator
                 if (sortColumn === header) {
                     th.classList.add(sortDirection === 1 ? 'sort-asc' : 'sort-desc');
                 }
                 tableHeader.appendChild(th);
             });
 
-            // Sort rows based on current sort column and direction
             rows.sort((a, b) => {
                 let valueA, valueB;
                 const colIndex = headers.indexOf(sortColumn);
-                if (colIndex === 1 || colIndex === 2) { // Visits or Rating (numeric)
+                if (colIndex === 1 || colIndex === 2) {
                     valueA = parseFloat(a[colIndex]);
                     valueB = parseFloat(b[colIndex]);
                     return sortDirection * (valueA - valueB);
-                } else { // Stream or Section (string)
+                } else {
                     valueA = a[colIndex];
                     valueB = b[colIndex];
                     return sortDirection * valueA.localeCompare(valueB);
                 }
             });
 
-            // Populate table body
             rows.forEach(row => {
                 const tr = document.createElement('tr');
                 row.forEach(cell => {
