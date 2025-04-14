@@ -144,8 +144,8 @@
                 .filter(row => {
                     const date = new Date(row[0].replace(/(\d+)\/(\d+)\/(\d+)/, '$3-$1-$2')); // Parse MM/DD/YYYY
                     const stream = row[2]?.trim(); // Column C (Stream Name)
-                    const rating = row[17]?.toUpperCase(); // Column S (Rating)
-                    const section = row[15]?.trim(); // Column Q (Stream Section)
+                    const rating = row[17]?.toUpperCase(); // Column R (Rating)
+                    const section = row[15]?.trim(); // Column P (Stream Section)
 
                     // Check if rating is valid (S, A, B, C, D, E)
                     const validRating = /^[SABCDE]$/.test(rating);
