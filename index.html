@@ -7,11 +7,6 @@
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
         h1 { text-align: center; color: #333; }
-        .tabs { text-align: center; margin-bottom: 20px; }
-        .tab-button { padding: 10px 20px; margin: 0 5px; cursor: pointer; background-color: #ddd; border: none; border-radius: 5px; }
-        .tab-button.active { background-color: #4CAF50; color: white; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
         .filter { text-align: center; margin-bottom: 20px; }
         select { padding: 8px; font-size: 1em; }
         table { width: 100%; max-width: 1200px; margin: 20px auto; border-collapse: collapse; background-color: #fff; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); }
@@ -30,19 +25,6 @@
 </head>
 <body>
     <h1>Analysis Dashboard</h1>
-    <div class="tabs">
-        <button class="tab-button active" onclick="showTab('total')">Total Analysis</button>
-        <button class="tab-button" onclick="showTab('month')">Month Analysis</button>
-    </div>
-
-    <div id="total" class="tab-content active">
-        <div id="total-loading" class="loading">Loading Total Analysis...</div>
-        <div id="total-error" class="error"></div>
-        <table id="total-table" style="display: none;">
-            <thead id="total-header"></thead>
-            <tbody id="total-body"></tbody>
-        </table>
-    </div>
 
     <div id="month" class="tab-content">
         <div class="filter">
@@ -52,7 +34,7 @@
                 <!-- Populated dynamically -->
             </select>
         </div>
-        <div id="month-loading" class="loading">Loading Month Analysis...</div>
+        <div id="month-loading" class="loading">Loading Analysis...</div>
         <div id="month-error" class="error"></div>
         <table id="month-table" style="display: none;">
             <thead id="month-header">
@@ -65,9 +47,7 @@
 
     <script>
         const SHEET_ID = '1vRDZny6ZfKGXJOKIgoRo47knNJmmtDT2WTrNvOmQ0lwUiznaF1McQVgpTUa1kTMUpq5X6c3b888BGwz';
-        const TOTAL_GID = '1778674026'; // Total Analysis GID
         const SOURCE_GID = '491893533'; // Rons Spots GPS GID
-        const TOTAL_URL = `https://docs.google.com/spreadsheets/d/e/2PACX-${SHEET_ID}/pub?gid=${TOTAL_GID}&single=true&output=csv`;
         const SOURCE_URL = `https://docs.google.com/spreadsheets/d/e/2PACX-${SHEET_ID}/pub?gid=${SOURCE_GID}&single=true&output=csv`;
 
         let sourceData = null; // Store Rons Spots GPS data
@@ -76,30 +56,6 @@
         let sortColumn = 'Stream'; // Default sort column
         let sortDirection = 1; // 1 for ascending, -1 for descending
         let filters = { Stream: '', Visits: '', Rating: '', Section: '' }; // Store filter values
-
-        // Tab switching
-        function showTab(tab) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
-            document.getElementById(tab).classList.add('active');
-            document.querySelector(`.tab-button[onclick="showTab('${tab}')"]`).classList.add('active');
-        }
-
-        // Fetch and display Total Analysis
-        async function fetchTotalData() {
-            try {
-                const response = await fetch(TOTAL_URL);
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const csvText = await response.text();
-                if (!csvText.trim()) throw new Error('Empty CSV data');
-                const data = parseCSV(csvText);
-                displayData(data, 'total');
-            } catch (error) {
-                document.getElementById('total-error').textContent = `Error: ${error.message}`;
-            } finally {
-                document.getElementById('total-loading').style.display = 'none';
-            }
-        }
 
         // Fetch and setup Rons Spots GPS data
         async function fetchSourceData() {
@@ -277,11 +233,11 @@
             let rowsToDisplay;
 
             if (selectedMonth === 'ALL') {
-                rowsToDisplay = allData; // Use aggregated data across all months
+                rowsToDisplay = allData;
             } else {
                 rowsToDisplay = processedData
                     .filter(row => row[0] === selectedMonth)
-                    .map(row => row.slice(1)); // Use month-specific data
+                    .map(row => row.slice(1));
             }
 
             // Apply column filters
@@ -304,7 +260,7 @@
 
             // Sort by default (Stream, ascending) on initial load
             rowsToDisplay.sort((a, b) => {
-                const valueA = a[0]; // Stream
+                const valueA = a[0];
                 const valueB = b[0];
                 return sortDirection * (valueA.localeCompare(valueB));
             });
@@ -386,7 +342,6 @@
         }
 
         // Initialize
-        fetchTotalData();
         fetchSourceData();
     </script>
 </body>
