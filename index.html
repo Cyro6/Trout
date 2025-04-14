@@ -157,8 +157,8 @@
                     const date = new Date(row[0].replace(/(\d+)\/(\d+)\/(\d+)/, '$3-$1-$2'));
                     const month = date.toLocaleString('default', { month: 'long' }); // e.g., "April"
                     const stream = row[2]?.trim();
-                    const rating = ratingMap[row[18]?.toUpperCase()] ?? -1;
-                    const section = row[16]?.trim().toUpperCase();
+                    const rating = ratingMap[row[17]?.toUpperCase()] ?? -1;
+                    const section = row[15]?.trim().toUpperCase();
                     return [month, stream, rating, section];
                 });
 
