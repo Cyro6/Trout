@@ -3,83 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Total Analysis Data</title>
+    <title>Analysis Dashboard</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f4f4f9;
-        }
-        h1 {
-            text-align: center;
-            color: #333;
-        }
-        table {
-            width: 100%;
-            max-width: 1200px;
-            margin: 20px auto;
-            border-collapse: collapse;
-            background-color: #fff;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border: 1px solid #ddd;
-        }
-        th {
-            background-color: #4CAF50;
-            color: white;
-        }
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-        tr:hover {
-            background-color: #f1f1f1;
-        }
-        .loading {
-            text-align: center;
-            font-size: 1.2em;
-            color: #555;
-        }
-        .error {
-            text-align: center;
-            color: red;
-        }
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
+        h1 { text-align: center; color: #333; }
+        .tabs { text-align: center; margin-bottom: 20px; }
+        .tab-button { padding: 10px 20px; margin: 0 5px; cursor: pointer; background-color: #ddd; border: none; border-radius: 5px; }
+        .tab-button.active { background-color: #4CAF50; color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .filter { text-align: center; margin-bottom: 20px; }
+        select { padding: 8px; font-size: 1em; }
+        table { width: 100%; max-width: 1200px; margin: 20px auto; border-collapse: collapse; background-color: #fff; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); }
+        th, td { padding: 12px; text-align: left; border: 1px solid #ddd; }
+        th { background-color: #4CAF50; color: white; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        tr:hover { background-color: #f1f1f1; }
+        .loading { text-align: center; font-size: 1.2em; color: #555; }
+        .error { text-align: center; color: red; }
     </style>
 </head>
 <body>
-    <h1>Total Analysis Data</h1>
-    <div id="loading" class="loading">Loading data...</div>
-    <div id="error" class="error"></div>
-    <table id="data-table" style="display: none;">
-        <thead id="table-header"></thead>
-        <tbody id="table-body"></tbody>
-    </table>
+    <h1>Analysis Dashboard</h1>
+    <div class="tabs">
+        <button class="tab-button active" onclick="showTab('total')">Total Analysis</button>
+        <button class="tab-button" onclick="showTab('month')">Month Analysis</button>
+    </div>
+
+    <div id="total" class="tab-content active">
+        <div id="total-loading" class="loading">Loading Total Analysis...</div>
+        <div id="total-error" class="error"></div>
+        <table id="total-table" style="display: none;">
+            <thead id="total-header"></thead>
+            <tbody id="total-body"></tbody>
+        </table>
+    </div>
+
+    <div id="month" class="tab-content">
+        <div class="filter">
+            <label for="month-select">Select Month: </label>
+            <select id="month-select" onchange="filterMonthData()">
+                <option value="">Select a month</option>
+                <!-- Populated dynamically -->
+            </select>
+        </div>
+        <div id="month-loading" class="loading">Loading Month Analysis...</div>
+        <div id="month-error" class="error"></div>
+        <table id="month-table" style="display: none;">
+            <thead id="month-header"></thead>
+            <tbody id="month-body"></tbody>
+        </table>
+    </div>
 
     <script>
-        // Replace with your Google Sheets ID and Sheet GID for "Total Analysis"
         const SHEET_ID = '1vRDZny6ZfKGXJOKIgoRo47knNJmmtDT2WTrNvOmQ0lwUiznaF1McQVgpTUa1kTMUpq5X6c3b888BGwz';
-        const SHEET_GID = '1778674026'; // Replace with the actual GID of "Total Analysis" sheet
-        const API_KEY = 'YOUR_API_KEY'; // Optional: Needed only if using Google Sheets API
+        const TOTAL_GID = '1778674026'; // Replace with "Total Analysis" GID
+        const SOURCE_GID = '491893533'; // Replace with "Rons Spots GPS" GID
+        const TOTAL_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/pub?gid=${TOTAL_GID}&single=true&output=csv`;
+        const SOURCE_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/pub?gid=${SOURCE_GID}&single=true&output=csv`;
 
-        // Use the public CSV export link for the specific sheet
-        const DATA_URL = `https://docs.google.com/spreadsheets/d/e/2PACX-${SHEET_ID}/pub?gid=${SHEET_GID}&single=true&output=csv`;
+        let sourceData = null; // Store Rons Spots GPS data
 
-        async function fetchSheetData() {
+        // Tab switching
+        function showTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
+            document.getElementById(tab).classList.add('active');
+            document.querySelector(`.tab-button[onclick="showTab('${tab}')"]`).classList.add('active');
+        }
+
+        // Fetch and display Total Analysis
+        async function fetchTotalData() {
             try {
-                const response = await fetch(DATA_URL);
-                if (!response.ok) throw new Error('Failed to fetch data');
+                const response = await fetch(TOTAL_URL);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const csvText = await response.text();
+                if (!csvText.trim()) throw new Error('Empty CSV data');
                 const data = parseCSV(csvText);
-                displayData(data);
+                displayData(data, 'total');
             } catch (error) {
-                document.getElementById('error').textContent = `Error: ${error.message}`;
+                document.getElementById('total-error').textContent = `Error: ${error.message}`;
             } finally {
-                document.getElementById('loading').style.display = 'none';
+                document.getElementById('total-loading').style.display = 'none';
             }
         }
 
+        // Fetch and setup Rons Spots GPS data
+        async function fetchSourceData() {
+            try {
+                const response = await fetch(SOURCE_URL);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const csvText = await response.text();
+                if (!csvText.trim()) throw new Error('Empty CSV data');
+                sourceData = parseCSV(csvText);
+                processSourceData();
+                populateMonthDropdown();
+                filterMonthData(); // Initial display
+            } catch (error) {
+                document.getElementById('month-error').textContent = `Error: ${error.message}`;
+            } finally {
+                document.getElementById('month-loading').style.display = 'none';
+            }
+        }
+
+        // Parse CSV
         function parseCSV(csvText) {
             const lines = csvText.split('\n').filter(line => line.trim() !== '');
             const headers = lines[0].split(',').map(header => header.trim());
@@ -103,12 +130,118 @@
             return { headers, rows };
         }
 
-        function displayData({ headers, rows }) {
-            const tableHeader = document.getElementById('table-header');
-            const tableBody = document.getElementById('table-body');
-            const table = document.getElementById('data-table');
+        // Process source data to match the formula logic
+        let processedData = null;
+        function processSourceData() {
+            if (!sourceData) return;
 
-            // Populate headers
+            // Map ratings: E=0, D=1, C=2, B=3, A=4, S=5, else -1
+            const ratingMap = { 'E': 0, 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5 };
+            const excludedStreams = ['Unknown', 'Central Sands', 'Minnesota', 'Southern WI'];
+
+            // Filter valid data
+            const validData = sourceData.rows
+                .filter(row => {
+                    const date = new Date(row[0]); // Column A (dateCol)
+                    const stream = row[2]?.trim(); // Column C (streamCol)
+                    const rating = row[17]?.toUpperCase(); // Column R (ratingCol)
+                    const section = row[15]?.trim(); // Column P (sectionTextCol)
+
+                    // Check if rating is valid (S, A, B, C, D, E)
+                    const validRating = /^[SABCDE]$/.test(rating);
+                    // Exclude certain streams
+                    const validStream = !excludedStreams.some(excluded => stream.includes(excluded));
+                    return validRating && validStream && !isNaN(date.getTime());
+                })
+                .map(row => {
+                    const date = new Date(row[0]);
+                    const month = date.toLocaleString('default', { month: 'long' }); // e.g., "May"
+                    const stream = row[2]?.trim();
+                    const rating = ratingMap[row[17]?.toUpperCase()] ?? -1;
+                    const section = row[15]?.trim().toUpperCase();
+                    return [month, stream, rating, section];
+                });
+
+            // Group by stream and month
+            const groupedData = {};
+            validData.forEach(([month, stream, rating, section]) => {
+                const key = `${month}|${stream}`;
+                if (!groupedData[key]) {
+                    groupedData[key] = { month, stream, ratings: [], sections: [] };
+                }
+                groupedData[key].ratings.push(rating);
+                groupedData[key].sections.push(section);
+            });
+
+            // Calculate aggregates
+            processedData = Object.values(groupedData).map(({ month, stream, ratings, sections }) => {
+                // Visits (count of entries)
+                const visits = ratings.length;
+
+                // Average rating
+                const avgRating = ratings.reduce((sum, r) => sum + r, 0) / ratings.length;
+                const roundedAvg = Math.round(avgRating * 100) / 100;
+
+                // Most fished section
+                const counts = { LOWER: 0, MIDDLE: 0, UPPER: 0 };
+                sections.forEach(section => {
+                    if (section in counts) counts[section]++;
+                });
+                const maxCount = Math.max(counts.LOWER, counts.MIDDLE, counts.UPPER);
+                const tieCheck = (counts.LOWER === maxCount ? 1 : 0) +
+                                 (counts.MIDDLE === maxCount ? 1 : 0) +
+                                 (counts.UPPER === maxCount ? 1 : 0);
+                let sectionResult = 'Mixed';
+                if (maxCount > 0) {
+                    if (tieCheck === 1) {
+                        if (counts.LOWER === maxCount) sectionResult = 'Lower';
+                        else if (counts.MIDDLE === maxCount) sectionResult = 'Middle';
+                        else if (counts.UPPER === maxCount) sectionResult = 'Upper';
+                    }
+                }
+
+                return [month, stream, visits, roundedAvg, sectionResult];
+            });
+        }
+
+        // Populate month dropdown
+        function populateMonthDropdown() {
+            if (!processedData) return;
+            const monthSelect = document.getElementById('month-select');
+            const months = [...new Set(processedData.map(row => row[0]))].sort();
+            months.forEach(month => {
+                const option = document.createElement('option');
+                option.value = month;
+                option.textContent = month;
+                monthSelect.appendChild(option);
+            });
+        }
+
+        // Filter and display Month Analysis by selected month
+        function filterMonthData() {
+            const monthSelect = document.getElementById('month-select');
+            const selectedMonth = monthSelect.value;
+            if (!processedData) return;
+
+            const filteredRows = selectedMonth
+                ? processedData.filter(row => row[0] === selectedMonth).map(row => row.slice(1)) // Exclude month column
+                : processedData.map(row => row.slice(1)); // Show all if no month selected
+
+            displayData({
+                headers: ['Stream', 'Visits', 'Rating', 'Section'],
+                rows: filteredRows
+            }, 'month');
+        }
+
+        // Display data in table
+        function displayData({ headers, rows }, prefix) {
+            const tableHeader = document.getElementById(`${prefix}-header`);
+            const tableBody = document.getElementById(`${prefix}-body`);
+            const table = document.getElementById(`${prefix}-table`);
+
+            tableHeader.innerHTML = '';
+            tableBody.innerHTML = '';
+
             const headerRow = document.createElement('tr');
             headers.forEach(header => {
                 const th = document.createElement('th');
@@ -117,7 +250,6 @@
             });
             tableHeader.appendChild(headerRow);
 
-            // Populate rows
             rows.forEach(row => {
                 const tr = document.createElement('tr');
                 row.forEach(cell => {
@@ -128,12 +260,12 @@
                 tableBody.appendChild(tr);
             });
 
-            // Show the table
-            table.style.display = 'table';
+            table.style.display = rows.length ? 'table' : 'none';
         }
 
-        // Fetch data when the page loads
-        fetchSheetData();
+        // Initialize
+        fetchTotalData();
+        fetchSourceData();
     </script>
 </body>
 </html>
