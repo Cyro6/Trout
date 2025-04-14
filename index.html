@@ -21,6 +21,8 @@
         .error { text-align: center; color: red; }
         .filter-row th { background-color: #f0f0f0; padding: 5px; }
         .filter-row input { width: 100%; padding: 5px; box-sizing: border-box; font-size: 0.9em; }
+        a { color: #4CAF50; text-decoration: none; }
+        a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -124,22 +126,27 @@
                     const stream = row[2]?.trim() || '';
                     const rating = ratingMap[row[17]?.toUpperCase()] ?? -1;
                     const section = row[15]?.trim().toUpperCase() || 'UNKNOWN';
-                    return [month, stream, rating, section];
+                    const lat = parseFloat(row[12]); // Standardized Latitude (Column M)
+                    const lon = parseFloat(row[13]); // Standardized Longitude (Column N)
+                    return [month, stream, rating, section, lat, lon];
                 });
 
             // Group by stream and month (for month-specific data)
             const groupedDataByMonth = {};
-            validData.forEach(([month, stream, rating, section]) => {
+            validData.forEach(([month, stream, rating, section, lat, lon]) => {
                 const key = `${month}|${stream}`;
                 if (!groupedDataByMonth[key]) {
-                    groupedDataByMonth[key] = { month, stream, ratings: [], sections: [] };
+                    groupedDataByMonth[key] = { month, stream, ratings: [], sections: [], spots: [] };
                 }
                 groupedDataByMonth[key].ratings.push(rating);
                 groupedDataByMonth[key].sections.push(section);
+                if (!isNaN(lat) && !isNaN(lon)) {
+                    groupedDataByMonth[key].spots.push({ lat, lon });
+                }
             });
 
             // Compute month-specific data
-            processedData = Object.values(groupedDataByMonth).map(({ month, stream, ratings, sections }) => {
+            processedData = Object.values(groupedDataByMonth).map(({ month, stream, ratings, sections, spots }) => {
                 const visits = ratings.length;
                 const avgRating = ratings.reduce((sum, r) => sum + r, 0) / ratings.length;
                 const roundedAvg = Math.round(avgRating * 100) / 100;
@@ -162,21 +169,24 @@
                     }
                 }
 
-                return [month, stream, visits, roundedAvg, sectionResult];
+                return [month, stream, visits, roundedAvg, sectionResult, spots];
             });
 
             // Group by stream only (for ALL data)
             const groupedDataAll = {};
-            validData.forEach(([month, stream, rating, section]) => {
+            validData.forEach(([month, stream, rating, section, lat, lon]) => {
                 if (!groupedDataAll[stream]) {
-                    groupedDataAll[stream] = { stream, ratings: [], sections: [] };
+                    groupedDataAll[stream] = { stream, ratings: [], sections: [], spots: [] };
                 }
                 groupedDataAll[stream].ratings.push(rating);
                 groupedDataAll[stream].sections.push(section);
+                if (!isNaN(lat) && !isNaN(lon)) {
+                    groupedDataAll[stream].spots.push({ lat, lon });
+                }
             });
 
             // Compute ALL data
-            allData = Object.values(groupedDataAll).map(({ stream, ratings, sections }) => {
+            allData = Object.values(groupedDataAll).map(({ stream, ratings, sections, spots }) => {
                 const visits = ratings.length;
                 const avgRating = ratings.reduce((sum, r) => sum + r, 0) / ratings.length;
                 const roundedAvg = Math.round(avgRating * 100) / 100;
@@ -199,7 +209,7 @@
                     }
                 }
 
-                return [stream, visits, roundedAvg, sectionResult];
+                return [stream, visits, roundedAvg, sectionResult, spots];
             });
         }
 
@@ -314,25 +324,18 @@
                 tableHeader.appendChild(th);
             });
 
-            rows.sort((a, b) => {
-                let valueA, valueB;
-                const colIndex = headers.indexOf(sortColumn);
-                if (colIndex === 1 || colIndex === 2) {
-                    valueA = parseFloat(a[colIndex]);
-                    valueB = parseFloat(b[colIndex]);
-                    return sortDirection * (valueA - valueB);
-                } else {
-                    valueA = a[colIndex];
-                    valueB = b[colIndex];
-                    return sortDirection * valueA.localeCompare(valueB);
-                }
-            });
-
             rows.forEach(row => {
                 const tr = document.createElement('tr');
-                row.forEach(cell => {
+                row.forEach((cell, index) => {
                     const td = document.createElement('td');
-                    td.textContent = cell;
+                    if (index === 0) { // Stream column
+                        const link = document.createElement('a');
+                        link.href = `stream-details.html?stream=${encodeURIComponent(cell)}`;
+                        link.textContent = cell;
+                        td.appendChild(link);
+                    } else {
+                        td.textContent = cell;
+                    }
                     tr.appendChild(td);
                 });
                 tableBody.appendChild(tr);
