@@ -142,8 +142,11 @@
             // Filter valid data
             const validData = sourceData.rows
                 .filter(row => {
+                    // Skip rows with insufficient columns
+                    if (row.length < 18) return false;
+
                     const date = new Date(row[0].replace(/(\d+)\/(\d+)\/(\d+)/, '$3-$1-$2')); // Parse MM/DD/YYYY
-                    const stream = row[2]?.trim(); // Column C (Stream Name)
+                    const stream = row[2]?.trim() || ''; // Column C (Stream Name), default to empty string
                     const rating = row[17]?.toUpperCase(); // Column R (Rating)
                     const section = row[15]?.trim(); // Column P (Stream Section)
 
@@ -156,9 +159,9 @@
                 .map(row => {
                     const date = new Date(row[0].replace(/(\d+)\/(\d+)\/(\d+)/, '$3-$1-$2'));
                     const month = date.toLocaleString('default', { month: 'long' }); // e.g., "April"
-                    const stream = row[2]?.trim();
+                    const stream = row[2]?.trim() || '';
                     const rating = ratingMap[row[17]?.toUpperCase()] ?? -1;
-                    const section = row[15]?.trim().toUpperCase();
+                    const section = row[15]?.trim().toUpperCase() || 'UNKNOWN';
                     return [month, stream, rating, section];
                 });
 
