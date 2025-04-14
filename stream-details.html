@@ -66,13 +66,17 @@
         const urlParams = new URLSearchParams(window.location.search);
         const streamName = urlParams.get('stream');
 
-        if (!streamName) {
-            document.getElementById('error').textContent = 'Error: No stream specified.';
-            document.getElementById('loading').style.display = 'none';
-            return;
-        }
+        // Initialize page
+        function init() {
+            if (!streamName) {
+                document.getElementById('error').textContent = 'Error: No stream specified.';
+                document.getElementById('loading').style.display = 'none';
+                return; // Return inside the function
+            }
 
-        document.getElementById('stream-title').textContent = `${streamName} Details`;
+            document.getElementById('stream-title').textContent = `${streamName} Details`;
+            fetchData();
+        }
 
         // Fetch and process data
         async function fetchData() {
@@ -217,7 +221,7 @@
         }
 
         // Initialize
-        fetchData();
+        init();
     </script>
 </body>
 </html>
