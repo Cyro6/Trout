@@ -13,7 +13,10 @@
         .stats, .month-stats { margin: 20px 0; padding: 15px; background-color: #fff; border-radius: 5px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); }
         .spots-table { width: 100%; max-width: 800px; margin: 20px 0; border-collapse: collapse; background-color: #fff; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); }
         .spots-table th, .spots-table td { padding: 12px; text-align: left; border: 1px solid #ddd; }
-        .spots-table th { background-color: #4CAF50; color: white; }
+        .spots-table th { background-color: #4CAF50; color: white; cursor: pointer; }
+        .spots-table th:hover { background-color: #45a049; }
+        .spots-table th.sort-asc::after { content: ' ↑'; }
+        .spots-table th.sort-desc::after { content: ' ↓'; }
         .spots-table tr:nth-child(even) { background-color: #f9f9f9; }
         .spots-table tr:hover { background-color: #f1f1f1; }
         .loading { text-align: center; font-size: 1.2em; color: #555; }
@@ -45,9 +48,10 @@
         <table class="spots-table" id="spots-table">
             <thead>
                 <tr>
-                    <th>Spot</th>
-                    <th>Latitude</th>
-                    <th>Longitude</th>
+                    <th onclick="sortSpotsTable(0)">Spot</th>
+                    <th onclick="sortSpotsTable(1)">Latitude</th>
+                    <th onclick="sortSpotsTable(2)">Longitude</th>
+                    <th onclick="sortSpotsTable(3)">Section</th>
                     <th>Google Maps Link</th>
                 </tr>
             </thead>
@@ -61,6 +65,9 @@
         const SOURCE_URL = `https://docs.google.com/spreadsheets/d/e/2PACX-${SHEET_ID}/pub?gid=${SOURCE_GID}&single=true&output=csv`;
 
         let sourceData = null;
+        let spotsData = []; // Store spots for sorting
+        let sortSpotsColumn = 1; // Default sort by Latitude
+        let sortSpotsDirection = 1; // 1 for ascending, -1 for descending
 
         // Get stream name from URL query parameter
         const urlParams = new URLSearchParams(window.location.search);
@@ -71,7 +78,7 @@
             if (!streamName) {
                 document.getElementById('error').textContent = 'Error: No stream specified.';
                 document.getElementById('loading').style.display = 'none';
-                return; // Return inside the function
+                return;
             }
 
             document.getElementById('stream-title').textContent = `${streamName} Details`;
@@ -118,6 +125,58 @@
             return { headers, rows };
         }
 
+        // Sort the spots table
+        function sortSpotsTable(colIndex) {
+            if (sortSpotsColumn === colIndex) {
+                sortSpotsDirection = -sortSpotsDirection;
+            } else {
+                sortSpotsColumn = colIndex;
+                sortSpotsDirection = 1;
+            }
+
+            // Update sort indicators
+            const headers = document.querySelectorAll('.spots-table th');
+            headers.forEach((th, index) => {
+                th.classList.remove('sort-asc', 'sort-desc');
+                if (index === colIndex) {
+                    th.classList.add(sortSpotsDirection === 1 ? 'sort-asc' : 'sort-desc');
+                }
+            });
+
+            spotsData.sort((a, b) => {
+                let valueA, valueB;
+                if (colIndex === 0) { // Spot (numeric)
+                    valueA = a.index;
+                    valueB = b.index;
+                    return sortSpotsDirection * (valueA - valueB);
+                } else if (colIndex === 1 || colIndex === 2) { // Latitude or Longitude (numeric)
+                    valueA = colIndex === 1 ? a.lat : a.lon;
+                    valueB = colIndex === 1 ? b.lat : b.lon;
+                    return sortSpotsDirection * (valueA - valueB);
+                } else if (colIndex === 3) { // Section (alphabetical)
+                    valueA = a.section;
+                    valueB = b.section;
+                    return sortSpotsDirection * valueA.localeCompare(valueB);
+                }
+                return 0;
+            });
+
+            // Re-render the table body
+            const spotsBody = document.getElementById('spots-body');
+            spotsBody.innerHTML = '';
+            spotsData.forEach(spot => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>Spot ${spot.index}</td>
+                    <td>${spot.lat.toFixed(5)}</td>
+                    <td>${spot.lon.toFixed(5)}</td>
+                    <td>${spot.section}</td>
+                    <td><a href="https://www.google.com/maps?q=${spot.lat},${spot.lon}" target="_blank">View on Google Maps</a></td>
+                `;
+                spotsBody.appendChild(tr);
+            });
+        }
+
         // Display stream details
         function displayStreamDetails() {
             const ratingMap = { 'E': 0, 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5 };
@@ -152,7 +211,7 @@
             }
 
             // Overall stats
-            const totalVisits = streamData.length;
+            const total visites = streamData.length;
             const avgRating = streamData.reduce((sum, entry) => sum + entry.rating, 0) / totalVisits;
             const roundedAvg = Math.round(avgRating * 100) / 100;
 
@@ -196,26 +255,34 @@
             document.getElementById('most-fished-section').textContent = mostFishedSection;
             document.getElementById('april-section').textContent = aprilSection;
 
-            // Fishing spots (sorted by latitude, lowest to uppermost)
-            const spots = [];
+            // Fishing spots (deduplicated, sorted by latitude, lowest to uppermost)
+            const spotsMap = new Map(); // Map to deduplicate spots by lat,lon
             streamData.forEach((entry, index) => {
                 if (!isNaN(entry.lat) && !isNaN(entry.lon)) {
-                    spots.push({ lat: entry.lat, lon: entry.lon, index: index + 1 });
+                    const key = `${entry.lat},${entry.lon}`;
+                    if (!spotsMap.has(key)) {
+                        spotsMap.set(key, { lat: entry.lat, lon: entry.lon, section: entry.section, index: spotsMap.size + 1 });
+                    }
                 }
             });
-            spots.sort((a, b) => a.lat - b.lat); // Sort by latitude (ascending: lowest to uppermost)
+            spotsData = Array.from(spotsMap.values());
+            spotsData.sort((a, b) => a.lat - b.lat); // Sort by latitude (ascending: lowest to uppermost)
 
             const spotsBody = document.getElementById('spots-body');
-            spots.forEach(spot => {
+            spotsData.forEach(spot => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>Spot ${spot.index}</td>
                     <td>${spot.lat.toFixed(5)}</td>
                     <td>${spot.lon.toFixed(5)}</td>
+                    <td>${spot.section}</td>
                     <td><a href="https://www.google.com/maps?q=${spot.lat},${spot.lon}" target="_blank">View on Google Maps</a></td>
                 `;
                 spotsBody.appendChild(tr);
             });
+
+            // Set default sort indicator on Latitude
+            document.querySelectorAll('.spots-table th')[1].classList.add('sort-asc');
 
             document.getElementById('stream-details').style.display = 'block';
         }
