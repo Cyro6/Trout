@@ -324,6 +324,21 @@
                 tableHeader.appendChild(th);
             });
 
+            rows.sort((a, b) => {
+                const colIndex = headers.indexOf(sortColumn);
+                let valueA = a[colIndex];
+                let valueB = b[colIndex];
+
+                // Handle numeric sorting for Visits and Rating
+                if (colIndex === 1 || colIndex === 2) { // Visits or Rating
+                    valueA = parseFloat(valueA);
+                    valueB = parseFloat(valueB);
+                    return sortDirection * (valueA - valueB);
+                }
+                // Handle alphabetical sorting for Stream and Section
+                return sortDirection * valueA.localeCompare(valueB);
+            });
+
             rows.forEach(row => {
                 const tr = document.createElement('tr');
                 row.forEach((cell, index) => {
