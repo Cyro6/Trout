@@ -268,16 +268,50 @@
             document.getElementById('april-section').textContent = aprilSection;
 
             // Fishing spots (deduplicated, sorted by section: Lower → Middle → Upper, then by latitude within each section)
-            const spotsMap = new Map(); // Map to deduplicate spots by lat,lon
+            const spotsMap = new Map(); // Map to store lat/lon pairs and their associated sections
             streamData.forEach((entry, index) => {
                 if (!isNaN(entry.lat) && !isNaN(entry.lon)) {
-                    const key = `${entry.lat},${entry.lon}`;
+                    // Round lat/lon to 5 decimal places to avoid floating-point precision issues
+                    const lat = Number(entry.lat.toFixed(5));
+                    const lon = Number(entry.lon.toFixed(5));
+                    const key = `${lat},${lon}`;
                     if (!spotsMap.has(key)) {
-                        spotsMap.set(key, { lat: entry.lat, lon: entry.lon, section: entry.section });
+                        spotsMap.set(key, { lat, lon, sections: [entry.section] });
+                    } else {
+                        spotsMap.get(key).sections.push(entry.section);
                     }
                 }
             });
-            spotsData = Array.from(spotsMap.values());
+
+            // Process spotsMap to determine the most frequent section for each lat/lon pair
+            spotsData = Array.from(spotsMap.values()).map(spot => {
+                // Count occurrences of each section for this lat/lon pair
+                const sectionCounts = { LOWER: 0, MIDDLE: 0, UPPER: 0, UNKNOWN: 0 };
+                spot.sections.forEach(section => {
+                    sectionCounts[section] = (sectionCounts[section] || 0) + 1;
+                });
+
+                // Find the section with the highest count
+                let maxCount = 0;
+                let selectedSection = 'UNKNOWN';
+                for (const [section, count] of Object.entries(sectionCounts)) {
+                    if (count > maxCount) {
+                        maxCount = count;
+                        selectedSection = section;
+                    } else if (count === maxCount) {
+                        // In case of a tie, prefer the most downstream section (LOWER > MIDDLE > UPPER)
+                        const order = sectionOrder[section] || 5;
+                        const currentOrder = sectionOrder[selectedSection] || 5;
+                        if (order < currentOrder) {
+                            selectedSection = section;
+                        }
+                    }
+                }
+
+                return { lat: spot.lat, lon: spot.lon, section: selectedSection };
+            });
+
+            // Sort by section (Lower → Middle → Upper), then by latitude within each section
             spotsData.sort((a, b) => {
                 const sectionA = sectionOrder[a.section] || 5;
                 const sectionB = sectionOrder[b.section] || 5;
@@ -287,6 +321,7 @@
                 }
                 return sectionA - sectionB;
             });
+
             // Assign Spot numbers based on sorted order (downstream to upstream)
             spotsData.forEach((spot, idx) => {
                 spot.index = idx + 1;
