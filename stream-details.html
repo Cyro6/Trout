@@ -44,7 +44,7 @@
             <p><strong>Typically Fished Section in April:</strong> <span id="april-section"></span></p>
         </div>
 
-        <h2>Fishing Spots (Lowest to Uppermost)</h2>
+        <h2>Fishing Spots (Downstream to Upstream)</h2>
         <table class="spots-table" id="spots-table">
             <thead>
                 <tr>
@@ -66,8 +66,11 @@
 
         let sourceData = null;
         let spotsData = []; // Store spots for sorting
-        let sortSpotsColumn = 1; // Default sort by Latitude
+        let sortSpotsColumn = 3; // Default sort by Section (to align with downstream-to-upstream)
         let sortSpotsDirection = 1; // 1 for ascending, -1 for descending
+
+        // Define section order for sorting (Lower → Middle → Upper)
+        const sectionOrder = { 'LOWER': 1, 'MIDDLE': 2, 'UPPER': 3, 'UNKNOWN': 4 };
 
         // Get stream name from URL query parameter
         const urlParams = new URLSearchParams(window.location.search);
@@ -153,12 +156,21 @@
                     valueA = colIndex === 1 ? a.lat : a.lon;
                     valueB = colIndex === 1 ? b.lat : b.lon;
                     return sortSpotsDirection * (valueA - valueB);
-                } else if (colIndex === 3) { // Section (alphabetical)
-                    valueA = a.section;
-                    valueB = b.section;
-                    return sortSpotsDirection * valueA.localeCompare(valueB);
+                } else if (colIndex === 3) { // Section (custom order: Lower → Middle → Upper)
+                    valueA = sectionOrder[a.section] || 5;
+                    valueB = sectionOrder[b.section] || 5;
+                    if (valueA === valueB) {
+                        // Within the same section, sort by latitude
+                        return (a.lat - b.lat) * sortSpotsDirection;
+                    }
+                    return sortSpotsDirection * (valueA - valueB);
                 }
                 return 0;
+            });
+
+            // Reassign Spot numbers based on the new sorted order
+            spotsData.forEach((spot, idx) => {
+                spot.index = idx + 1;
             });
 
             // Re-render the table body
@@ -211,7 +223,7 @@
             }
 
             // Overall stats
-            const totalVisits = streamData.length; // Fixed typo: 'visites' to 'visits'
+            const totalVisits = streamData.length;
             const avgRating = streamData.reduce((sum, entry) => sum + entry.rating, 0) / totalVisits;
             const roundedAvg = Math.round(avgRating * 100) / 100;
 
@@ -255,18 +267,30 @@
             document.getElementById('most-fished-section').textContent = mostFishedSection;
             document.getElementById('april-section').textContent = aprilSection;
 
-            // Fishing spots (deduplicated, sorted by latitude, lowest to uppermost)
+            // Fishing spots (deduplicated, sorted by section: Lower → Middle → Upper, then by latitude within each section)
             const spotsMap = new Map(); // Map to deduplicate spots by lat,lon
             streamData.forEach((entry, index) => {
                 if (!isNaN(entry.lat) && !isNaN(entry.lon)) {
                     const key = `${entry.lat},${entry.lon}`;
                     if (!spotsMap.has(key)) {
-                        spotsMap.set(key, { lat: entry.lat, lon: entry.lon, section: entry.section, index: spotsMap.size + 1 });
+                        spotsMap.set(key, { lat: entry.lat, lon: entry.lon, section: entry.section });
                     }
                 }
             });
             spotsData = Array.from(spotsMap.values());
-            spotsData.sort((a, b) => a.lat - b.lat); // Sort by latitude (ascending: lowest to uppermost)
+            spotsData.sort((a, b) => {
+                const sectionA = sectionOrder[a.section] || 5;
+                const sectionB = sectionOrder[b.section] || 5;
+                if (sectionA === sectionB) {
+                    // Within the same section, sort by latitude
+                    return a.lat - b.lat;
+                }
+                return sectionA - sectionB;
+            });
+            // Assign Spot numbers based on sorted order (downstream to upstream)
+            spotsData.forEach((spot, idx) => {
+                spot.index = idx + 1;
+            });
 
             const spotsBody = document.getElementById('spots-body');
             spotsData.forEach(spot => {
@@ -281,8 +305,8 @@
                 spotsBody.appendChild(tr);
             });
 
-            // Set default sort indicator on Latitude
-            document.querySelectorAll('.spots-table th')[1].classList.add('sort-asc');
+            // Set default sort indicator on Section
+            document.querySelectorAll('.spots-table th')[3].classList.add('sort-asc');
 
             document.getElementById('stream-details').style.display = 'block';
         }
