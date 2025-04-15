@@ -52,6 +52,7 @@
                     <th onclick="sortSpotsTable(1)">Latitude</th>
                     <th onclick="sortSpotsTable(2)">Longitude</th>
                     <th onclick="sortSpotsTable(3)">Section</th>
+                    <th onclick="sortSpotsTable(4)">Visits</th>
                     <th>Google Maps Link</th>
                 </tr>
             </thead>
@@ -164,6 +165,10 @@
                         return (a.lat - b.lat) * sortSpotsDirection;
                     }
                     return sortSpotsDirection * (valueA - valueB);
+                } else if (colIndex === 4) { // Visits (numeric)
+                    valueA = a.visits;
+                    valueB = b.visits;
+                    return sortSpotsDirection * (valueA - valueB);
                 }
                 return 0;
             });
@@ -183,6 +188,7 @@
                     <td>${spot.lat.toFixed(5)}</td>
                     <td>${spot.lon.toFixed(5)}</td>
                     <td>${spot.section}</td>
+                    <td>${spot.visits}</td>
                     <td><a href="https://www.google.com/maps?q=${spot.lat},${spot.lon}" target="_blank">View on Google Maps</a></td>
                 `;
                 spotsBody.appendChild(tr);
@@ -268,7 +274,7 @@
             document.getElementById('april-section').textContent = aprilSection;
 
             // Fishing spots (deduplicated, sorted by section: Lower → Middle → Upper, then by latitude within each section)
-            const spotsMap = new Map(); // Map to store lat/lon pairs and their associated sections
+            const spotsMap = new Map(); // Map to store lat/lon pairs, their associated sections, and visit counts
             streamData.forEach((entry, index) => {
                 if (!isNaN(entry.lat) && !isNaN(entry.lon)) {
                     // Round lat/lon to 5 decimal places to avoid floating-point precision issues
@@ -276,9 +282,11 @@
                     const lon = Number(entry.lon.toFixed(5));
                     const key = `${lat},${lon}`;
                     if (!spotsMap.has(key)) {
-                        spotsMap.set(key, { lat, lon, sections: [entry.section] });
+                        spotsMap.set(key, { lat, lon, sections: [entry.section], visits: 1 });
                     } else {
-                        spotsMap.get(key).sections.push(entry.section);
+                        const spot = spotsMap.get(key);
+                        spot.sections.push(entry.section);
+                        spot.visits += 1;
                     }
                 }
             });
@@ -308,7 +316,7 @@
                     }
                 }
 
-                return { lat: spot.lat, lon: spot.lon, section: selectedSection };
+                return { lat: spot.lat, lon: spot.lon, section: selectedSection, visits: spot.visits };
             });
 
             // Sort by section (Lower → Middle → Upper), then by latitude within each section
@@ -335,6 +343,7 @@
                     <td>${spot.lat.toFixed(5)}</td>
                     <td>${spot.lon.toFixed(5)}</td>
                     <td>${spot.section}</td>
+                    <td>${spot.visits}</td>
                     <td><a href="https://www.google.com/maps?q=${spot.lat},${spot.lon}" target="_blank">View on Google Maps</a></td>
                 `;
                 spotsBody.appendChild(tr);
