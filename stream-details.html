@@ -73,6 +73,42 @@
             text-align: center;
             color: red;
         }
+        .filter-section {
+            margin: 20px 0;
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .filter-section label {
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        .filter-section select, .filter-section input {
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        .filter-section button {
+            padding: 5px 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .filter-section button:hover {
+            background-color: #45a049;
+        }
+        .no-results {
+            text-align: center;
+            color: #555;
+            margin: 20px 0;
+        }
 
         /* Mobile Responsiveness */
         @media screen and (max-width: 600px) {
@@ -88,6 +124,17 @@
             }
             .stats, .month-stats, .top-outings {
                 padding: 10px;
+            }
+            .filter-section {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .filter-section select, .filter-section input {
+                width: 100%;
+                box-sizing: border-box;
+            }
+            .filter-section button {
+                width: 100%;
             }
             .spots-table, .top-outings-table {
                 box-shadow: none;
@@ -165,6 +212,28 @@
         </div>
 
         <h2>Fishing Spots (Downstream to Upstream)</h2>
+        <div class="filter-section">
+            <div>
+                <label for="section-filter">Section:</label>
+                <select id="section-filter" onchange="applyFilters()">
+                    <option value="All">All</option>
+                    <option value="LOWER">LOWER</option>
+                    <option value="MIDDLE">MIDDLE</option>
+                    <option value="UPPER">UPPER</option>
+                    <option value="UNKNOWN">UNKNOWN</option>
+                </select>
+            </div>
+            <div>
+                <label for="visits-filter">Min Visits:</label>
+                <input type="number" id="visits-filter" min="0" value="" placeholder="e.g., 2" oninput="applyFilters()">
+            </div>
+            <div>
+                <label for="rating-filter">Min Avg Rating:</label>
+                <input type="number" id="rating-filter" min="0" max="5" step="0.1" value="" placeholder="e.g., 3.5" oninput="applyFilters()">
+            </div>
+            <button onclick="clearFilters()">Clear Filters</button>
+        </div>
+        <div id="no-results" class="no-results" style="display: none;">No spots match the filters.</div>
         <table class="spots-table" id="spots-table">
             <thead>
                 <tr>
@@ -185,7 +254,8 @@
         const SOURCE_URL = `https://docs.google.com/spreadsheets/d/e/2PACX-${SHEET_ID}/pub?gid=${SOURCE_GID}&single=true&output=csv`;
 
         let sourceData = null;
-        let spotsData = []; // Store spots for sorting
+        let spotsData = []; // Store all spots for filtering and sorting
+        let filteredSpotsData = []; // Store filtered spots for display
         let sortSpotsColumn = 1; // Default sort by Section (to align with downstream-to-upstream)
         let sortSpotsDirection = 1; // 1 for ascending, -1 for descending
 
@@ -248,7 +318,45 @@
             return { headers, rows };
         }
 
-        // Sort the spots table
+        // Apply filters to the spots data
+        function applyFilters() {
+            const sectionFilter = document.getElementById('section-filter').value;
+            const visitsFilter = document.getElementById('visits-filter').value;
+            const ratingFilter = document.getElementById('rating-filter').value;
+
+            filteredSpotsData = spotsData.filter(spot => {
+                // Section filter
+                if (sectionFilter !== 'All' && spot.section !== sectionFilter) {
+                    return false;
+                }
+
+                // Visits filter
+                if (visitsFilter !== '' && spot.visits < parseInt(visitsFilter)) {
+                    return false;
+                }
+
+                // Average Rating filter
+                if (ratingFilter !== '' && (spot.avgRating === 'N/A' || spot.avgRating < parseFloat(ratingFilter))) {
+                    return false;
+                }
+
+                return true;
+            });
+
+            // Re-sort the filtered data based on the current sort column and direction
+            sortFilteredSpots();
+        }
+
+        // Clear all filters
+        function clearFilters() {
+            document.getElementById('section-filter').value = 'All';
+            document.getElementById('visits-filter').value = '';
+            document.getElementById('rating-filter').value = '';
+            filteredSpotsData = [...spotsData];
+            sortFilteredSpots();
+        }
+
+        // Sort the filtered spots table
         function sortSpotsTable(colIndex) {
             if (sortSpotsColumn === colIndex) {
                 sortSpotsDirection = -sortSpotsDirection;
@@ -266,21 +374,26 @@
                 }
             });
 
-            spotsData.sort((a, b) => {
+            sortFilteredSpots();
+        }
+
+        // Sort and render the filtered spots
+        function sortFilteredSpots() {
+            filteredSpotsData.sort((a, b) => {
                 let valueA, valueB;
-                if (colIndex === 0) { // Spot (numeric)
+                if (sortSpotsColumn === 0) { // Spot (numeric)
                     valueA = a.index;
                     valueB = b.index;
                     return sortSpotsDirection * (valueA - valueB);
-                } else if (colIndex === 1) { // Section (custom order: Lower → Middle → Upper)
+                } else if (sortSpotsColumn === 1) { // Section (custom order: Lower → Middle → Upper)
                     valueA = sectionOrder[a.section] || 5;
                     valueB = sectionOrder[b.section] || 5;
                     return sortSpotsDirection * (valueA - valueB);
-                } else if (colIndex === 2) { // Visits (numeric)
+                } else if (sortSpotsColumn === 2) { // Visits (numeric)
                     valueA = a.visits;
                     valueB = b.visits;
                     return sortSpotsDirection * (valueA - valueB);
-                } else if (colIndex === 3) { // Average Rating (numeric, handle N/A)
+                } else if (sortSpotsColumn === 3) { // Average Rating (numeric, handle N/A)
                     valueA = a.avgRating !== 'N/A' ? a.avgRating : -1;
                     valueB = b.avgRating !== 'N/A' ? b.avgRating : -1;
                     return sortSpotsDirection * (valueA - valueB);
@@ -289,24 +402,30 @@
             });
 
             // Reassign Spot numbers based on the new sorted order
-            spotsData.forEach((spot, idx) => {
+            filteredSpotsData.forEach((spot, idx) => {
                 spot.index = idx + 1;
             });
 
             // Re-render the table body
             const spotsBody = document.getElementById('spots-body');
+            const noResultsDiv = document.getElementById('no-results');
             spotsBody.innerHTML = '';
-            spotsData.forEach(spot => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td data-label="Spot">Spot ${spot.index}</td>
-                    <td data-label="Section">${spot.section}</td>
-                    <td data-label="Visits">${spot.visits}</td>
-                    <td data-label="Average Rating">${spot.avgRating}</td>
-                    <td data-label="Google Maps Link"><a href="https://www.google.com/maps?q=${spot.lat},${spot.lon}" target="_blank">View on Google Maps</a></td>
-                `;
-                spotsBody.appendChild(tr);
-            });
+            if (filteredSpotsData.length === 0) {
+                noResultsDiv.style.display = 'block';
+            } else {
+                noResultsDiv.style.display = 'none';
+                filteredSpotsData.forEach(spot => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td data-label="Spot">Spot ${spot.index}</td>
+                        <td data-label="Section">${spot.section}</td>
+                        <td data-label="Visits">${spot.visits}</td>
+                        <td data-label="Average Rating">${spot.avgRating}</td>
+                        <td data-label="Google Maps Link"><a href="https://www.google.com/maps?q=${spot.lat},${spot.lon}" target="_blank">View on Google Maps</a></td>
+                    `;
+                    spotsBody.appendChild(tr);
+                });
+            }
         }
 
         // Display stream details
@@ -472,21 +591,11 @@
                 spot.index = idx + 1;
             });
 
-            const spotsBody = document.getElementById('spots-body');
-            spotsData.forEach(spot => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td data-label="Spot">Spot ${spot.index}</td>
-                    <td data-label="Section">${spot.section}</td>
-                    <td data-label="Visits">${spot.visits}</td>
-                    <td data-label="Average Rating">${spot.avgRating}</td>
-                    <td data-label="Google Maps Link"><a href="https://www.google.com/maps?q=${spot.lat},${spot.lon}" target="_blank">View on Google Maps</a></td>
-                `;
-                spotsBody.appendChild(tr);
-            });
+            // Initialize filteredSpotsData with all spots
+            filteredSpotsData = [...spotsData];
 
-            // Set default sort indicator on Section
-            document.querySelectorAll('.spots-table th')[1].classList.add('sort-asc');
+            // Render the table
+            sortFilteredSpots();
 
             document.getElementById('stream-details').style.display = 'block';
         }
