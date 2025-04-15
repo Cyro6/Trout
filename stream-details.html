@@ -10,15 +10,15 @@
         .back-link { margin-bottom: 20px; }
         a { color: #4CAF50; text-decoration: none; }
         a:hover { text-decoration: underline; }
-        .stats, .month-stats { margin: 20px 0; padding: 15px; background-color: #fff; border-radius: 5px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); }
-        .spots-table { width: 100%; max-width: 800px; margin: 20px 0; border-collapse: collapse; background-color: #fff; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); }
-        .spots-table th, .spots-table td { padding: 12px; text-align: left; border: 1px solid #ddd; }
-        .spots-table th { background-color: #4CAF50; color: white; cursor: pointer; }
-        .spots-table th:hover { background-color: #45a049; }
+        .stats, .month-stats, .top-outings { margin: 20px 0; padding: 15px; background-color: #fff; border-radius: 5px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); }
+        .spots-table, .top-outings-table { width: 100%; max-width: 800px; margin: 20px 0; border-collapse: collapse; background-color: #fff; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); }
+        .spots-table th, .spots-table td, .top-outings-table th, .top-outings-table td { padding: 12px; text-align: left; border: 1px solid #ddd; }
+        .spots-table th, .top-outings-table th { background-color: #4CAF50; color: white; cursor: pointer; }
+        .spots-table th:hover, .top-outings-table th:hover { background-color: #45a049; }
         .spots-table th.sort-asc::after { content: ' ↑'; }
         .spots-table th.sort-desc::after { content: ' ↓'; }
-        .spots-table tr:nth-child(even) { background-color: #f9f9f9; }
-        .spots-table tr:hover { background-color: #f1f1f1; }
+        .spots-table tr:nth-child(even), .top-outings-table tr:nth-child(even) { background-color: #f9f9f9; }
+        .spots-table tr:hover, .top-outings-table tr:hover { background-color: #f1f1f1; }
         .loading { text-align: center; font-size: 1.2em; color: #555; }
         .error { text-align: center; color: red; }
     </style>
@@ -39,6 +39,22 @@
             <p><strong>Most Fished Section (Overall):</strong> <span id="most-fished-section"></span></p>
         </div>
 
+        <div class="top-outings">
+            <h2>Top 5 Highest Rated Outings</h2>
+            <table class="top-outings-table" id="top-outings-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Rating</th>
+                        <th>Location</th>
+                        <th>Section</th>
+                        <th>YouTube Link</th>
+                    </tr>
+                </thead>
+                <tbody id="top-outings-body"></tbody>
+            </table>
+        </div>
+
         <div class="month-stats">
             <h2>Current Month (April) Statistics</h2>
             <p><strong>Typically Fished Section in April:</strong> <span id="april-section"></span></p>
@@ -53,6 +69,7 @@
                     <th onclick="sortSpotsTable(2)">Longitude</th>
                     <th onclick="sortSpotsTable(3)">Section</th>
                     <th onclick="sortSpotsTable(4)">Visits</th>
+                    <th onclick="sortSpotsTable(5)">Average Rating</th>
                     <th>Google Maps Link</th>
                 </tr>
             </thead>
@@ -169,6 +186,10 @@
                     valueA = a.visits;
                     valueB = b.visits;
                     return sortSpotsDirection * (valueA - valueB);
+                } else if (colIndex === 5) { // Average Rating (numeric, handle N/A)
+                    valueA = a.avgRating !== 'N/A' ? a.avgRating : -1;
+                    valueB = b.avgRating !== 'N/A' ? b.avgRating : -1;
+                    return sortSpotsDirection * (valueA - valueB);
                 }
                 return 0;
             });
@@ -189,6 +210,7 @@
                     <td>${spot.lon.toFixed(5)}</td>
                     <td>${spot.section}</td>
                     <td>${spot.visits}</td>
+                    <td>${spot.avgRating}</td>
                     <td><a href="https://www.google.com/maps?q=${spot.lat},${spot.lon}" target="_blank">View on Google Maps</a></td>
                 `;
                 spotsBody.appendChild(tr);
@@ -198,6 +220,7 @@
         // Display stream details
         function displayStreamDetails() {
             const ratingMap = { 'E': 0, 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5 };
+            const ratingReverseMap = { 0: 'E', 1: 'D', 2: 'C', 3: 'B', 4: 'A', 5: 'S' };
             const excludedStreams = ['Unknown', 'Central Sands', 'Minnesota', 'Southern WI'];
 
             // Filter valid data for this stream
@@ -220,7 +243,8 @@
                     const section = row[15]?.trim().toUpperCase() || 'UNKNOWN';
                     const lat = parseFloat(row[12]);
                     const lon = parseFloat(row[13]);
-                    return { month, stream, rating, section, lat, lon, date };
+                    const youtubeLink = row[1]?.trim() || '';
+                    return { month, stream, rating, section, lat, lon, date, youtubeLink };
                 });
 
             if (streamData.length === 0) {
@@ -273,8 +297,26 @@
             document.getElementById('most-fished-section').textContent = mostFishedSection;
             document.getElementById('april-section').textContent = aprilSection;
 
+            // Top 5 Highest Rated Outings
+            const sortedOutings = streamData.sort((a, b) => b.rating - a.rating).slice(0, 5);
+            const topOutingsBody = document.getElementById('top-outings-body');
+            sortedOutings.forEach(outing => {
+                const tr = document.createElement('tr');
+                const formattedDate = outing.date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                const ratingLetter = ratingReverseMap[outing.rating] || 'N/A';
+                const youtubeLink = outing.youtubeLink ? `<a href="${outing.youtubeLink}" target="_blank">Watch on YouTube</a>` : 'N/A';
+                tr.innerHTML = `
+                    <td>${formattedDate}</td>
+                    <td>${ratingLetter}</td>
+                    <td><a href="https://www.google.com/maps?q=${outing.lat},${outing.lon}" target="_blank">View on Google Maps</a></td>
+                    <td>${outing.section}</td>
+                    <td>${youtubeLink}</td>
+                `;
+                topOutingsBody.appendChild(tr);
+            });
+
             // Fishing spots (deduplicated, sorted by section: Lower → Middle → Upper, then by latitude within each section)
-            const spotsMap = new Map(); // Map to store lat/lon pairs, their associated sections, and visit counts
+            const spotsMap = new Map(); // Map to store lat/lon pairs, their associated sections, visits, and ratings
             streamData.forEach((entry, index) => {
                 if (!isNaN(entry.lat) && !isNaN(entry.lon)) {
                     // Round lat/lon to 5 decimal places to avoid floating-point precision issues
@@ -282,16 +324,17 @@
                     const lon = Number(entry.lon.toFixed(5));
                     const key = `${lat},${lon}`;
                     if (!spotsMap.has(key)) {
-                        spotsMap.set(key, { lat, lon, sections: [entry.section], visits: 1 });
+                        spotsMap.set(key, { lat, lon, sections: [entry.section], visits: 1, ratings: [entry.rating] });
                     } else {
                         const spot = spotsMap.get(key);
                         spot.sections.push(entry.section);
                         spot.visits += 1;
+                        spot.ratings.push(entry.rating);
                     }
                 }
             });
 
-            // Process spotsMap to determine the most frequent section for each lat/lon pair
+            // Process spotsMap to determine the most frequent section and average rating for each lat/lon pair
             spotsData = Array.from(spotsMap.values()).map(spot => {
                 // Count occurrences of each section for this lat/lon pair
                 const sectionCounts = { LOWER: 0, MIDDLE: 0, UPPER: 0, UNKNOWN: 0 };
@@ -316,7 +359,13 @@
                     }
                 }
 
-                return { lat: spot.lat, lon: spot.lon, section: selectedSection, visits: spot.visits };
+                // Calculate average rating
+                const validRatings = spot.ratings.filter(r => r >= 0);
+                const avgRating = validRatings.length > 0
+                    ? Math.round((validRatings.reduce((sum, r) => sum + r, 0) / validRatings.length) * 100) / 100
+                    : 'N/A';
+
+                return { lat: spot.lat, lon: spot.lon, section: selectedSection, visits: spot.visits, avgRating };
             });
 
             // Sort by section (Lower → Middle → Upper), then by latitude within each section
@@ -344,6 +393,7 @@
                     <td>${spot.lon.toFixed(5)}</td>
                     <td>${spot.section}</td>
                     <td>${spot.visits}</td>
+                    <td>${spot.avgRating}</td>
                     <td><a href="https://www.google.com/maps?q=${spot.lat},${spot.lon}" target="_blank">View on Google Maps</a></td>
                 `;
                 spotsBody.appendChild(tr);
