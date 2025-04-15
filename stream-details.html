@@ -211,7 +211,7 @@
             }
 
             // Overall stats
-            const total visites = streamData.length;
+            const totalVisits = streamData.length; // Fixed typo: 'visites' to 'visits'
             const avgRating = streamData.reduce((sum, entry) => sum + entry.rating, 0) / totalVisits;
             const roundedAvg = Math.round(avgRating * 100) / 100;
 
