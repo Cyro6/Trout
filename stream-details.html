@@ -151,6 +151,14 @@
             color: #555;
             margin: 20px 0;
         }
+        .month-stats .stats-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .month-stats .stats-row p {
+            margin: 0;
+        }
 
         /* Mobile Responsiveness */
         @media screen and (max-width: 600px) {
@@ -216,6 +224,10 @@
             .spots-table tr:hover, .top-outings-table tr:hover, .month-outing-table tr:hover {
                 background-color: #fff;
             }
+            .month-stats .stats-row {
+                flex-direction: column;
+                gap: 10px;
+            }
         }
     </style>
 </head>
@@ -263,18 +275,21 @@
 
         <div class="month-stats">
             <h2>Current Month (April) Statistics</h2>
-            <table class="month-outing-table" id="month-outing-table">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Rating</th>
-                        <th>Location</th>
-                        <th>Section</th>
-                        <th>YouTube Link</th>
-                    </tr>
-                </thead>
-                <tbody id="month-outing-body"></tbody>
-            </table>
+            <div class="stats-row">
+                <p><strong>Typically Fished Section in April:</strong> <span id="april-section"></span></p>
+                <table class="month-outing-table" id="month-outing-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Rating</th>
+                            <th>Location</th>
+                            <th>Section</th>
+                            <th>YouTube Link</th>
+                        </tr>
+                    </thead>
+                    <tbody id="month-outing-body"></tbody>
+                </table>
+            </div>
         </div>
 
         <h2>Fishing Spots (Downstream to Upstream)</h2>
@@ -662,6 +677,22 @@
 
             // April stats
             const aprilData = streamData.filter(entry => entry.month === 'April');
+            const aprilSectionCounts = { LOWER: 0, MIDDLE: 0, UPPER: 0 };
+            aprilData.forEach(entry => {
+                if (entry.section in aprilSectionCounts) aprilSectionCounts[entry.section]++;
+                else aprilSectionCounts['UNKNOWN'] = (aprilSectionCounts['UNKNOWN'] || 0) + 1;
+            });
+            const aprilMaxCount = Math.max(aprilSectionCounts.LOWER, aprilSectionCounts.MIDDLE, aprilSectionCounts.UPPER);
+            const aprilTieCheck = (aprilSectionCounts.LOWER === aprilMaxCount ? 1 : 0) +
+                                  (aprilSectionCounts.MIDDLE === aprilMaxCount ? 1 : 0) +
+                                  (aprilSectionCounts.UPPER === aprilMaxCount ? 1 : 0);
+            let aprilSection = aprilData.length > 0 ? 'Mixed' : 'No April data';
+            if (aprilMaxCount > 0 && aprilTieCheck === 1) {
+                if (aprilSectionCounts.LOWER === aprilMaxCount) aprilSection = 'Lower';
+                else if (aprilSectionCounts.MIDDLE === aprilMaxCount) aprilSection = 'Middle';
+                else if (aprilSectionCounts.UPPER === aprilMaxCount) aprilSection = 'Upper';
+            }
+
             const bestAprilOuting = aprilData.length > 0 ? aprilData.reduce((best, current) => best.rating > current.rating ? best : current) : null;
             const monthOutingBody = document.getElementById('month-outing-body');
             monthOutingBody.innerHTML = '';
@@ -688,6 +719,7 @@
             document.getElementById('total-visits').textContent = totalVisits;
             document.getElementById('avg-rating').textContent = roundedAvg;
             document.getElementById('most-fished-section').textContent = mostFishedSection;
+            document.getElementById('april-section').textContent = aprilSection;
 
             // Top 5 Highest Rated Outings
             const sortedOutings = streamData.sort((a, b) => b.rating - a.rating).slice(0, 5);
