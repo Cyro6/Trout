@@ -94,10 +94,10 @@
         .spots-table th:hover, .top-outings-table th:hover, .month-outing-table th:hover {
             background-color: #45a049;
         }
-        .spots-table th.sort-asc::after {
+        .spots-table th.sort-asc::after, .top-outings-table th.sort-asc::after, .month-outing-table th.sort-asc::after {
             content: ' ↑';
         }
-        .spots-table th.sort-desc::after {
+        .spots-table th.sort-desc::after, .top-outings-table th.sort-desc::after, .month-outing-table th.sort-desc::after {
             content: ' ↓';
         }
         .spots-table tr:nth-child(even), .top-outings-table tr:nth-child(even), .month-outing-table tr:nth-child(even) {
@@ -153,14 +153,14 @@
         }
         .month-stats .stats-row {
             display: block;
+            overflow: hidden; /* Prevent floating issues */
         }
         .month-stats .stats-row p {
             margin: 0 0 10px 0;
         }
         .month-stats .month-outing-table {
-            width: 100%;
-            max-width: 600px;
-            margin: 0 auto;
+            width: 100%; /* Override previous width: 100%; max-width: 600px */
+            margin: 20px 0; /* Match the global margin */
         }
 
         /* Mobile Responsiveness */
