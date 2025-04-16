@@ -73,7 +73,7 @@
         .widnr-map-section .iframe-fallback.active {
             display: block;
         }
-        .spots-table, .top-outings-table {
+        .spots-table, .top-outings-table, .month-outing-table {
             width: 100%;
             max-width: 800px;
             margin: 20px 0;
@@ -81,17 +81,17 @@
             background-color: #fff;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
-        .spots-table th, .spots-table td, .top-outings-table th, .top-outings-table td {
+        .spots-table th, .spots-table td, .top-outings-table th, .top-outings-table td, .month-outing-table th, .month-outing-table td {
             padding: 12px;
             text-align: left;
             border: 1px solid #ddd;
         }
-        .spots-table th, .top-outings-table th {
+        .spots-table th, .top-outings-table th, .month-outing-table th {
             background-color: #4CAF50;
             color: white;
             cursor: pointer;
         }
-        .spots-table th:hover, .top-outings-table th:hover {
+        .spots-table th:hover, .top-outings-table th:hover, .month-outing-table th:hover {
             background-color: #45a049;
         }
         .spots-table th.sort-asc::after {
@@ -100,10 +100,10 @@
         .spots-table th.sort-desc::after {
             content: ' ↓';
         }
-        .spots-table tr:nth-child(even), .top-outings-table tr:nth-child(even) {
+        .spots-table tr:nth-child(even), .top-outings-table tr:nth-child(even), .month-outing-table tr:nth-child(even) {
             background-color: #f9f9f9;
         }
-        .spots-table tr:hover, .top-outings-table tr:hover {
+        .spots-table tr:hover, .top-outings-table tr:hover, .month-outing-table tr:hover {
             background-color: #f1f1f1;
         }
         .loading {
@@ -181,19 +181,19 @@
             .filter-section button {
                 width: 100%;
             }
-            .spots-table, .top-outings-table {
+            .spots-table, .top-outings-table, .month-outing-table {
                 box-shadow: none;
             }
-            .spots-table thead, .top-outings-table thead {
+            .spots-table thead, .top-outings-table thead, .month-outing-table thead {
                 display: none; /* Hide headers on mobile */
             }
-            .spots-table tr, .top-outings-table tr {
+            .spots-table tr, .top-outings-table tr, .month-outing-table tr {
                 display: block;
                 margin-bottom: 10px;
                 border: 1px solid #ddd;
                 border-radius: 5px;
             }
-            .spots-table td, .top-outings-table td {
+            .spots-table td, .top-outings-table td, .month-outing-table td {
                 display: block;
                 text-align: right;
                 padding: 8px;
@@ -201,7 +201,7 @@
                 border-bottom: 1px solid #eee;
                 position: relative;
             }
-            .spots-table td::before, .top-outings-table td::before {
+            .spots-table td::before, .top-outings-table td::before, .month-outing-table td::before {
                 content: attr(data-label);
                 position: absolute;
                 left: 8px;
@@ -210,10 +210,10 @@
                 font-weight: bold;
                 color: #333;
             }
-            .spots-table td:last-child, .top-outings-table td:last-child {
+            .spots-table td:last-child, .top-outings-table td:last-child, .month-outing-table td:last-child {
                 border-bottom: none;
             }
-            .spots-table tr:hover, .top-outings-table tr:hover {
+            .spots-table tr:hover, .top-outings-table tr:hover, .month-outing-table tr:hover {
                 background-color: #fff;
             }
         }
@@ -235,7 +235,7 @@
             <p id="stream-gear-restrictions-container"><strong>Gear Restrictions:</strong> <span id="stream-gear-restrictions"></span></p>
             <p><strong>Season Information:</strong> <span id="stream-season-info"></span></p>
             <p><strong>Early Season:</strong> <span id="stream-early-season"></span></p>
-            <p id="stream-widnr-link-container"><strong>WIDNR Map:</strong> <span id="stream-widnr-link"></span></p>
+            <p id="stream-widnr-link-container"><strong>WIDNR Map:</strong> <span id="stream-widnr-link"></span> | <span id="stream-widnr-external-link"></span></p>
         </div>
 
         <div class="stats">
@@ -263,7 +263,18 @@
 
         <div class="month-stats">
             <h2>Current Month (April) Statistics</h2>
-            <p><strong>Typically Fished Section in April:</strong> <span id="april-section"></span></p>
+            <table class="month-outing-table" id="month-outing-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Rating</th>
+                        <th>Location</th>
+                        <th>Section</th>
+                        <th>YouTube Link</th>
+                    </tr>
+                </thead>
+                <tbody id="month-outing-body"></tbody>
+            </table>
         </div>
 
         <h2>Fishing Spots (Downstream to Upstream)</h2>
@@ -587,11 +598,12 @@
                     document.getElementById('stream-season-info').textContent = streamInfoRow[4] || 'N/A';
                     document.getElementById('stream-early-season').textContent = streamInfoRow[5] || 'N/A';
 
-                    // WIDNR Map Link
+                    // WIDNR Map Links
                     widnrLink = streamInfoRow[6]?.trim();
                     const widnrLinkContainer = document.getElementById('stream-widnr-link-container');
                     if (widnrLink) {
                         document.getElementById('stream-widnr-link').innerHTML = `<a href="#widnr-map-section" onclick="toggleMap()">View WIDNR Map</a>`;
+                        document.getElementById('stream-widnr-external-link').innerHTML = `<a href="${widnrLink}" target="_blank">View WIDNR Map External Link</a>`;
                         widnrLinkContainer.style.display = 'block';
 
                         // Populate the iframe at the bottom
@@ -650,27 +662,32 @@
 
             // April stats
             const aprilData = streamData.filter(entry => entry.month === 'April');
-            const aprilSectionCounts = { LOWER: 0, MIDDLE: 0, UPPER: 0 };
-            aprilData.forEach(entry => {
-                if (entry.section in aprilSectionCounts) aprilSectionCounts[entry.section]++;
-                else aprilSectionCounts['UNKNOWN'] = (aprilSectionCounts['UNKNOWN'] || 0) + 1;
-            });
-            const aprilMaxCount = Math.max(aprilSectionCounts.LOWER, aprilSectionCounts.MIDDLE, aprilSectionCounts.UPPER);
-            const aprilTieCheck = (aprilSectionCounts.LOWER === aprilMaxCount ? 1 : 0) +
-                                  (aprilSectionCounts.MIDDLE === aprilMaxCount ? 1 : 0) +
-                                  (aprilSectionCounts.UPPER === aprilMaxCount ? 1 : 0);
-            let aprilSection = aprilData.length > 0 ? 'Mixed' : 'No April data';
-            if (aprilMaxCount > 0 && aprilTieCheck === 1) {
-                if (aprilSectionCounts.LOWER === aprilMaxCount) aprilSection = 'Lower';
-                else if (aprilSectionCounts.MIDDLE === aprilMaxCount) aprilSection = 'Middle';
-                else if (aprilSectionCounts.UPPER === aprilMaxCount) aprilSection = 'Upper';
+            const bestAprilOuting = aprilData.length > 0 ? aprilData.reduce((best, current) => best.rating > current.rating ? best : current) : null;
+            const monthOutingBody = document.getElementById('month-outing-body');
+            monthOutingBody.innerHTML = '';
+            if (bestAprilOuting) {
+                const formattedDate = bestAprilOuting.date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                const ratingLetter = ratingReverseMap[bestAprilOuting.rating] || 'N/A';
+                const youtubeLink = bestAprilOuting.youtubeLink ? `<a href="${bestAprilOuting.youtubeLink}" target="_blank">Watch on YouTube</a>` : 'N/A';
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td data-label="Date">${formattedDate}</td>
+                    <td data-label="Rating">${ratingLetter}</td>
+                    <td data-label="Location"><a href="https://www.google.com/maps?q=${bestAprilOuting.lat},${bestAprilOuting.lon}" target="_blank">View on Google Maps</a></td>
+                    <td data-label="Section">${bestAprilOuting.section}</td>
+                    <td data-label="YouTube Link">${youtubeLink}</td>
+                `;
+                monthOutingBody.appendChild(tr);
+            } else {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td colspan="5" data-label="Result">No April outings found.</td>`;
+                monthOutingBody.appendChild(tr);
             }
 
             // Populate overall stats
             document.getElementById('total-visits').textContent = totalVisits;
             document.getElementById('avg-rating').textContent = roundedAvg;
             document.getElementById('most-fished-section').textContent = mostFishedSection;
-            document.getElementById('april-section').textContent = aprilSection;
 
             // Top 5 Highest Rated Outings
             const sortedOutings = streamData.sort((a, b) => b.rating - a.rating).slice(0, 5);
