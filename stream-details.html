@@ -563,7 +563,7 @@
                     const stream = row[2]?.trim() || '';
                     const rating = row[17]?.toUpperCase();
                     const section = row[15]?.trim();
-                    const validRating = /^[SABCDE+]$/.test(rating); // Ensure S+ is included
+                    const validRating = /^[SABCDE]|S+$/.test(rating); // Fixed regex to include S+
                     const validStream = !excludedStreams.some(excluded => stream.includes(excluded));
                     return stream === streamName && validRating && validStream && !isNaN(date.getTime());
                 })
@@ -571,7 +571,7 @@
                     const date = new Date(row[0].replace(/(\d+)\/(\d+)\/(\d+)/, '$3-$1-$2'));
                     const month = date.toLocaleString('default', { month: 'long' });
                     const stream = row[2]?.trim() || '';
-                    const rating = ratingMap[row[17]?.toUpperCase()] ?? -1; // Map S+ to 6
+                    const rating = ratingMap[row[17]?.toUpperCase()] ?? -1;
                     const section = row[15]?.trim().toUpperCase() || 'UNKNOWN';
                     const lat = parseFloat(row[12]);
                     const lon = parseFloat(row[13]);
