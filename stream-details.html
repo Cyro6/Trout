@@ -152,19 +152,15 @@
             margin: 20px 0;
         }
         .month-stats .stats-row {
-            display: block;
-            gap: 20px;
-            flex-wrap: wrap;
-            justify-content: center; /* Center items on wide screens */
-            align-items: flex-start; /* Align items at the top */
+            display: block; /* Changed from flex to block for vertical stacking */
         }
         .month-stats .stats-row p {
-            margin: 0;
-            flex: 1 1 200px; /* Allow paragraph to grow but with a minimum width */
+            margin: 0 0 10px 0; /* Add spacing below paragraph */
         }
         .month-stats .month-outing-table {
-            flex: 1 1 500px; /* Allow table to grow but cap at a reasonable width */
-            max-width: 800px; /* Constrain table width on wide screens */
+            width: 100%;
+            max-width: 600px; /* Constrain table width */
+            margin: 0 auto; /* Center the table */
         }
 
         /* Mobile Responsiveness */
@@ -230,13 +226,6 @@
             }
             .spots-table tr:hover, .top-outings-table tr:hover, .month-outing-table tr:hover {
                 background-color: #fff;
-            }
-            .month-stats .stats-row {
-                flex-direction: column;
-                gap: 10px;
-            }
-            .month-stats .month-outing-table {
-                max-width: 100%; /* Full width on mobile */
             }
         }
     </style>
@@ -320,7 +309,7 @@
             </div>
             <div>
                 <label for="rating-filter">Min Avg Rating:</label>
-                <input type="number" id="rating-filter" min="0" max="5" step="0.1" value="" placeholder="e.g., 3.5" oninput="applyFilters()">
+                <input type="number" id="rating-filter" min="0" max="6" step="0.1" value="" placeholder="e.g., 3.5" oninput="applyFilters()"> <!-- Updated max to 6 -->
             </div>
             <button onclick="clearFilters()">Clear Filters</button>
         </div>
@@ -561,8 +550,8 @@
 
         // Display stream details
         function displayStreamDetails() {
-            const ratingMap = { 'E': 0, 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5 };
-            const ratingReverseMap = { 0: 'E', 1: 'D', 2: 'C', 3: 'B', 4: 'A', 5: 'S' };
+            const ratingMap = { 'E': 0, 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5, 'S+': 6 }; // Added S+ with value 6
+            const ratingReverseMap = { 0: 'E', 1: 'D', 2: 'C', 3: 'B', 4: 'A', 5: 'S', 6: 'S+' }; // Added S+ mapping
             const excludedStreams = ['Unknown', 'Central Sands', 'Minnesota', 'Southern WI'];
 
             // Filter valid data for this stream
@@ -573,7 +562,7 @@
                     const stream = row[2]?.trim() || '';
                     const rating = row[17]?.toUpperCase();
                     const section = row[15]?.trim();
-                    const validRating = /^[SABCDE]$/.test(rating);
+                    const validRating = /^[SABCDE+]$/.test(rating); // Updated regex to include +
                     const validStream = !excludedStreams.some(excluded => stream.includes(excluded));
                     return stream === streamName && validRating && validStream && !isNaN(date.getTime());
                 })
