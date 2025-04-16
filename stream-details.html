@@ -24,12 +24,34 @@
         a:hover {
             text-decoration: underline;
         }
-        .stats, .month-stats, .top-outings {
+        .stats, .month-stats, .top-outings, .stream-info {
             margin: 20px 0;
             padding: 15px;
             background-color: #fff;
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .stream-info p {
+            margin: 5px 0;
+        }
+        .stream-info .iframe-container {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            height: 0;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        .stream-info .iframe-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+        .stream-info .iframe-fallback {
+            margin-top: 10px;
+            color: #555;
         }
         .spots-table, .top-outings-table {
             width: 100%;
@@ -122,8 +144,11 @@
             h2 {
                 font-size: 1.2em;
             }
-            .stats, .month-stats, .top-outings {
+            .stats, .month-stats, .top-outings, .stream-info {
                 padding: 10px;
+            }
+            .stream-info .iframe-container {
+                padding-bottom: 75%; /* Adjust aspect ratio for mobile if needed */
             }
             .filter-section {
                 flex-direction: column;
@@ -183,6 +208,18 @@
     <div id="error" class="error"></div>
 
     <div id="stream-details" style="display: none;">
+        <div class="stream-info">
+            <h2>Stream Information</h2>
+            <p><strong>Regulation:</strong> <span id="stream-regulation"></span></p>
+            <p><strong>Special Regulations:</strong> <span id="stream-special-regulations"></span></p>
+            <p><strong>Gear Restrictions:</strong> <span id="stream-gear-restrictions"></span></p>
+            <p><strong>Season Information:</strong> <span id="stream-season-info"></span></p>
+            <p><strong>Early Season:</strong> <span id="stream-early-season"></span></p>
+            <p><strong>WIDNR Map:</strong></p>
+            <div id="stream-widnr-iframe" class="iframe-container"></div>
+            <div id="stream-widnr-fallback" class="iframe-fallback"></div>
+        </div>
+
         <div class="stats">
             <h2>Overall Statistics</h2>
             <p><strong>Total Visits:</strong> <span id="total-visits"></span></p>
@@ -251,9 +288,12 @@
     <script>
         const SHEET_ID = '1vRDZny6ZfKGXJOKIgoRo47knNJmmtDT2WTrNvOmQ0lwUiznaF1McQVgpTUa1kTMUpq5X6c3b888BGwz';
         const SOURCE_GID = '491893533'; // Rons Spots GPS GID
+        const STREAM_INFO_GID = '1772368131'; // Stream Info GID
         const SOURCE_URL = `https://docs.google.com/spreadsheets/d/e/2PACX-${SHEET_ID}/pub?gid=${SOURCE_GID}&single=true&output=csv`;
+        const STREAM_INFO_URL = `https://docs.google.com/spreadsheets/d/e/2PACX-${SHEET_ID}/pub?gid=${STREAM_INFO_GID}&single=true&output=csv`;
 
         let sourceData = null;
+        let streamInfoData = null;
         let spotsData = []; // Store all spots for filtering and sorting
         let filteredSpotsData = []; // Store filtered spots for display
         let sortSpotsColumn = 1; // Default sort by Section (to align with downstream-to-upstream)
@@ -267,7 +307,7 @@
         const streamName = urlParams.get('stream');
 
         // Initialize page
-        function init() {
+        async function init() {
             if (!streamName) {
                 document.getElementById('error').textContent = 'Error: No stream specified.';
                 document.getElementById('loading').style.display = 'none';
@@ -275,10 +315,11 @@
             }
 
             document.getElementById('stream-title').textContent = `${streamName} Details`;
-            fetchData();
+            await Promise.all([fetchData(), fetchStreamInfo()]);
+            displayStreamDetails();
         }
 
-        // Fetch and process data
+        // Fetch fishing spots data
         async function fetchData() {
             try {
                 const response = await fetch(SOURCE_URL);
@@ -286,11 +327,21 @@
                 const csvText = await response.text();
                 if (!csvText.trim()) throw new Error('Empty CSV data');
                 sourceData = parseCSV(csvText);
-                displayStreamDetails();
             } catch (error) {
-                document.getElementById('error').textContent = `Error: ${error.message}`;
-            } finally {
-                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').textContent = `Error fetching spots data: ${error.message}`;
+            }
+        }
+
+        // Fetch stream info data
+        async function fetchStreamInfo() {
+            try {
+                const response = await fetch(STREAM_INFO_URL);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const csvText = await response.text();
+                if (!csvText.trim()) throw new Error('Empty stream info CSV data');
+                streamInfoData = parseCSV(csvText);
+            } catch (error) {
+                document.getElementById('error').textContent = `Error fetching stream info: ${error.message}`;
             }
         }
 
@@ -435,7 +486,7 @@
             const excludedStreams = ['Unknown', 'Central Sands', 'Minnesota', 'Southern WI'];
 
             // Filter valid data for this stream
-            const streamData = sourceData.rows
+            const streamData = sourceData?.rows
                 .filter(row => {
                     if (row.length < 18) return false;
                     const date = new Date(row[0].replace(/(\d+)\/(\d+)\/(\d+)/, '$3-$1-$2'));
@@ -456,11 +507,53 @@
                     const lon = parseFloat(row[13]);
                     const youtubeLink = row[1]?.trim() || '';
                     return { month, stream, rating, section, lat, lon, date, youtubeLink };
-                });
+                }) || [];
 
             if (streamData.length === 0) {
                 document.getElementById('error').textContent = 'No data found for this stream.';
                 return;
+            }
+
+            // Populate stream information
+            if (streamInfoData) {
+                const streamInfoRow = streamInfoData.rows.find(row => row[0]?.trim() === streamName);
+                if (streamInfoRow) {
+                    document.getElementById('stream-regulation').textContent = streamInfoRow[1] || 'N/A';
+                    document.getElementById('stream-special-regulations').textContent = streamInfoRow[2] || 'None';
+                    document.getElementById('stream-gear-restrictions').textContent = streamInfoRow[3] || 'N/A';
+                    document.getElementById('stream-season-info').textContent = streamInfoRow[4] || 'N/A';
+                    document.getElementById('stream-early-season').textContent = streamInfoRow[5] || 'N/A';
+                    const widnrLink = streamInfoRow[6]?.trim();
+                    if (widnrLink) {
+                        // Attempt to embed the WIDNR link in an iframe
+                        document.getElementById('stream-widnr-iframe').innerHTML = `
+                            <iframe src="${widnrLink}" loading="lazy" allowfullscreen></iframe>
+                        `;
+                        // Provide a fallback link
+                        document.getElementById('stream-widnr-fallback').innerHTML = `
+                            If the map doesn't load, <a href="${widnrLink}" target="_blank">view WIDNR details here</a>.
+                        `;
+                    } else {
+                        document.getElementById('stream-widnr-iframe').innerHTML = '';
+                        document.getElementById('stream-widnr-fallback').textContent = 'N/A';
+                    }
+                } else {
+                    document.getElementById('stream-regulation').textContent = 'N/A';
+                    document.getElementById('stream-special-regulations').textContent = 'None';
+                    document.getElementById('stream-gear-restrictions').textContent = 'N/A';
+                    document.getElementById('stream-season-info').textContent = 'N/A';
+                    document.getElementById('stream-early-season').textContent = 'N/A';
+                    document.getElementById('stream-widnr-iframe').innerHTML = '';
+                    document.getElementById('stream-widnr-fallback').textContent = 'N/A';
+                }
+            } else {
+                document.getElementById('stream-regulation').textContent = 'Error loading data';
+                document.getElementById('stream-special-regulations').textContent = 'Error loading data';
+                document.getElementById('stream-gear-restrictions').textContent = 'Error loading data';
+                document.getElementById('stream-season-info').textContent = 'Error loading data';
+                document.getElementById('stream-early-season').textContent = 'Error loading data';
+                document.getElementById('stream-widnr-iframe').innerHTML = '';
+                document.getElementById('stream-widnr-fallback').textContent = 'Error loading data';
             }
 
             // Overall stats
@@ -598,6 +691,7 @@
             sortFilteredSpots();
 
             document.getElementById('stream-details').style.display = 'block';
+            document.getElementById('loading').style.display = 'none';
         }
 
         // Initialize
