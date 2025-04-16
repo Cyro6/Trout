@@ -24,7 +24,7 @@
         a:hover {
             text-decoration: underline;
         }
-        .stats, .month-stats, .top-outings, .stream-info {
+        .stats, .month-stats, .top-outings, .stream-info, .widnr-map-section {
             margin: 20px 0;
             padding: 15px;
             background-color: #fff;
@@ -34,14 +34,30 @@
         .stream-info p {
             margin: 5px 0;
         }
-        .stream-info .iframe-container {
+        .widnr-map-section .toggle-button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 3px;
+            cursor: pointer;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+        .widnr-map-section .toggle-button:hover {
+            background-color: #45a049;
+        }
+        .widnr-map-section .iframe-container {
             position: relative;
             padding-bottom: 56.25%; /* 16:9 aspect ratio */
             height: 0;
             overflow: hidden;
-            margin-top: 10px;
+            display: none; /* Collapsed by default */
         }
-        .stream-info .iframe-container iframe {
+        .widnr-map-section .iframe-container.active {
+            display: block;
+        }
+        .widnr-map-section .iframe-container iframe {
             position: absolute;
             top: 0;
             left: 0;
@@ -49,9 +65,13 @@
             height: 100%;
             border: 0;
         }
-        .stream-info .iframe-fallback {
+        .widnr-map-section .iframe-fallback {
             margin-top: 10px;
             color: #555;
+            display: none;
+        }
+        .widnr-map-section .iframe-fallback.active {
+            display: block;
         }
         .spots-table, .top-outings-table {
             width: 100%;
@@ -144,10 +164,10 @@
             h2 {
                 font-size: 1.2em;
             }
-            .stats, .month-stats, .top-outings, .stream-info {
+            .stats, .month-stats, .top-outings, .stream-info, .widnr-map-section {
                 padding: 10px;
             }
-            .stream-info .iframe-container {
+            .widnr-map-section .iframe-container {
                 padding-bottom: 75%; /* Adjust aspect ratio for mobile if needed */
             }
             .filter-section {
@@ -211,13 +231,11 @@
         <div class="stream-info">
             <h2>Stream Information</h2>
             <p><strong>Regulation:</strong> <span id="stream-regulation"></span></p>
-            <p><strong>Special Regulations:</strong> <span id="stream-special-regulations"></span></p>
-            <p><strong>Gear Restrictions:</strong> <span id="stream-gear-restrictions"></span></p>
+            <p id="stream-special-regulations-container"><strong>Special Regulations:</strong> <span id="stream-special-regulations"></span></p>
+            <p id="stream-gear-restrictions-container"><strong>Gear Restrictions:</strong> <span id="stream-gear-restrictions"></span></p>
             <p><strong>Season Information:</strong> <span id="stream-season-info"></span></p>
             <p><strong>Early Season:</strong> <span id="stream-early-season"></span></p>
-            <p><strong>WIDNR Map:</strong></p>
-            <div id="stream-widnr-iframe" class="iframe-container"></div>
-            <div id="stream-widnr-fallback" class="iframe-fallback"></div>
+            <p id="stream-widnr-link-container"><strong>WIDNR Map:</strong> <span id="stream-widnr-link"></span></p>
         </div>
 
         <div class="stats">
@@ -283,6 +301,13 @@
             </thead>
             <tbody id="spots-body"></tbody>
         </table>
+
+        <div class="widnr-map-section" id="widnr-map-section">
+            <h2>WIDNR Map</h2>
+            <button class="toggle-button" onclick="toggleMap()">Expand Map</button>
+            <div id="stream-widnr-iframe" class="iframe-container"></div>
+            <div id="stream-widnr-fallback" class="iframe-fallback"></div>
+        </div>
     </div>
 
     <script>
@@ -298,6 +323,7 @@
         let filteredSpotsData = []; // Store filtered spots for display
         let sortSpotsColumn = 1; // Default sort by Section (to align with downstream-to-upstream)
         let sortSpotsDirection = 1; // 1 for ascending, -1 for descending
+        let widnrLink = ''; // Store the WIDNR link for use in the toggle
 
         // Define section order for sorting (Lower → Middle → Upper)
         const sectionOrder = { 'LOWER': 1, 'MIDDLE': 2, 'UPPER': 3, 'UNKNOWN': 4 };
@@ -367,6 +393,24 @@
                 return values;
             });
             return { headers, rows };
+        }
+
+        // Toggle the WIDNR map visibility
+        function toggleMap() {
+            const iframeContainer = document.getElementById('stream-widnr-iframe');
+            const fallback = document.getElementById('stream-widnr-fallback');
+            const toggleButton = document.querySelector('.toggle-button');
+            const isExpanded = iframeContainer.classList.contains('active');
+
+            if (isExpanded) {
+                iframeContainer.classList.remove('active');
+                fallback.classList.remove('active');
+                toggleButton.textContent = 'Expand Map';
+            } else {
+                iframeContainer.classList.add('active');
+                fallback.classList.add('active');
+                toggleButton.textContent = 'Collapse Map';
+            }
         }
 
         // Apply filters to the spots data
@@ -519,39 +563,66 @@
                 const streamInfoRow = streamInfoData.rows.find(row => row[0]?.trim() === streamName);
                 if (streamInfoRow) {
                     document.getElementById('stream-regulation').textContent = streamInfoRow[1] || 'N/A';
-                    document.getElementById('stream-special-regulations').textContent = streamInfoRow[2] || 'None';
-                    document.getElementById('stream-gear-restrictions').textContent = streamInfoRow[3] || 'N/A';
+
+                    // Special Regulations: Hide if "N/A" (case-insensitive)
+                    const specialRegulations = streamInfoRow[2] || 'None';
+                    const specialRegulationsContainer = document.getElementById('stream-special-regulations-container');
+                    if (specialRegulations.toUpperCase() === 'N/A') {
+                        specialRegulationsContainer.style.display = 'none';
+                    } else {
+                        document.getElementById('stream-special-regulations').textContent = specialRegulations;
+                        specialRegulationsContainer.style.display = 'block';
+                    }
+
+                    // Gear Restrictions: Hide if "N/A" (case-insensitive)
+                    const gearRestrictions = streamInfoRow[3] || 'N/A';
+                    const gearRestrictionsContainer = document.getElementById('stream-gear-restrictions-container');
+                    if (gearRestrictions.toUpperCase() === 'N/A') {
+                        gearRestrictionsContainer.style.display = 'none';
+                    } else {
+                        document.getElementById('stream-gear-restrictions').textContent = gearRestrictions;
+                        gearRestrictionsContainer.style.display = 'block';
+                    }
+
                     document.getElementById('stream-season-info').textContent = streamInfoRow[4] || 'N/A';
                     document.getElementById('stream-early-season').textContent = streamInfoRow[5] || 'N/A';
-                    const widnrLink = streamInfoRow[6]?.trim();
+
+                    // WIDNR Map Link
+                    widnrLink = streamInfoRow[6]?.trim();
+                    const widnrLinkContainer = document.getElementById('stream-widnr-link-container');
                     if (widnrLink) {
-                        // Attempt to embed the WIDNR link in an iframe
+                        document.getElementById('stream-widnr-link').innerHTML = `<a href="#widnr-map-section" onclick="toggleMap()">View WIDNR Map</a>`;
+                        widnrLinkContainer.style.display = 'block';
+
+                        // Populate the iframe at the bottom
                         document.getElementById('stream-widnr-iframe').innerHTML = `
                             <iframe src="${widnrLink}" loading="lazy" allowfullscreen></iframe>
                         `;
-                        // Provide a fallback link
                         document.getElementById('stream-widnr-fallback').innerHTML = `
                             If the map doesn't load, <a href="${widnrLink}" target="_blank">view WIDNR details here</a>.
                         `;
                     } else {
+                        widnrLinkContainer.style.display = 'none';
                         document.getElementById('stream-widnr-iframe').innerHTML = '';
                         document.getElementById('stream-widnr-fallback').textContent = 'N/A';
                     }
                 } else {
                     document.getElementById('stream-regulation').textContent = 'N/A';
-                    document.getElementById('stream-special-regulations').textContent = 'None';
-                    document.getElementById('stream-gear-restrictions').textContent = 'N/A';
+                    document.getElementById('stream-special-regulations-container').style.display = 'none';
+                    document.getElementById('stream-gear-restrictions-container').style.display = 'none';
                     document.getElementById('stream-season-info').textContent = 'N/A';
                     document.getElementById('stream-early-season').textContent = 'N/A';
+                    document.getElementById('stream-widnr-link-container').style.display = 'none';
                     document.getElementById('stream-widnr-iframe').innerHTML = '';
                     document.getElementById('stream-widnr-fallback').textContent = 'N/A';
                 }
             } else {
                 document.getElementById('stream-regulation').textContent = 'Error loading data';
-                document.getElementById('stream-special-regulations').textContent = 'Error loading data';
-                document.getElementById('stream-gear-restrictions').textContent = 'Error loading data';
+                document.getElementById('stream-special-regulations-container').style.display = 'none';
+                document.getElementById('stream-gear-restrictions-container').style.display = 'none';
                 document.getElementById('stream-season-info').textContent = 'Error loading data';
                 document.getElementById('stream-early-season').textContent = 'Error loading data';
+                document.getElementById('stream-widnr-link-container').style.display = 'none';
                 document.getElementById('stream-widnr-iframe').innerHTML = '';
                 document.getElementById('stream-widnr-fallback').textContent = 'Error loading data';
             }
