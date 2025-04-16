@@ -155,9 +155,16 @@
             display: flex;
             gap: 20px;
             flex-wrap: wrap;
+            justify-content: center; /* Center items on wide screens */
+            align-items: flex-start; /* Align items at the top */
         }
         .month-stats .stats-row p {
             margin: 0;
+            flex: 1 1 200px; /* Allow paragraph to grow but with a minimum width */
+        }
+        .month-stats .month-outing-table {
+            flex: 1 1 500px; /* Allow table to grow but cap at a reasonable width */
+            max-width: 600px; /* Constrain table width on wide screens */
         }
 
         /* Mobile Responsiveness */
@@ -227,6 +234,9 @@
             .month-stats .stats-row {
                 flex-direction: column;
                 gap: 10px;
+            }
+            .month-stats .month-outing-table {
+                max-width: 100%; /* Full width on mobile */
             }
         }
     </style>
