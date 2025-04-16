@@ -152,15 +152,15 @@
             margin: 20px 0;
         }
         .month-stats .stats-row {
-            display: block; /* Changed from flex to block for vertical stacking */
+            display: block;
         }
         .month-stats .stats-row p {
-            margin: 0 0 10px 0; /* Add spacing below paragraph */
+            margin: 0 0 10px 0;
         }
         .month-stats .month-outing-table {
             width: 100%;
-            max-width: 600px; /* Constrain table width */
-            margin: 0 auto; /* Center the table */
+            max-width: 600px;
+            margin: 0 auto;
         }
 
         /* Mobile Responsiveness */
@@ -179,7 +179,7 @@
                 padding: 10px;
             }
             .widnr-map-section .iframe-container {
-                padding-bottom: 75%; /* Adjust aspect ratio for mobile if needed */
+                padding-bottom: 75%;
             }
             .filter-section {
                 flex-direction: column;
@@ -196,7 +196,7 @@
                 box-shadow: none;
             }
             .spots-table thead, .top-outings-table thead, .month-outing-table thead {
-                display: none; /* Hide headers on mobile */
+                display: none;
             }
             .spots-table tr, .top-outings-table tr, .month-outing-table tr {
                 display: block;
@@ -309,7 +309,7 @@
             </div>
             <div>
                 <label for="rating-filter">Min Avg Rating:</label>
-                <input type="number" id="rating-filter" min="0" max="6" step="0.1" value="" placeholder="e.g., 3.5" oninput="applyFilters()"> <!-- Updated max to 6 -->
+                <input type="number" id="rating-filter" min="0" max="6" step="0.1" value="" placeholder="e.g., 3.5" oninput="applyFilters()">
             </div>
             <button onclick="clearFilters()">Clear Filters</button>
         </div>
@@ -378,6 +378,7 @@
                 const csvText = await response.text();
                 if (!csvText.trim()) throw new Error('Empty CSV data');
                 sourceData = parseCSV(csvText);
+                console.log('Raw Source Data:', sourceData.rows); // Debug: Log raw data
             } catch (error) {
                 document.getElementById('error').textContent = `Error fetching spots data: ${error.message}`;
             }
@@ -550,8 +551,8 @@
 
         // Display stream details
         function displayStreamDetails() {
-            const ratingMap = { 'E': 0, 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5, 'S+': 6 }; // Added S+ with value 6
-            const ratingReverseMap = { 0: 'E', 1: 'D', 2: 'C', 3: 'B', 4: 'A', 5: 'S', 6: 'S+' }; // Added S+ mapping
+            const ratingMap = { 'E': 0, 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5, 'S+': 6 };
+            const ratingReverseMap = { 0: 'E', 1: 'D', 2: 'C', 3: 'B', 4: 'A', 5: 'S', 6: 'S+' };
             const excludedStreams = ['Unknown', 'Central Sands', 'Minnesota', 'Southern WI'];
 
             // Filter valid data for this stream
@@ -562,7 +563,7 @@
                     const stream = row[2]?.trim() || '';
                     const rating = row[17]?.toUpperCase();
                     const section = row[15]?.trim();
-                    const validRating = /^[SABCDE+]$/.test(rating); // Updated regex to include +
+                    const validRating = /^[SABCDE+]$/.test(rating); // Ensure S+ is included
                     const validStream = !excludedStreams.some(excluded => stream.includes(excluded));
                     return stream === streamName && validRating && validStream && !isNaN(date.getTime());
                 })
@@ -570,13 +571,15 @@
                     const date = new Date(row[0].replace(/(\d+)\/(\d+)\/(\d+)/, '$3-$1-$2'));
                     const month = date.toLocaleString('default', { month: 'long' });
                     const stream = row[2]?.trim() || '';
-                    const rating = ratingMap[row[17]?.toUpperCase()] ?? -1;
+                    const rating = ratingMap[row[17]?.toUpperCase()] ?? -1; // Map S+ to 6
                     const section = row[15]?.trim().toUpperCase() || 'UNKNOWN';
                     const lat = parseFloat(row[12]);
                     const lon = parseFloat(row[13]);
                     const youtubeLink = row[1]?.trim() || '';
                     return { month, stream, rating, section, lat, lon, date, youtubeLink };
                 }) || [];
+
+            console.log('Processed Stream Data:', streamData); // Debug: Log processed data
 
             if (streamData.length === 0) {
                 document.getElementById('error').textContent = 'No data found for this stream.';
@@ -588,8 +591,6 @@
                 const streamInfoRow = streamInfoData.rows.find(row => row[0]?.trim() === streamName);
                 if (streamInfoRow) {
                     document.getElementById('stream-regulation').textContent = streamInfoRow[1] || 'N/A';
-
-                    // Special Regulations: Hide if "N/A" (case-insensitive)
                     const specialRegulations = streamInfoRow[2] || 'None';
                     const specialRegulationsContainer = document.getElementById('stream-special-regulations-container');
                     if (specialRegulations.toUpperCase() === 'N/A') {
@@ -598,8 +599,6 @@
                         document.getElementById('stream-special-regulations').textContent = specialRegulations;
                         specialRegulationsContainer.style.display = 'block';
                     }
-
-                    // Gear Restrictions: Hide if "N/A" (case-insensitive)
                     const gearRestrictions = streamInfoRow[3] || 'N/A';
                     const gearRestrictionsContainer = document.getElementById('stream-gear-restrictions-container');
                     if (gearRestrictions.toUpperCase() === 'N/A') {
@@ -608,25 +607,16 @@
                         document.getElementById('stream-gear-restrictions').textContent = gearRestrictions;
                         gearRestrictionsContainer.style.display = 'block';
                     }
-
                     document.getElementById('stream-season-info').textContent = streamInfoRow[4] || 'N/A';
                     document.getElementById('stream-early-season').textContent = streamInfoRow[5] || 'N/A';
-
-                    // WIDNR Map Links
                     widnrLink = streamInfoRow[6]?.trim();
                     const widnrLinkContainer = document.getElementById('stream-widnr-link-container');
                     if (widnrLink) {
                         document.getElementById('stream-widnr-link').innerHTML = `<a href="#widnr-map-section" onclick="toggleMap()">View WIDNR Map</a>`;
                         document.getElementById('stream-widnr-external-link').innerHTML = `<a href="${widnrLink}" target="_blank">View WIDNR Map External Link</a>`;
                         widnrLinkContainer.style.display = 'block';
-
-                        // Populate the iframe at the bottom
-                        document.getElementById('stream-widnr-iframe').innerHTML = `
-                            <iframe src="${widnrLink}" loading="lazy" allowfullscreen></iframe>
-                        `;
-                        document.getElementById('stream-widnr-fallback').innerHTML = `
-                            If the map doesn't load, <a href="${widnrLink}" target="_blank">view WIDNR details here</a>.
-                        `;
+                        document.getElementById('stream-widnr-iframe').innerHTML = `<iframe src="${widnrLink}" loading="lazy" allowfullscreen></iframe>`;
+                        document.getElementById('stream-widnr-fallback').innerHTML = `If the map doesn't load, <a href="${widnrLink}" target="_blank">view WIDNR details here</a>.`;
                     } else {
                         widnrLinkContainer.style.display = 'none';
                         document.getElementById('stream-widnr-iframe').innerHTML = '';
@@ -653,7 +643,6 @@
                 document.getElementById('stream-widnr-fallback').textContent = 'Error loading data';
             }
 
-            // Overall stats
             const totalVisits = streamData.length;
             const avgRating = streamData.reduce((sum, entry) => sum + entry.rating, 0) / totalVisits;
             const roundedAvg = Math.round(avgRating * 100) / 100;
@@ -674,7 +663,6 @@
                 else if (sectionCounts.UPPER === maxCount) mostFishedSection = 'Upper';
             }
 
-            // April stats
             const aprilData = streamData.filter(entry => entry.month === 'April');
             const aprilSectionCounts = { LOWER: 0, MIDDLE: 0, UPPER: 0 };
             aprilData.forEach(entry => {
@@ -714,15 +702,15 @@
                 monthOutingBody.appendChild(tr);
             }
 
-            // Populate overall stats
             document.getElementById('total-visits').textContent = totalVisits;
             document.getElementById('avg-rating').textContent = roundedAvg;
             document.getElementById('most-fished-section').textContent = mostFishedSection;
             document.getElementById('april-section').textContent = aprilSection;
 
-            // Top 5 Highest Rated Outings
             const sortedOutings = streamData.sort((a, b) => b.rating - a.rating).slice(0, 5);
+            console.log('Sorted Outings:', sortedOutings); // Debug: Log sorted outings
             const topOutingsBody = document.getElementById('top-outings-body');
+            topOutingsBody.innerHTML = '';
             sortedOutings.forEach(outing => {
                 const tr = document.createElement('tr');
                 const formattedDate = outing.date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -738,11 +726,9 @@
                 topOutingsBody.appendChild(tr);
             });
 
-            // Fishing spots (deduplicated, sorted by section: Lower → Middle → Upper)
-            const spotsMap = new Map(); // Map to store lat/lon pairs, their associated sections, visits, and ratings
+            const spotsMap = new Map();
             streamData.forEach((entry, index) => {
                 if (!isNaN(entry.lat) && !isNaN(entry.lon)) {
-                    // Round lat/lon to 5 decimal places to avoid floating-point precision issues
                     const lat = Number(entry.lat.toFixed(5));
                     const lon = Number(entry.lon.toFixed(5));
                     const key = `${lat},${lon}`;
@@ -757,15 +743,11 @@
                 }
             });
 
-            // Process spotsMap to determine the most frequent section and average rating for each lat/lon pair
             spotsData = Array.from(spotsMap.values()).map(spot => {
-                // Count occurrences of each section for this lat/lon pair
                 const sectionCounts = { LOWER: 0, MIDDLE: 0, UPPER: 0, UNKNOWN: 0 };
                 spot.sections.forEach(section => {
                     sectionCounts[section] = (sectionCounts[section] || 0) + 1;
                 });
-
-                // Find the section with the highest count
                 let maxCount = 0;
                 let selectedSection = 'UNKNOWN';
                 for (const [section, count] of Object.entries(sectionCounts)) {
@@ -773,7 +755,6 @@
                         maxCount = count;
                         selectedSection = section;
                     } else if (count === maxCount) {
-                        // In case of a tie, prefer the most downstream section (LOWER > MIDDLE > UPPER)
                         const order = sectionOrder[section] || 5;
                         const currentOrder = sectionOrder[selectedSection] || 5;
                         if (order < currentOrder) {
@@ -781,32 +762,24 @@
                         }
                     }
                 }
-
-                // Calculate average rating
                 const validRatings = spot.ratings.filter(r => r >= 0);
                 const avgRating = validRatings.length > 0
                     ? Math.round((validRatings.reduce((sum, r) => sum + r, 0) / validRatings.length) * 100) / 100
                     : 'N/A';
-
                 return { lat: spot.lat, lon: spot.lon, section: selectedSection, visits: spot.visits, avgRating };
             });
 
-            // Sort by section (Lower → Middle → Upper)
             spotsData.sort((a, b) => {
                 const sectionA = sectionOrder[a.section] || 5;
                 const sectionB = sectionOrder[b.section] || 5;
                 return sectionA - sectionB;
             });
 
-            // Assign Spot numbers based on sorted order (downstream to upstream)
             spotsData.forEach((spot, idx) => {
                 spot.index = idx + 1;
             });
 
-            // Initialize filteredSpotsData with all spots
             filteredSpotsData = [...spotsData];
-
-            // Render the table
             sortFilteredSpots();
 
             document.getElementById('stream-details').style.display = 'block';
