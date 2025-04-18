@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stream Weather Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+            font-size: 16px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .input-section {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .input-section input {
+            padding: 8px;
+            width: 200px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-size: 1em;
+        }
+        .input-section button {
+            padding: 8px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .input-section button:hover {
+            background-color: #45a049;
+        }
+        .download-button {
+            display: none;
+            margin: 10px auto;
+            text-align: center;
+        }
+        .download-button button {
+            padding: 8px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .download-button button:hover {
+            background-color: #45a049;
+        }
+        .loading {
+            text-align: center;
+            font-size: 1.2em;
+            color: #555;
+            display: none;
+        }
+        .error {
+            text-align: center;
+            color: red;
+            display: none;
+        }
+        .results-table {
+            width: 100%;
+            max-width: 1200px;
+            margin: 20px auto;
+            border-collapse: collapse;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+        .results-table th, .results-table td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        .results-table th {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+        .results-table th:hover {
+            background-color: #45a049;
+        }
+        .results-table th.sort-asc::after {
+            content: ' ↑';
+        }
+        .results-table th.sort-desc::after {
+            content: ' ↓';
+        }
+        .results-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .results-table tr:hover {
+            background-color: #f1f1f1;
+        }
+        a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        @media screen and (max-width: 600px) {
+            body {
+                margin: 10px;
+                font-size: 14px;
+            }
+            .input-section input {
+                width: 100%;
+                box-sizing: border-box;
+            }
+            .input-section button {
+                width: 100%;
+                margin: 10px 0;
+            }
+            .results-table {
+                box-shadow: none;
+            }
+            .results-table thead {
+                display: none;
+            }
+            .results-table tr {
+                display: block;
+                margin-bottom: 10px;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+            }
+            .results-table td {
+                display: block;
+                text-align: right;
+                padding: 8px;
+                border: none;
+                border-bottom: 1px solid #eee;
+                position: relative;
+            }
+            .results-table td::before {
+                content: attr(data-label);
+                position: absolute;
+                left: 8px;
+                width: 45%;
+                text-align: left;
+                font-weight: bold;
+                color: #333;
+            }
+            .results-table td:last-child {
+                border-bottom: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Stream Weather Data</h1>
+    <div class="input-section">
+        <input type="text" id="stream-input" placeholder="Enter stream name" />
+        <button onclick="fetchStreamData()">Fetch Data</button>
+    </div>
+    <div id="loading" class="loading">Loading stream and weather data...</div>
+    <div id="error" class="error"></div>
+    <div class="download-button" id="download-button">
+        <button onclick="downloadCSV()">Download as CSV</button>
+    </div>
+    <table class="results-table" id="results-table">
+        <thead>
+            <tr>
+                <th onclick="sortTable(0)">Date</th>
+                <th onclick="sortTable(1)">Stream</th>
+                <th onclick="sortTable(2)">Latitude</th>
+                <th onclick="sortTable(3)">Longitude</th>
+                <th onclick="sortTable(4)">Rating</th>
+                <th onclick="sortTable(5)">Section</th>
+                <th onclick="sortTable(6)">Min Temp (°F)</th>
+                <th onclick="sortTable(7)">Max Temp (°F)</th>
+                <th onclick="sortTable(8)">Precipitation (in)</th>
+                <th onclick="sortTable(9)">Wind Speed (mph)</th>
+                <th onclick="sortTable(10)">Pressure at Noon (hPa)</th>
+                <th onclick="sortTable(11)">Pressure Trend</th>
+            </tr>
+        </thead>
+        <tbody id="results-body"></tbody>
+    </table>
+
+    <script>
+        const SHEET_ID = '1vRDZny6ZfKGXJOKIgoRo47knNJmmtDT2WTrNvOmQ0lwUiznaF1McQVgpTUa1kTMUpq5X6c3b888BGwz';
+        const SOURCE_GID = '491893533';
+        const SOURCE_URL = `https://docs.google.com/spreadsheets/d/e/2PACX-${SHEET_ID}/pub?gid=${SOURCE_GID}&single=true&output=csv`;
+
+        let streamData = [];
+        let weatherData = [];
+        let sortColumn = 0;
+        let sortDirection = 1;
+
+        // Parse CSV
+        function parseCSV(csvText) {
+            const lines = csvText.split('\n').filter(line => line.trim() !== '');
+            const headers = lines[0].split(',').map(header => header.trim());
+            const rows = lines.slice(1).map(line => {
+                const values = [];
+                let current = '';
+                let insideQuotes = false;
+                for (let char of line) {
+                    if (char === '"') {
+                        insideQuotes = !insideQuotes;
+                    } else if (char === ',' && !insideQuotes) {
+                        values.push(current.trim());
+                        current = '';
+                    } else {
+                        current += char;
+                    }
+                }
+                values.push(current.trim());
+                return values;
+            });
+            return { headers, rows };
+        }
+
+        // Fetch stream data
+        async function fetchStreamData() {
+            const streamName = document.getElementById('stream-input').value.trim();
+            if (!streamName) {
+                document.getElementById('error').textContent = 'Please enter a stream name.';
+                document.getElementById('error').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('results-table').style.display = 'none';
+            document.getElementById('download-button').style.display = 'none';
+
+            try {
+                const response = await fetch(SOURCE_URL);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const csvText = await response.text();
+                if (!csvText.trim()) throw new Error('Empty CSV data');
+                const data = parseCSV(csvText);
+                processStreamData(data, streamName);
+                if (streamData.length === 0) {
+                    throw new Error(`No data found for stream: ${streamName}`);
+                }
+                await fetchWeatherData();
+                displayResults();
+            } catch (error) {
+                document.getElementById('error').textContent = `Error: ${error.message}`;
+                document.getElementById('error').style.display = 'block';
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        // Process stream data
+        function processStreamData(data, streamName) {
+            const ratingMap = { 'E': 0, 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5, 'S+': 6 };
+            const ratingReverseMap = { 0: 'E', 1: 'D', 2: 'C', 3: 'B', 4: 'A', 5: 'S', 6: 'S+' };
+            const excludedStreams = ['Unknown', 'Central Sands', 'Minnesota', 'Southern WI'];
+
+            streamData = data.rows
+                .filter(row => {
+                    if (row.length < 18) return false;
+                    const date = new Date(row[0].replace(/(\d+)\/(\d+)\/(\d+)/, '$3-$1-$2'));
+                    const stream = row[2]?.trim() || '';
+                    const rating = row[17]?.toUpperCase();
+                    const validRating = /^[SABCDE]|S+$/.test(rating);
+                    const validStream = !excludedStreams.some(excluded => stream.includes(excluded));
+                    return stream === streamName && validRating && validStream && !isNaN(date.getTime());
+                })
+                .map(row => {
+                    const date = new Date(row[0].replace(/(\d+)\/(\d+)\/(\d+)/, '$3-$1-$2'));
+                    const dateStr = date.toISOString().split('T')[0];
+                    const stream = row[2]?.trim() || '';
+                    const rating = ratingMap[row[17]?.toUpperCase()] ?? -1;
+                    const ratingLetter = ratingReverseMap[rating] || 'N/A';
+                    const section = row[15]?.trim().toUpperCase() || 'UNKNOWN';
+                    const lat = parseFloat(row[12]);
+                    const lon = parseFloat(row[13]);
+                    return { dateStr, date, stream, lat, lon, rating: ratingLetter, section };
+                });
+        }
+
+        // Fetch weather data with hourly pressure_msl at noon
+        async function fetchWeatherData() {
+            weatherData = [];
+            const dateGPSMap = new Map();
+
+            // Collect unique date-GPS pairs
+            streamData.forEach(entry => {
+                if (!isNaN(entry.lat) && !isNaN(entry.lon)) {
+                    const key = `${entry.dateStr}|${entry.lat.toFixed(5)}|${entry.lon.toFixed(5)}`;
+                    dateGPSMap.set(key, { date: entry.dateStr, lat: entry.lat, lon: entry.lon });
+                }
+            });
+
+            const dateGPSPairs = Array.from(dateGPSMap.values());
+
+            for (const { date, lat, lon } of dateGPSPairs) {
+                try {
+                    // Fetch daily weather data and hourly pressure at noon
+                    const response = await fetch(
+                        `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${date}&end_date=${date}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max&hourly=pressure_msl&timezone=auto&temperature_unit=fahrenheit`
+                    );
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const data = await response.json();
+
+                    // Extract pressure at noon (12:00, index 12 in hourly data)
+                    const pressure = data.hourly.pressure_msl[12] || 'N/A';
+
+                    // Convert precipitation (mm to inches) and wind speed (km/h to mph)
+                    const precipitation = data.daily.precipitation_sum[0] !== undefined ? (data.daily.precipitation_sum[0] * 0.03937) : 'N/A';
+                    const wind_speed = data.daily.wind_speed_10m_max[0] !== undefined ? (data.daily.wind_speed_10m_max[0] * 0.621371) : 'N/A';
+
+                    // Calculate pressure trend using noon pressures from day before, current day, day after
+                    let pressureTrend = 'N/A';
+                    if (pressure !== 'N/A') {
+                        const dayBefore = new Date(date);
+                        dayBefore.setDate(dayBefore.getDate() - 1);
+                        const dayAfter = new Date(date);
+                        dayAfter.setDate(dayAfter.getDate() + 1);
+                        const rangeStart = dayBefore.toISOString().split('T')[0];
+                        const rangeEnd = dayAfter.toISOString().split('T')[0];
+
+                        const trendResponse = await fetch(
+                            `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${rangeStart}&end_date=${rangeEnd}&hourly=pressure_msl&timezone=auto`
+                        );
+                        if (trendResponse.ok) {
+                            const trendData = await trendResponse.json();
+                            const pressures = trendData.hourly.pressure_msl;
+                            // Noon indices: day before (12), current day (36), day after (60)
+                            if (pressures.length >= 61) {
+                                const prevPressure = pressures[12]; // Noon, day before
+                                const currPressure = pressures[36]; // Noon, current day
+                                const nextPressure = pressures[60]; // Noon, day after
+                                if (currPressure > prevPressure && currPressure <= nextPressure) {
+                                    pressureTrend = 'Rising';
+                                } else if (currPressure < prevPressure && currPressure >= nextPressure) {
+                                    pressureTrend = 'Falling';
+                                } else {
+                                    pressureTrend = 'Stable';
+                                }
+                            }
+                        }
+                    }
+
+                    weatherData.push({
+                        date,
+                        lat,
+                        lon,
+                        temp_max: data.daily.temperature_2m_max[0] || 'N/A',
+                        temp_min: data.daily.temperature_2m_min[0] || 'N/A',
+                        precipitation,
+                        wind_speed,
+                        pressure,
+                        pressure_trend: pressureTrend
+                    });
+                } catch (error) {
+                    console.error(`Error fetching weather for ${date}, (${lat}, ${lon}):`, error);
+                    weatherData.push({
+                        date,
+                        lat,
+                        lon,
+                        temp_max: 'N/A',
+                        temp_min: 'N/A',
+                        precipitation: 'N/A',
+                        wind_speed: 'N/A',
+                        pressure: 'N/A',
+                        pressure_trend: 'N/A'
+                    });
+                }
+            }
+        }
+
+        // Display results
+        function displayResults() {
+            const tbody = document.getElementById('results-body');
+            tbody.innerHTML = '';
+
+            const rows = streamData.map(entry => {
+                const weather = weatherData.find(w => w.date === entry.dateStr && w.lat.toFixed(5) === entry.lat.toFixed(5) && w.lon.toFixed(5) === entry.lon.toFixed(5)) || {
+                    temp_max: 'N/A',
+                    temp_min: 'N/A',
+                    precipitation: 'N/A',
+                    wind_speed: 'N/A',
+                    pressure: 'N/A',
+                    pressure_trend: 'N/A'
+                };
+                return {
+                    date: entry.dateStr,
+                    stream: entry.stream,
+                    lat: entry.lat,
+                    lon: entry.lon,
+                    rating: entry.rating,
+                    section: entry.section,
+                    temp_min: weather.temp_min !== 'N/A' ? parseFloat(weather.temp_min).toFixed(1) : 'N/A',
+                    temp_max: weather.temp_max !== 'N/A' ? parseFloat(weather.temp_max).toFixed(1) : 'N/A',
+                    precipitation: weather.precipitation !== 'N/A' ? parseFloat(weather.precipitation).toFixed(2) : 'N/A',
+                    wind_speed: weather.wind_speed !== 'N/A' ? parseFloat(weather.wind_speed).toFixed(1) : 'N/A',
+                    pressure: weather.pressure !== 'N/A' ? parseFloat(weather.pressure).toFixed(1) : 'N/A',
+                    pressure_trend: weather.pressure_trend
+                };
+            });
+
+            // Sort rows based on current sort column and direction
+            rows.sort((a, b) => {
+                let valueA = a[Object.keys(a)[sortColumn]];
+                let valueB = b[Object.keys(b)[sortColumn]];
+                if (sortColumn >= 2 && sortColumn <= 3 || sortColumn >= 6 && sortColumn <= 10) { // Numeric columns
+                    valueA = valueA === 'N/A' ? -Infinity : parseFloat(valueA);
+                    valueB = valueB === 'N/A' ? -Infinity : parseFloat(valueB);
+                    return sortDirection * (valueA - valueB);
+                }
+                valueA = valueA === 'N/A' ? '' : valueA;
+                valueB = valueB === 'N/A' ? '' : valueB;
+                return sortDirection * valueA.localeCompare(valueB);
+            });
+
+            rows.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td data-label="Date">${row.date}</td>
+                    <td data-label="Stream">${row.stream}</td>
+                    <td data-label="Latitude">${row.lat}</td>
+                    <td data-label="Longitude">${row.lon}</td>
+                    <td data-label="Rating">${row.rating}</td>
+                    <td data-label="Section">${row.section}</td>
+                    <td data-label="Min Temp">${row.temp_min}</td>
+                    <td data-label="Max Temp">${row.temp_max}</td>
+                    <td data-label="Precipitation">${row.precipitation}</td>
+                    <td data-label="Wind Speed">${row.wind_speed}</td>
+                    <td data-label="Pressure at Noon">${row.pressure}</td>
+                    <td data-label="Pressure Trend">${row.pressure_trend}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('results-table').style.display = rows.length ? 'table' : 'none';
+            document.getElementById('download-button').style.display = rows.length ? 'block' : 'none';
+        }
+
+        // Sort table
+        function sortTable(colIndex) {
+            if (sortColumn === colIndex) {
+                sortDirection = -sortDirection;
+            } else {
+                sortColumn = colIndex;
+                sortDirection = 1;
+            }
+
+            const headers = document.querySelectorAll('.results-table th');
+            headers.forEach((th, index) => {
+                th.classList.remove('sort-asc', 'sort-desc');
+                if (index === colIndex) {
+                    th.classList.add(sortDirection === 1 ? 'sort-asc' : 'sort-desc');
+                }
+            });
+
+            displayResults();
+        }
+
+        // Download as CSV
+        function downloadCSV() {
+            const tbody = document.getElementById('results-body');
+            const rows = Array.from(tbody.querySelectorAll('tr')).map(tr => {
+                const cells = Array.from(tr.querySelectorAll('td')).map(td => `"${td.textContent.replace(/"/g, '""')}"`);
+                return cells.join(',');
+            });
+            const headers = ['Date', 'Stream', 'Latitude', 'Longitude', 'Rating', 'Section', 'Min Temp (°F)', 'Max Temp (°F)', 'Precipitation (in)', 'Wind Speed (mph)', 'Pressure at Noon (hPa)', 'Pressure Trend'];
+            const csvContent = [
+                headers.map(h => `"${h}"`).join(','),
+                ...rows
+            ].join('\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `weather_data_${document.getElementById('stream-input').value.trim()}.csv`;
+            link.click();
+        }
+    </script>
+</body>
+</html>
