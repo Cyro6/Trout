@@ -11,7 +11,7 @@
             background-color: #f4f4f9;
             font-size: 16px;
         }
-        h1, h2, h3 {
+        h1, h2 {
             color: #333;
         }
         .back-link {
@@ -24,14 +24,14 @@
         a:hover {
             text-decoration: underline;
         }
-        .stats, .month-stats, .top-outings, .stream-info, .widnr-map-section, .weather-section {
+        .stats, .month-stats, .top-outings, .stream-info, .widnr-map-section {
             margin: 20px 0;
             padding: 15px;
             background-color: #fff;
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
-        .stream-info p, .weather-section p {
+        .stream-info p {
             margin: 5px 0;
         }
         .widnr-map-section .toggle-button {
@@ -73,7 +73,7 @@
         .widnr-map-section .iframe-fallback.active {
             display: block;
         }
-        .spots-table, .top-outings-table, .month-outing-table, .weather-table {
+        .spots-table, .top-outings-table, .month-outing-table {
             width: 100%;
             max-width: 800px;
             margin: 20px 0;
@@ -81,17 +81,17 @@
             background-color: #fff;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
-        .spots-table th, .spots-table td, .top-outings-table th, .top-outings-table td, .month-outing-table th, .month-outing-table td, .weather-table th, .weather-table td {
+        .spots-table th, .spots-table td, .top-outings-table th, .top-outings-table td, .month-outing-table th, .month-outing-table td {
             padding: 12px;
             text-align: left;
             border: 1px solid #ddd;
         }
-        .spots-table th, .top-outings-table th, .month-outing-table th, .weather-table th {
+        .spots-table th, .top-outings-table th, .month-outing-table th {
             background-color: #4CAF50;
             color: white;
             cursor: pointer;
         }
-        .spots-table th:hover, .top-outings-table th:hover, .month-outing-table th:hover, .weather-table th:hover {
+        .spots-table th:hover, .top-outings-table th:hover, .month-outing-table th:hover {
             background-color: #45a049;
         }
         .spots-table th.sort-asc::after, .top-outings-table th.sort-asc::after, .month-outing-table th.sort-asc::after {
@@ -100,10 +100,10 @@
         .spots-table th.sort-desc::after, .top-outings-table th.sort-desc::after, .month-outing-table th.sort-desc::after {
             content: ' ↓';
         }
-        .spots-table tr:nth-child(even), .top-outings-table tr:nth-child(even), .month-outing-table tr:nth-child(even), .weather-table tr:nth-child(even) {
+        .spots-table tr:nth-child(even), .top-outings-table tr:nth-child(even), .month-outing-table tr:nth-child(even) {
             background-color: #f9f9f9;
         }
-        .spots-table tr:hover, .top-outings-table tr:hover, .month-outing-table tr:hover, .weather-table tr:hover {
+        .spots-table tr:hover, .top-outings-table tr:hover, .month-outing-table tr:hover {
             background-color: #f1f1f1;
         }
         .loading {
@@ -175,10 +175,7 @@
             h2 {
                 font-size: 1.2em;
             }
-            h3 {
-                font-size: 1.1em;
-            }
-            .stats, .month-stats, .top-outings, .stream-info, .widnr-map-section, .weather-section {
+            .stats, .month-stats, .top-outings, .stream-info, .widnr-map-section {
                 padding: 10px;
             }
             .widnr-map-section .iframe-container {
@@ -195,19 +192,19 @@
             .filter-section button {
                 width: 100%;
             }
-            .spots-table, .top-outings-table, .month-outing-table, .weather-table {
+            .spots-table, .top-outings-table, .month-outing-table {
                 box-shadow: none;
             }
-            .spots-table thead, .top-outings-table thead, .month-outing-table thead, .weather-table thead {
+            .spots-table thead, .top-outings-table thead, .month-outing-table thead {
                 display: none;
             }
-            .spots-table tr, .top-outings-table tr, .month-outing-table tr, .weather-table tr {
+            .spots-table tr, .top-outings-table tr, .month-outing-table tr {
                 display: block;
                 margin-bottom: 10px;
                 border: 1px solid #ddd;
                 border-radius: 5px;
             }
-            .spots-table td, .top-outings-table td, .month-outing-table td, .weather-table td {
+            .spots-table td, .top-outings-table td, .month-outing-table td {
                 display: block;
                 text-align: right;
                 padding: 8px;
@@ -215,7 +212,7 @@
                 border-bottom: 1px solid #eee;
                 position: relative;
             }
-            .spots-table td::before, .top-outings-table td::before, .month-outing-table td::before, .weather-table td::before {
+            .spots-table td::before, .top-outings-table td::before, .month-outing-table td::before {
                 content: attr(data-label);
                 position: absolute;
                 left: 8px;
@@ -224,10 +221,10 @@
                 font-weight: bold;
                 color: #333;
             }
-            .spots-table td:last-child, .top-outings-table td:last-child, .month-outing-table td:last-child, .weather-table td:last-child {
+            .spots-table td:last-child, .top-outings-table td:last-child, .month-outing-table td:last-child {
                 border-bottom: none;
             }
-            .spots-table tr:hover, .top-outings-table tr:hover, .month-outing-table tr:hover, .weather-table tr:hover {
+            .spots-table tr:hover, .top-outings-table tr:hover, .month-outing-table tr:hover {
                 background-color: #fff;
             }
         }
@@ -250,49 +247,6 @@
             <p><strong>Season Information:</strong> <span id="stream-season-info"></span></p>
             <p><strong>Early Season:</strong> <span id="stream-early-season"></span></p>
             <p id="stream-widnr-link-container"><strong>WIDNR Map:</strong> <span id="stream-widnr-link"></span> | <span id="stream-widnr-external-link"></span></p>
-        </div>
-
-        <div class="weather-section">
-            <h2>Weather Information</h2>
-            <h3>Past 3 Days Weather</h3>
-            <table class="weather-table" id="past-weather-table">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Location</th>
-                        <th>Min Temp (°F)</th>
-                        <th>Max Temp (°F)</th>
-                        <th>Weather Condition</th>
-                        <th>Precipitation (in)</th>
-                        <th>Recent Rainfall (3 days, in)</th>
-                        <th>Wind Speed (mph)</th>
-                        <th>Wind Direction</th>
-                        <th>Pressure at Noon (hPa)</th>
-                        <th>Pressure Trend</th>
-                    </tr>
-                </thead>
-                <tbody id="past-weather-body"></tbody>
-            </table>
-
-            <h3>Next 4 Days Weather (Including Today)</h3>
-            <table class="weather-table" id="forecast-weather-table">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Location</th>
-                        <th>Min Temp (°F)</th>
-                        <th>Max Temp (°F)</th>
-                        <th>Weather Condition</th>
-                        <th>Precipitation (in)</th>
-                        <th>Recent Rainfall (3 days, in)</th>
-                        <th>Wind Speed (mph)</th>
-                        <th>Wind Direction</th>
-                        <th>Pressure at Noon (hPa)</th>
-                        <th>Pressure Trend</th>
-                    </tr>
-                </thead>
-                <tbody id="forecast-weather-body"></tbody>
-            </table>
         </div>
 
         <div class="stats">
@@ -395,10 +349,6 @@
         let sortSpotsColumn = 1; // Default sort by Section (to align with downstream-to-upstream)
         let sortSpotsDirection = 1; // 1 for ascending, -1 for descending
         let widnrLink = ''; // Store the WIDNR link for use in the toggle
-        let pastWeatherData = [];
-        let forecastWeatherData = [];
-        let avgLat = null; // Average latitude for weather data
-        let avgLon = null; // Average longitude for weather data
 
         // Define section order for sorting (Lower → Middle → Upper)
         const sectionOrder = { 'LOWER': 1, 'MIDDLE': 2, 'UPPER': 3, 'UNKNOWN': 4 };
@@ -406,37 +356,6 @@
         // Get stream name from URL query parameter
         const urlParams = new URLSearchParams(window.location.search);
         const streamName = urlParams.get('stream');
-
-        // Weather code mapping
-        function getWeatherCondition(code) {
-            if (code === null || code === undefined) return 'N/A';
-            switch (code) {
-                case 0: return 'Sunny';
-                case 1: return 'Mostly Sunny';
-                case 2: return 'Partly Cloudy';
-                case 3: return 'Cloudy';
-                case 45: return 'Foggy';
-                case 48: return 'Foggy';
-                case 51: case 53: case 55: return 'Drizzle';
-                case 61: case 63: case 65: return 'Rainy';
-                case 66: case 67: return 'Freezing Rain';
-                case 71: case 73: case 75: return 'Snow';
-                case 77: return 'Snow Grains';
-                case 80: case 81: case 82: return 'Rain Showers';
-                case 85: case 86: return 'Snow Showers';
-                case 95: return 'Thunderstorm';
-                case 96: case 99: return 'Thunderstorm with Hail';
-                default: return 'Unknown';
-            }
-        }
-
-        // Convert wind direction (degrees) to cardinal direction
-        function degreesToCardinal(degrees) {
-            if (degrees === 'N/A' || isNaN(degrees)) return 'N/A';
-            const directions = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
-            const index = Math.round(degrees / 22.5) % 16;
-            return directions[index];
-        }
 
         // Initialize page
         async function init() {
@@ -448,24 +367,7 @@
 
             document.getElementById('stream-title').textContent = `${streamName} Details`;
             await Promise.all([fetchData(), fetchStreamInfo()]);
-            calculateAverageCoordinates();
-            await fetchWeatherData();
             displayStreamDetails();
-            displayWeatherData();
-        }
-
-        // Calculate average coordinates for weather data
-        function calculateAverageCoordinates() {
-            if (!sourceData || !sourceData.rows) return;
-            const validSpots = sourceData.rows
-                .filter(row => row[2]?.trim() === streamName && !isNaN(parseFloat(row[12])) && !isNaN(parseFloat(row[13])))
-                .map(row => ({
-                    lat: parseFloat(row[12]),
-                    lon: parseFloat(row[13])
-                }));
-            if (validSpots.length === 0) return;
-            avgLat = validSpots.reduce((sum, spot) => sum + spot.lat, 0) / validSpots.length;
-            avgLon = validSpots.reduce((sum, spot) => sum + spot.lon, 0) / validSpots.length;
         }
 
         // Fetch fishing spots data
@@ -476,6 +378,7 @@
                 const csvText = await response.text();
                 if (!csvText.trim()) throw new Error('Empty CSV data');
                 sourceData = parseCSV(csvText);
+                console.log('Raw Source Data:', sourceData.rows); // Debug: Log raw data
             } catch (error) {
                 document.getElementById('error').textContent = `Error fetching spots data: ${error.message}`;
             }
@@ -491,252 +394,6 @@
                 streamInfoData = parseCSV(csvText);
             } catch (error) {
                 document.getElementById('error').textContent = `Error fetching stream info: ${error.message}`;
-            }
-        }
-
-        // Fetch weather data
-        async function fetchWeatherData() {
-            if (!avgLat || !avgLon) {
-                document.getElementById('past-weather-body').innerHTML = '<tr><td colspan="11" data-label="Result">No coordinates available for weather data.</td></tr>';
-                document.getElementById('forecast-weather-body').innerHTML = '<tr><td colspan="11" data-label="Result">No coordinates available for weather data.</td></tr>';
-                return;
-            }
-
-            // Past weather: Fetch for April 16–18, 2025 (3 days before today, April 19, 2025)
-            try {
-                const response = await fetch(
-                    `https://archive-api.open-meteo.com/v1/archive?latitude=${avgLat}&longitude=${avgLon}&start_date=2025-04-16&end_date=2025-04-18&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,weather_code&hourly=pressure_msl,wind_direction_10m&timezone=auto&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch`
-                );
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const data = await response.json();
-
-                pastWeatherData = data.daily.time.map((date, index) => {
-                    const noonIndex = data.hourly.time.findIndex(t => t.includes(`${date}T12:00`));
-                    const pressure = noonIndex !== -1 ? Math.round(data.hourly.pressure_msl[noonIndex]) : 'N/A';
-                    const wind_direction = noonIndex !== -1 ? data.hourly.wind_direction_10m[noonIndex] : 'N/A';
-
-                    const temp_max = data.daily.temperature_2m_max[index].toFixed(1);
-                    const temp_min = data.daily.temperature_2m_min[index].toFixed(1);
-                    const precipitation = parseFloat(data.daily.precipitation_sum[index]).toFixed(2);
-                    const wind_speed = data.daily.wind_speed_10m_max[index].toFixed(1);
-                    const weather_code = data.daily.weather_code[index];
-                    const recent_rainfall = data.daily.precipitation_sum.reduce((sum, val) => sum + (val || 0), 0).toFixed(2);
-
-                    let pressureTrend = 'N/A';
-                    if (pressure !== 'N/A') {
-                        const dayBefore = new Date(date);
-                        dayBefore.setDate(dayBefore.getDate() - 1);
-                        const dayAfter = new Date(date);
-                        dayAfter.setDate(dayAfter.getDate() + 1);
-                        const rangeStart = dayBefore.toISOString().split('T')[0];
-                        const rangeEnd = dayAfter.toISOString().split('T')[0];
-
-                        let trendData = null;
-                        try {
-                            const trendResponse = await fetch(
-                                `https://archive-api.open-meteo.com/v1/archive?latitude=${avgLat}&longitude=${avgLon}&start_date=${rangeStart}&end_date=${rangeEnd}&hourly=pressure_msl&timezone=auto`
-                            );
-                            if (!trendResponse.ok) throw new Error(`HTTP ${trendResponse.status}`);
-                            trendData = await trendResponse.json();
-                        } catch (error) {
-                            console.error(`Error fetching pressure trend for ${date}: ${error.message}`);
-                        }
-
-                        if (trendData) {
-                            const times = trendData.hourly.time;
-                            const pressures = trendData.hourly.pressure_msl;
-
-                            const prevNoon = times.findIndex(t => t.includes(`${rangeStart}T12:00`));
-                            const currNoon = times.findIndex(t => t.includes(`${date}T12:00`));
-                            const nextNoon = times.findIndex(t => t.includes(`${rangeEnd}T12:00`));
-
-                            if (prevNoon !== -1 && currNoon !== -1 && nextNoon !== -1) {
-                                const prevPressure = pressures[prevNoon];
-                                const currPressure = pressures[currNoon];
-                                const nextPressure = pressures[nextNoon];
-                                const MIN_CHANGE = 1.0;
-                                const SIGNIFICANT_CHANGE = 5.0;
-
-                                const change = currPressure - prevPressure;
-                                if (change > SIGNIFICANT_CHANGE && currPressure <= nextPressure) {
-                                    pressureTrend = 'Significant Rising';
-                                } else if (change > MIN_CHANGE && currPressure <= nextPressure) {
-                                    pressureTrend = 'Rising';
-                                } else if (change < -SIGNIFICANT_CHANGE && currPressure >= nextPressure) {
-                                    pressureTrend = 'Significant Falling';
-                                } else if (change < -MIN_CHANGE && currPressure >= nextPressure) {
-                                    pressureTrend = 'Falling';
-                                } else {
-                                    pressureTrend = 'Stable';
-                                }
-                            }
-                        }
-                    }
-
-                    return {
-                        date,
-                        lat: avgLat,
-                        lon: avgLon,
-                        temp_max,
-                        temp_min,
-                        precipitation,
-                        recent_rainfall,
-                        wind_speed,
-                        wind_direction,
-                        pressure,
-                        pressure_trend: pressureTrend,
-                        weather_code
-                    };
-                });
-            } catch (error) {
-                pastWeatherData = ['2025-04-16', '2025-04-17', '2025-04-18'].map(date => ({
-                    date,
-                    lat: avgLat,
-                    lon: avgLon,
-                    temp_max: 'N/A',
-                    temp_min: 'N/A',
-                    precipitation: 'N/A',
-                    recent_rainfall: 'N/A',
-                    wind_speed: 'N/A',
-                    wind_direction: 'N/A',
-                    pressure: 'N/A',
-                    pressure_trend: 'N/A',
-                    weather_code: 'N/A'
-                }));
-            }
-
-            // Forecast weather: Fetch for April 19–22, 2025 (today + 3 days)
-            try {
-                const response = await fetch(
-                    `https://api.open-meteo.com/v1/forecast?latitude=${avgLat}&longitude=${avgLon}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,weather_code&hourly=pressure_msl,wind_direction_10m&forecast_days=4&start_date=2025-04-19&end_date=2025-04-22&timezone=auto&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch`
-                );
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const data = await response.json();
-
-                forecastWeatherData = data.daily.time.map((date, index) => {
-                    const noonIndex = data.hourly.time.findIndex(t => t.includes(`${date}T12:00`));
-                    const pressure = noonIndex !== -1 ? Math.round(data.hourly.pressure_msl[noonIndex]) : 'N/A';
-                    const wind_direction = noonIndex !== -1 ? data.hourly.wind_direction_10m[noonIndex] : 'N/A';
-
-                    const temp_max = data.daily.temperature_2m_max[index].toFixed(1);
-                    const temp_min = data.daily.temperature_2m_min[index].toFixed(1);
-                    const precipitation = parseFloat(data.daily.precipitation_sum[index]).toFixed(2);
-                    const wind_speed = data.daily.wind_speed_10m_max[index].toFixed(1);
-                    const weather_code = data.daily.weather_code[index];
-
-                    // Recent rainfall: Only accurate for today (April 19)
-                    let recent_rainfall = date === '2025-04-19' ? pastWeatherData.find(w => w.date === '2025-04-18')?.recent_rainfall || 'N/A' : 'See Past Weather';
-
-                    let pressureTrend = 'N/A';
-                    if (pressure !== 'N/A' && index > 0) {
-                        const prevNoon = data.hourly.time.findIndex(t => t.includes(`${data.daily.time[index - 1]}T12:00`));
-                        if (prevNoon !== -1) {
-                            const prevPressure = data.hourly.pressure_msl[prevNoon];
-                            const currPressure = data.hourly.pressure_msl[noonIndex];
-                            const MIN_CHANGE = 1.0;
-                            const SIGNIFICANT_CHANGE = 5.0;
-                            const change = currPressure - prevPressure;
-                            if (change > SIGNIFICANT_CHANGE) {
-                                pressureTrend = 'Significant Rising';
-                            } else if (change > MIN_CHANGE) {
-                                pressureTrend = 'Rising';
-                            } else if (change < -SIGNIFICANT_CHANGE) {
-                                pressureTrend = 'Significant Falling';
-                            } else if (change < -MIN_CHANGE) {
-                                pressureTrend = 'Falling';
-                            } else {
-                                pressureTrend = 'Stable';
-                            }
-                        }
-                    }
-
-                    return {
-                        date,
-                        lat: avgLat,
-                        lon: avgLon,
-                        temp_max,
-                        temp_min,
-                        precipitation,
-                        recent_rainfall,
-                        wind_speed,
-                        wind_direction,
-                        pressure,
-                        pressure_trend: pressureTrend,
-                        weather_code
-                    };
-                });
-            } catch (error) {
-                forecastWeatherData = ['2025-04-19', '2025-04-20', '2025-04-21', '2025-04-22'].map(date => ({
-                    date,
-                    lat: avgLat,
-                    lon: avgLon,
-                    temp_max: 'N/A',
-                    temp_min: 'N/A',
-                    precipitation: 'N/A',
-                    recent_rainfall: 'N/A',
-                    wind_speed: 'N/A',
-                    wind_direction: 'N/A',
-                    pressure: 'N/A',
-                    pressure_trend: 'N/A',
-                    weather_code: 'N/A'
-                }));
-            }
-        }
-
-        // Display weather data
-        function displayWeatherData() {
-            const pastWeatherBody = document.getElementById('past-weather-body');
-            pastWeatherBody.innerHTML = '';
-            pastWeatherData.forEach(weather => {
-                const tr = document.createElement('tr');
-                const formattedDate = new Date(weather.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-                const locationLink = weather.lat && weather.lon ? 
-                    `<a href="https://www.google.com/maps?q=${weather.lat},${weather.lon}" target="_blank">View on Google Maps</a>` : 
-                    'N/A';
-                tr.innerHTML = `
-                    <td data-label="Date">${formattedDate}</td>
-                    <td data-label="Location">${locationLink}</td>
-                    <td data-label="Min Temp (°F)">${weather.temp_min}</td>
-                    <td data-label="Max Temp (°F)">${weather.temp_max}</td>
-                    <td data-label="Weather Condition">${getWeatherCondition(weather.weather_code)}</td>
-                    <td data-label="Precipitation (in)">${weather.precipitation}</td>
-                    <td data-label="Recent Rainfall (3 days, in)">${weather.recent_rainfall}</td>
-                    <td data-label="Wind Speed (mph)">${weather.wind_speed}</td>
-                    <td data-label="Wind Direction">${degreesToCardinal(weather.wind_direction)}</td>
-                    <td data-label="Pressure at Noon (hPa)">${weather.pressure}</td>
-                    <td data-label="Pressure Trend">${weather.pressure_trend}</td>
-                `;
-                pastWeatherBody.appendChild(tr);
-            });
-            if (pastWeatherData.length === 0) {
-                pastWeatherBody.innerHTML = '<tr><td colspan="11" data-label="Result">No past weather data available.</td></tr>';
-            }
-
-            const forecastWeatherBody = document.getElementById('forecast-weather-body');
-            forecastWeatherBody.innerHTML = '';
-            forecastWeatherData.forEach(weather => {
-                const tr = document.createElement('tr');
-                const formattedDate = new Date(weather.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-                const locationLink = weather.lat && weather.lon ? 
-                    `<a href="https://www.google.com/maps?q=${weather.lat},${weather.lon}" target="_blank">View on Google Maps</a>` : 
-                    'N/A';
-                tr.innerHTML = `
-                    <td data-label="Date">${formattedDate}</td>
-                    <td data-label="Location">${locationLink}</td>
-                    <td data-label="Min Temp (°F)">${weather.temp_min}</td>
-                    <td data-label="Max Temp (°F)">${weather.temp_max}</td>
-                    <td data-label="Weather Condition">${getWeatherCondition(weather.weather_code)}</td>
-                    <td data-label="Precipitation (in)">${weather.precipitation}</td>
-                    <td data-label="Recent Rainfall (3 days, in)">${weather.recent_rainfall}</td>
-                    <td data-label="Wind Speed (mph)">${weather.wind_speed}</td>
-                    <td data-label="Wind Direction">${degreesToCardinal(weather.wind_direction)}</td>
-                    <td data-label="Pressure at Noon (hPa)">${weather.pressure}</td>
-                    <td data-label="Pressure Trend">${weather.pressure_trend}</td>
-                `;
-                forecastWeatherBody.appendChild(tr);
-            });
-            if (forecastWeatherData.length === 0) {
-                forecastWeatherBody.innerHTML = '<tr><td colspan="11" data-label="Result">No forecast weather data available.</td></tr>';
             }
         }
 
@@ -789,18 +446,25 @@
             const ratingFilter = document.getElementById('rating-filter').value;
 
             filteredSpotsData = spotsData.filter(spot => {
+                // Section filter
                 if (sectionFilter !== 'All' && spot.section !== sectionFilter) {
                     return false;
                 }
+
+                // Visits filter
                 if (visitsFilter !== '' && spot.visits < parseInt(visitsFilter)) {
                     return false;
                 }
+
+                // Average Rating filter
                 if (ratingFilter !== '' && (spot.avgRating === 'N/A' || spot.avgRating < parseFloat(ratingFilter))) {
                     return false;
                 }
+
                 return true;
             });
 
+            // Re-sort the filtered data based on the current sort column and direction
             sortFilteredSpots();
         }
 
@@ -822,6 +486,7 @@
                 sortSpotsDirection = 1;
             }
 
+            // Update sort indicators
             const headers = document.querySelectorAll('.spots-table th');
             headers.forEach((th, index) => {
                 th.classList.remove('sort-asc', 'sort-desc');
@@ -857,10 +522,12 @@
                 return 0;
             });
 
+            // Reassign Spot numbers based on the new sorted order
             filteredSpotsData.forEach((spot, idx) => {
                 spot.index = idx + 1;
             });
 
+            // Re-render the table body
             const spotsBody = document.getElementById('spots-body');
             const noResultsDiv = document.getElementById('no-results');
             spotsBody.innerHTML = '';
@@ -884,17 +551,19 @@
 
         // Display stream details
         function displayStreamDetails() {
-            const ratingMap = { 'F': -1, 'E': 0, 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5, 'S+': 6 };
-            const ratingReverseMap = { '-1': 'F', 0: 'E', 1: 'D', 2: 'C', 3: 'B', 4: 'A', 5: 'S', 6: 'S+' };
+            const ratingMap = { 'E': 0, 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5, 'S+': 6 };
+            const ratingReverseMap = { 0: 'E', 1: 'D', 2: 'C', 3: 'B', 4: 'A', 5: 'S', 6: 'S+' };
             const excludedStreams = ['Unknown', 'Central Sands', 'Minnesota', 'Southern WI'];
 
+            // Filter valid data for this stream
             const streamData = sourceData?.rows
                 .filter(row => {
                     if (row.length < 18) return false;
                     const date = new Date(row[0].replace(/(\d+)\/(\d+)\/(\d+)/, '$3-$1-$2'));
                     const stream = row[2]?.trim() || '';
                     const rating = row[17]?.toUpperCase();
-                    const validRating = /^[SFABCDE]|S+$/.test(rating);
+                    const section = row[15]?.trim();
+                    const validRating = /^[SABCDE]|S+$/.test(rating); // Fixed regex to include S+
                     const validStream = !excludedStreams.some(excluded => stream.includes(excluded));
                     return stream === streamName && validRating && validStream && !isNaN(date.getTime());
                 })
@@ -910,11 +579,14 @@
                     return { month, stream, rating, section, lat, lon, date, youtubeLink };
                 }) || [];
 
+            console.log('Processed Stream Data:', streamData); // Debug: Log processed data
+
             if (streamData.length === 0) {
                 document.getElementById('error').textContent = 'No data found for this stream.';
                 return;
             }
 
+            // Populate stream information
             if (streamInfoData) {
                 const streamInfoRow = streamInfoData.rows.find(row => row[0]?.trim() === streamName);
                 if (streamInfoRow) {
@@ -1036,6 +708,7 @@
             document.getElementById('april-section').textContent = aprilSection;
 
             const sortedOutings = streamData.sort((a, b) => b.rating - a.rating).slice(0, 5);
+            console.log('Sorted Outings:', sortedOutings); // Debug: Log sorted outings
             const topOutingsBody = document.getElementById('top-outings-body');
             topOutingsBody.innerHTML = '';
             sortedOutings.forEach(outing => {
@@ -1089,7 +762,7 @@
                         }
                     }
                 }
-                const validRatings = spot.ratings.filter(r => r >= -1); // Include F rating
+                const validRatings = spot.ratings.filter(r => r >= 0);
                 const avgRating = validRatings.length > 0
                     ? Math.round((validRatings.reduce((sum, r) => sum + r, 0) / validRatings.length) * 100) / 100
                     : 'N/A';
