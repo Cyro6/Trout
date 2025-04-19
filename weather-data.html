@@ -11,7 +11,7 @@
             background-color: #f4f4f9;
             font-size: 16px;
         }
-        h1 {
+        h1, h2 {
             color: #333;
             text-align: center;
         }
@@ -69,7 +69,7 @@
             color: red;
             display: none;
         }
-        .results-table {
+        .results-table, .summary-table {
             width: 100%;
             max-width: 1200px;
             margin: 20px auto;
@@ -78,17 +78,17 @@
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
             display: none;
         }
-        .results-table th, .results-table td {
+        .results-table th, .results-table td, .summary-table th, .summary-table td {
             padding: 12px;
             text-align: left;
             border: 1px solid #ddd;
         }
-        .results-table th {
+        .results-table th, .summary-table th {
             background-color: #4CAF50;
             color: white;
             cursor: pointer;
         }
-        .results-table th:hover {
+        .results-table th:hover, .summary-table th:hover {
             background-color: #45a049;
         }
         .results-table th.sort-asc::after {
@@ -97,11 +97,14 @@
         .results-table th.sort-desc::after {
             content: ' ↓';
         }
-        .results-table tr:nth-child(even) {
+        .results-table tr:nth-child(even), .summary-table tr:nth-child(even) {
             background-color: #f9f9f9;
         }
-        .results-table tr:hover {
+        .results-table tr:hover, .summary-table tr:hover {
             background-color: #f1f1f1;
+        }
+        .results-table th:nth-child(1), .results-table td:nth-child(1) {
+            min-width: 120px;
         }
         a {
             color: #4CAF50;
@@ -123,19 +126,19 @@
                 width: 100%;
                 margin: 10px 0;
             }
-            .results-table {
+            .results-table, .summary-table {
                 box-shadow: none;
             }
-            .results-table thead {
+            .results-table thead, .summary-table thead {
                 display: none;
             }
-            .results-table tr {
+            .results-table tr, .summary-table tr {
                 display: block;
                 margin-bottom: 10px;
                 border: 1px solid #ddd;
                 border-radius: 5px;
             }
-            .results-table td {
+            .results-table td, .summary-table td {
                 display: block;
                 text-align: right;
                 padding: 8px;
@@ -143,7 +146,7 @@
                 border-bottom: 1px solid #eee;
                 position: relative;
             }
-            .results-table td::before {
+            .results-table td::before, .summary-table td::before {
                 content: attr(data-label);
                 position: absolute;
                 left: 8px;
@@ -152,8 +155,11 @@
                 font-weight: bold;
                 color: #333;
             }
-            .results-table td:last-child {
+            .results-table td:last-child, .summary-table td:last-child {
                 border-bottom: none;
+            }
+            .results-table td:nth-child(1), .summary-table td:nth-child(1) {
+                min-width: 100%;
             }
         }
     </style>
@@ -187,6 +193,21 @@
             </tr>
         </thead>
         <tbody id="results-body"></tbody>
+    </table>
+    <h2>Rating vs. Pressure Trend Summary</h2>
+    <table class="summary-table" id="summary-table">
+        <thead>
+            <tr>
+                <th>Rating</th>
+                <th>Significant Rising</th>
+                <th>Rising</th>
+                <th>Stable</th>
+                <th>Falling</th>
+                <th>Significant Falling</th>
+                <th>N/A</th>
+            </tr>
+        </thead>
+        <tbody id="summary-body"></tbody>
     </table>
 
     <script>
@@ -236,6 +257,7 @@
             document.getElementById('error').style.display = 'none';
             document.getElementById('results-table').style.display = 'none';
             document.getElementById('download-button').style.display = 'none';
+            document.getElementById('summary-table').style.display = 'none';
 
             try {
                 const response = await fetch(SOURCE_URL);
@@ -249,6 +271,7 @@
                 }
                 await fetchWeatherData();
                 displayResults();
+                displaySummary();
             } catch (error) {
                 document.getElementById('error').textContent = `Error: ${error.message}`;
                 document.getElementById('error').style.display = 'block';
@@ -310,8 +333,8 @@
                     if (!response.ok) throw new Error(`HTTP ${response.status}`);
                     const data = await response.json();
 
-                    // Extract pressure at noon (12:00, index 12 in hourly data)
-                    const pressure = data.hourly.pressure_msl[12] || 'N/A';
+                    // Extract pressure at noon (12:00)
+                    const pressure = data.hourly.pressure_msl[data.hourly.time.findIndex(t => t.includes(`${date}T12:00`))] || 'N/A';
 
                     // Convert precipitation (mm to inches) and wind speed (km/h to mph)
                     const precipitation = data.daily.precipitation_sum[0] !== undefined ? (data.daily.precipitation_sum[0] * 0.03937) : 'N/A';
@@ -319,6 +342,7 @@
 
                     // Calculate pressure trend using noon pressures from day before, current day, day after
                     let pressureTrend = 'N/A';
+                    let pressureChange = 'N/A';
                     if (pressure !== 'N/A') {
                         const dayBefore = new Date(date);
                         dayBefore.setDate(dayBefore.getDate() - 1);
@@ -332,15 +356,30 @@
                         );
                         if (trendResponse.ok) {
                             const trendData = await trendResponse.json();
+                            const times = trendData.hourly.time;
                             const pressures = trendData.hourly.pressure_msl;
-                            // Noon indices: day before (12), current day (36), day after (60)
-                            if (pressures.length >= 61) {
-                                const prevPressure = pressures[12]; // Noon, day before
-                                const currPressure = pressures[36]; // Noon, current day
-                                const nextPressure = pressures[60]; // Noon, day after
-                                if (currPressure > prevPressure && currPressure <= nextPressure) {
+
+                            // Find noon indices dynamically
+                            const prevNoon = times.findIndex(t => t.includes(`${rangeStart}T12:00`));
+                            const currNoon = times.findIndex(t => t.includes(`${date}T12:00`));
+                            const nextNoon = times.findIndex(t => t.includes(`${rangeEnd}T12:00`));
+
+                            if (prevNoon !== -1 && currNoon !== -1 && nextNoon !== -1) {
+                                const prevPressure = pressures[prevNoon];
+                                const currPressure = pressures[currNoon];
+                                const nextPressure = pressures[nextNoon];
+                                const MIN_CHANGE = 1.0; // Minimum for Rising/Falling
+                                const SIGNIFICANT_CHANGE = 5.0; // Threshold for Significant Rising/Falling
+
+                                const change = currPressure - prevPressure;
+                                pressureChange = change.toFixed(1);
+                                if (change > SIGNIFICANT_CHANGE && currPressure <= nextPressure) {
+                                    pressureTrend = 'Significant Rising';
+                                } else if (change > MIN_CHANGE && currPressure <= nextPressure) {
                                     pressureTrend = 'Rising';
-                                } else if (currPressure < prevPressure && currPressure >= nextPressure) {
+                                } else if (change < -SIGNIFICANT_CHANGE && currPressure >= nextPressure) {
+                                    pressureTrend = 'Significant Falling';
+                                } else if (change < -MIN_CHANGE && currPressure >= nextPressure) {
                                     pressureTrend = 'Falling';
                                 } else {
                                     pressureTrend = 'Stable';
@@ -358,7 +397,8 @@
                         precipitation,
                         wind_speed,
                         pressure,
-                        pressure_trend: pressureTrend
+                        pressure_trend: pressureTrend,
+                        pressure_change: pressureChange
                     });
                 } catch (error) {
                     console.error(`Error fetching weather for ${date}, (${lat}, ${lon}):`, error);
@@ -371,7 +411,8 @@
                         precipitation: 'N/A',
                         wind_speed: 'N/A',
                         pressure: 'N/A',
-                        pressure_trend: 'N/A'
+                        pressure_trend: 'N/A',
+                        pressure_change: 'N/A'
                     });
                 }
             }
@@ -389,8 +430,14 @@
                     precipitation: 'N/A',
                     wind_speed: 'N/A',
                     pressure: 'N/A',
-                    pressure_trend: 'N/A'
+                    pressure_trend: 'N/A',
+                    pressure_change: 'N/A'
                 };
+                // Combine pressure trend and change for display
+                const pressureTrendDisplay = weather.pressure_trend === 'N/A' || weather.pressure_trend === 'Stable' ? 
+                    weather.pressure_trend : 
+                    `${weather.pressure_trend} (${weather.pressure_change > 0 ? '+' : ''}${weather.pressure_change} hPa)`;
+                
                 return {
                     date: entry.dateStr,
                     stream: entry.stream,
@@ -403,7 +450,7 @@
                     precipitation: weather.precipitation !== 'N/A' ? parseFloat(weather.precipitation).toFixed(2) : 'N/A',
                     wind_speed: weather.wind_speed !== 'N/A' ? parseFloat(weather.wind_speed).toFixed(1) : 'N/A',
                     pressure: weather.pressure !== 'N/A' ? parseFloat(weather.pressure).toFixed(1) : 'N/A',
-                    pressure_trend: weather.pressure_trend
+                    pressure_trend: pressureTrendDisplay
                 };
             });
 
@@ -444,6 +491,54 @@
             document.getElementById('download-button').style.display = rows.length ? 'block' : 'none';
         }
 
+        // Display rating vs. pressure trend summary
+        function displaySummary() {
+            const tbody = document.getElementById('summary-body');
+            tbody.innerHTML = '';
+
+            // Initialize summary data
+            const ratings = ['E', 'D', 'C', 'B', 'A', 'S', 'S+'];
+            const trends = ['Significant Rising', 'Rising', 'Stable', 'Falling', 'Significant Falling', 'N/A'];
+            const summary = {};
+            ratings.forEach(rating => {
+                summary[rating] = {
+                    'Significant Rising': 0,
+                    Rising: 0,
+                    Stable: 0,
+                    Falling: 0,
+                    'Significant Falling': 0,
+                    'N/A': 0
+                };
+            });
+
+            // Count occurrences
+            streamData.forEach(entry => {
+                const weather = weatherData.find(w => w.date === entry.dateStr && w.lat.toFixed(5) === entry.lat.toFixed(5) && w.lon.toFixed(5) === entry.lon.toFixed(5));
+                if (weather && summary[entry.rating]) {
+                    const trend = weather.pressure_trend;
+                    summary[entry.rating][trend]++;
+                }
+            });
+
+            // Display summary table
+            ratings.forEach(rating => {
+                const row = summary[rating];
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td data-label="Rating">${rating}</td>
+                    <td data-label="Significant Rising">${row['Significant Rising']}</td>
+                    <td data-label="Rising">${row.Rising}</td>
+                    <td data-label="Stable">${row.Stable}</td>
+                    <td data-label="Falling">${row.Falling}</td>
+                    <td data-label="Significant Falling">${row['Significant Falling']}</td>
+                    <td data-label="N/A">${row['N/A']}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('summary-table').style.display = Object.keys(summary).length ? 'table' : 'none';
+        }
+
         // Sort table
         function sortTable(colIndex) {
             if (sortColumn === colIndex) {
@@ -471,10 +566,35 @@
                 const cells = Array.from(tr.querySelectorAll('td')).map(td => `"${td.textContent.replace(/"/g, '""')}"`);
                 return cells.join(',');
             });
-            const headers = ['Date', 'Stream', 'Latitude', 'Longitude', 'Rating', 'Section', 'Min Temp (°F)', 'Max Temp (°F)', 'Precipitation (in)', 'Wind Speed (mph)', 'Pressure at Noon (hPa)', 'Pressure Trend'];
+            const headers = ['Date', 'Stream', 'Latitude', 'Longitude', 'Rating', 'Section', 'Min Temp (°F)', 'Max Temp (°F)', 'Precipitation (in)', 'Wind Speed (mph)', 'Pressure at Noon (hPa)', 'Pressure Trend', 'Pressure Change (hPa)'];
             const csvContent = [
                 headers.map(h => `"${h}"`).join(','),
-                ...rows
+                ...streamData.map(entry => {
+                    const weather = weatherData.find(w => w.date === entry.dateStr && w.lat.toFixed(5) === entry.lat.toFixed(5) && w.lon.toFixed(5) === entry.lon.toFixed(5)) || {
+                        temp_max: 'N/A',
+                        temp_min: 'N/A',
+                        precipitation: 'N/A',
+                        wind_speed: 'N/A',
+                        pressure: 'N/A',
+                        pressure_trend: 'N/A',
+                        pressure_change: 'N/A'
+                    };
+                    return [
+                        entry.dateStr,
+                        entry.stream,
+                        entry.lat,
+                        entry.lon,
+                        entry.rating,
+                        entry.section,
+                        weather.temp_min !== 'N/A' ? parseFloat(weather.temp_min).toFixed(1) : 'N/A',
+                        weather.temp_max !== 'N/A' ? parseFloat(weather.temp_max).toFixed(1) : 'N/A',
+                        weather.precipitation !== 'N/A' ? parseFloat(weather.precipitation).toFixed(2) : 'N/A',
+                        weather.wind_speed !== 'N/A' ? parseFloat(weather.wind_speed).toFixed(1) : 'N/A',
+                        weather.pressure !== 'N/A' ? parseFloat(weather.pressure).toFixed(1) : 'N/A',
+                        weather.pressure_trend,
+                        weather.pressure_change
+                    ].map(val => `"${val.toString().replace(/"/g, '""')}"`).join(',');
+                })
             ].join('\n');
 
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
