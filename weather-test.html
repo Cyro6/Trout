@@ -147,7 +147,7 @@
                 <tbody id="past-weather-body"></tbody>
             </table>
 
-            <h2>Next 4 Days Weather (Including Yesterday)</h2>
+            <h2>Next 4 Days Weather (Including Today)</h2>
             <table class="weather-table" id="forecast-weather-table">
                 <thead>
                     <tr>
@@ -216,28 +216,27 @@
 
             const yesterday = new Date(today);
             yesterday.setDate(today.getDate() - 1); // April 18, 2025
-            const pastEnd = new Date(yesterday);
-            pastEnd.setDate(yesterday.getDate() - 1); // April 17, 2025
+            const pastEnd = new Date(yesterday); // April 18, 2025
             const pastStart = new Date(yesterday);
-            pastStart.setDate(yesterday.getDate() - 3); // April 15, 2025
-            const forecastEnd = new Date(yesterday);
-            forecastEnd.setDate(yesterday.getDate() + 3); // April 21, 2025
+            pastStart.setDate(yesterday.getDate() - 2); // April 16, 2025
+            const forecastEnd = new Date(today);
+            forecastEnd.setDate(today.getDate() + 3); // April 22, 2025
 
             const formatDate = date => date.toISOString().split('T')[0];
             return {
-                pastStart: formatDate(pastStart), // 2025-04-15
-                pastEnd: formatDate(pastEnd), // 2025-04-17
-                forecastStart: formatDate(yesterday), // 2025-04-18
-                forecastEnd: formatDate(forecastEnd), // 2025-04-21
+                pastStart: formatDate(pastStart), // 2025-04-16
+                pastEnd: formatDate(pastEnd), // 2025-04-18
+                forecastStart: formatDate(today), // 2025-04-19
+                forecastEnd: formatDate(forecastEnd), // 2025-04-22
                 pastDates: [0, 1, 2].map(i => {
                     const d = new Date(pastStart);
                     d.setDate(pastStart.getDate() + i);
-                    return formatDate(d); // 2025-04-15 to 2025-04-17
+                    return formatDate(d); // 2025-04-16 to 2025-04-18
                 }),
                 forecastDates: [0, 1, 2, 3].map(i => {
-                    const d = new Date(yesterday);
-                    d.setDate(yesterday.getDate() + i);
-                    return formatDate(d); // 2025-04-18 to 2025-04-21
+                    const d = new Date(today);
+                    d.setDate(today.getDate() + i);
+                    return formatDate(d); // 2025-04-19 to 2025-04-22
                 }),
                 today: formatDate(today) // 2025-04-19
             };
@@ -264,6 +263,12 @@
                 if (!response.ok) throw new Error(`HTTP ${response.status}: Failed to fetch past weather data`);
                 const data = await response.json();
 
+                // Debug precipitation data
+                console.log('Past Weather Precipitation (in):', data.daily.precipitation_sum.map((val, i) => ({
+                    date: data.daily.time[i],
+                    precipitation: val?.toFixed(2) ?? 'N/A'
+                })));
+
                 pastWeatherData = data.daily.time.map((date, index) => {
                     const noonIndex = data.hourly.time.findIndex(t => t.includes(`${date}T12:00`));
                     const pressure = noonIndex !== -1 ? Math.round(data.hourly.pressure_msl[noonIndex]) : 'N/A';
@@ -274,7 +279,10 @@
                     const precipitation = parseFloat(data.daily.precipitation_sum[index])?.toFixed(2) ?? 'N/A';
                     const wind_speed = data.daily.wind_speed_10m_max[index]?.toFixed(1) ?? 'N/A';
                     const weather_code = data.daily.weather_code[index] ?? 'N/A';
-                    const recent_rainfall = data.daily.precipitation_sum.reduce((sum, val) => sum + (val || 0), 0).toFixed(2);
+                    const recent_rainfall = data.daily.precipitation_sum
+                        .slice(0, index + 1)
+                        .reduce((sum, val) => sum + (parseFloat(val) || 0), 0)
+                        .toFixed(2);
 
                     let pressureTrend = 'N/A';
                     if (pressure !== 'N/A' && index > 0) {
@@ -335,10 +343,16 @@
             // Forecast weather
             try {
                 const response = await fetch(
-                    `https://api.open-meteo.com/v1/forecast?latitude=${avgLat}&longitude=${avgLon}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,weather_code&hourly=pressure_msl,wind_direction_10m&forecast_days=4&timezone=auto&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch`
+                    `https://api.open-meteo.com/v1/forecast?latitude=${avgLat}&longitude=${avgLon}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,weather_code&hourly=pressure_msl,wind_direction_10m&forecast_days=4&timezone=auto&temperature_unit=fahrenheit potter&wind_speed_unit=mph&precipitation_unit=inch`
                 );
                 if (!response.ok) throw new Error(`HTTP ${response.status}: Failed to fetch forecast weather data`);
                 const data = await response.json();
+
+                // Debug precipitation data
+                console.log('Forecast Weather Precipitation (in):', data.daily.precipitation_sum.map((val, i) => ({
+                    date: data.daily.time[i],
+                    precipitation: val?.toFixed(2) ?? 'N/A'
+                })));
 
                 forecastWeatherData = data.daily.time.map((date, index) => {
                     const noonIndex = data.hourly.time.findIndex(t => t.includes(`${date}T12:00`));
@@ -351,8 +365,10 @@
                     const wind_speed = data.daily.wind_speed_10m_max[index]?.toFixed(1) ?? 'N/A';
                     const weather_code = data.daily.weather_code[index] ?? 'N/A';
 
-                    // Recent rainfall: Only accurate for yesterday
-                    let recent_rainfall = date === forecastStart ? pastWeatherData.find(w => w.date === pastEnd)?.recent_rainfall || 'N/A' : 'See Past Weather';
+                    // Recent rainfall: Use past weather's value for today (April 19, 2025)
+                    let recent_rainfall = date === forecastStart ? 
+                        pastWeatherData.find(w => w.date === pastEnd)?.recent_rainfall || 'N/A' : 
+                        'See Past Weather';
 
                     let pressureTrend = 'N/A';
                     if (pressure !== 'N/A' && index > 0) {
