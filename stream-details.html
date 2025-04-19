@@ -531,14 +531,17 @@
                         const rangeStart = dayBefore.toISOString().split('T')[0];
                         const rangeEnd = dayAfter.toISOString().split('T')[0];
 
-                        const trendResponse = fetch(
-                            `https://archive-api.open-meteo.com/v1/archive?latitude=${avgLat}&longitude=${avgLon}&start_date=${rangeStart}&end_date=${rangeEnd}&hourly=pressure_msl&timezone=auto`
-                        ).then(res => {
-                            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                            return res.json();
-                        }).catch(() => null);
+                        let trendData = null;
+                        try {
+                            const trendResponse = await fetch(
+                                `https://archive-api.open-meteo.com/v1/archive?latitude=${avgLat}&longitude=${avgLon}&start_date=${rangeStart}&end_date=${rangeEnd}&hourly=pressure_msl&timezone=auto`
+                            );
+                            if (!trendResponse.ok) throw new Error(`HTTP ${trendResponse.status}`);
+                            trendData = await trendResponse.json();
+                        } catch (error) {
+                            console.error(`Error fetching pressure trend for ${date}: ${error.message}`);
+                        }
 
-                        const trendData = trendResponse ? await trendResponse : null;
                         if (trendData) {
                             const times = trendData.hourly.time;
                             const pressures = trendData.hourly.pressure_msl;
