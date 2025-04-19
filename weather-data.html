@@ -307,8 +307,8 @@
 
         // Process stream data
         function processStreamData(data, streamName) {
-            const ratingMap = { 'E': 0, 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5, 'S+': 6 };
-            const ratingReverseMap = { 0: 'E', 1: 'D', 2: 'C', 3: 'B', 4: 'A', 5: 'S', 6: 'S+' };
+            const ratingMap = { 'F': -1, 'E': 0, 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5, 'S+': 6 };
+            const ratingReverseMap = { '-1': 'F', 0: 'E', 1: 'D', 2: 'C', 3: 'B', 4: 'A', 5: 'S', 6: 'S+' };
             const excludedStreams = ['Unknown', 'Central Sands', 'Minnesota', 'Southern WI'];
 
             streamData = data.rows
@@ -317,7 +317,7 @@
                     const date = new Date(row[0].replace(/(\d+)\/(\d+)\/(\d+)/, '$3-$1-$2'));
                     const stream = row[2]?.trim() || '';
                     const rating = row[17]?.toUpperCase();
-                    const validRating = /^[SABCDE]|S+$/.test(rating);
+                    const validRating = /^[SFABCDE]|S+$/.test(rating);
                     const validStream = !excludedStreams.some(excluded => stream.includes(excluded));
                     return stream === streamName && validRating && validStream && !isNaN(date.getTime());
                 })
@@ -325,7 +325,7 @@
                     const date = new Date(row[0].replace(/(\d+)\/(\d+)\/(\d+)/, '$3-$1-$2'));
                     const dateStr = date.toISOString().split('T')[0];
                     const stream = row[2]?.trim() || '';
-                    const rating = ratingMap[row[17]?.toUpperCase()] ?? -1;
+                    const rating = ratingMap[row[17]?.toUpperCase()] ?? -2;
                     const ratingLetter = ratingReverseMap[rating] || 'N/A';
                     const section = row[15]?.trim().toUpperCase() || 'UNKNOWN';
                     const lat = parseFloat(row[12]);
@@ -541,7 +541,7 @@
             const tbody = document.getElementById('summary-body');
             tbody.innerHTML = '';
 
-            const ratings = ['E', 'D', 'C', 'B', 'A', 'S', 'S+'];
+            const ratings = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'S+'];
             const trends = ['Significant Rising', 'Rising', 'Stable', 'Falling', 'Significant Falling', 'N/A'];
             const summary = {};
             ratings.forEach(rating => {
