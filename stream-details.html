@@ -373,7 +373,6 @@
 
         <div class="widnr-map-section" id="widnr-map-section">
             <h2>WIDNR Map</h2>
-           егодня
             <button class="toggle-button" onclick="toggleMap()">Expand Map</button>
             <div id="stream-widnr-iframe" class="iframe-container"></div>
             <div id="stream-widnr-fallback" class="iframe-fallback"></div>
@@ -394,8 +393,10 @@
         let sortSpotsColumn = 1; // Default sort by Section (to align with downstream-to-upstream)
         let sortSpotsDirection = 1; // 1 for ascending, -1 for descending
         let widnrLink = ''; // Store the WIDNR link for use in the toggle
-        let avgLat = null; // Average latitude for weather data
-        let avgLon = null; // Average longitude for weather data
+        let pastWeatherData = [];
+        let forecastWeatherData = [];
+        let avgLat = null; // Average latitude for forecast
+        let avgLon = null; // Average longitude for forecast
 
         // Define section order for sorting (Lower → Middle → Upper)
         const sectionOrder = { 'LOWER': 1, 'MIDDLE': 2, 'UPPER': 3, 'UNKNOWN': 4 };
@@ -404,37 +405,36 @@
         const urlParams = new URLSearchParams(window.location.search);
         const streamName = urlParams.get('stream');
 
-        // Weather code mapping (WMO codes to descriptions)
-        const weatherCodeMap = {
-            0: 'Clear',
-            1: 'Mostly Clear',
-            2: 'Partly Cloudy',
-            3: 'Overcast',
-            45: 'Fog',
-            48: 'Freezing Fog',
-            51: 'Light Drizzle',
-            53: 'Moderate Drizzle',
-            55: 'Heavy Drizzle',
-            56: 'Light Freezing Drizzle',
-            57: 'Heavy Freezing Drizzle',
-            61: 'Light Rain',
-            63: 'Moderate Rain',
-            65: 'Heavy Rain',
-            66: 'Light Freezing Rain',
-            67: 'Heavy Freezing Rain',
-            71: 'Light Snow',
-            73: 'Moderate Snow',
-            75: 'Heavy Snow',
-            77: 'Snow Grains',
-            80: 'Light Rain Showers',
-            81: 'Moderate Rain Showers',
-            82: 'Heavy Rain Showers',
-            85: 'Light Snow Showers',
-            86: 'Heavy Snow Showers',
-            95: 'Thunderstorm',
-            96: 'Thunderstorm with Light Hail',
-            99: 'Thunderstorm with Heavy Hail'
-        };
+        // Weather code mapping (based on provided script for consistency)
+        function getWeatherCondition(code) {
+            if (code === null || code === undefined) return 'N/A';
+            switch (code) {
+                case 0: return 'Sunny';
+                case 1: return 'Mostly Sunny';
+                case 2: return 'Partly Cloudy';
+                case 3: return 'Cloudy';
+                case 45: return 'Foggy';
+                case 48: return 'Foggy';
+                case 51: case 53: case 55: return 'Drizzle';
+                case 61: case 63: case 65: return 'Rainy';
+                case 66: case 67: return 'Freezing Rain';
+                case 71: case 73: case 75: return 'Snow';
+                case 77: return 'Snow Grains';
+                case 80: case 81: case 82: return 'Rain Showers';
+                case 85: case 86: return 'Snow Showers';
+                case 95: return 'Thunderstorm';
+                case 96: case 99: return 'Thunderstorm with Hail';
+                default: return 'Unknown';
+            }
+        }
+
+        // Convert wind direction (degrees) to cardinal direction
+        function degreesToCardinal(degrees) {
+            if (degrees === 'N/A' || isNaN(degrees)) return 'N/A';
+            const directions = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+            const index = Math.round(degrees / 22.5) % 16;
+            return directions[index];
+        }
 
         // Initialize page
         async function init() {
@@ -447,12 +447,12 @@
             document.getElementById('stream-title').textContent = `${streamName} Details`;
             await Promise.all([fetchData(), fetchStreamInfo()]);
             calculateAverageCoordinates();
-            await Promise.all([fetchPastWeatherData(), fetchForecastWeatherData()]);
+            await fetchWeatherData();
             displayStreamDetails();
             displayWeatherData();
         }
 
-        // Calculate average coordinates from fishing spots
+        // Calculate average coordinates for forecast
         function calculateAverageCoordinates() {
             if (!sourceData || !sourceData.rows) return;
             const validSpots = sourceData.rows
@@ -492,149 +492,271 @@
             }
         }
 
-        // Fetch past 3 days weather data
-        async function fetchPastWeatherData() {
-            if (!avgLat || !avgLon) {
-                document.getElementById('past-weather-body').innerHTML = '<tr><td colspan="10" data-label="Result">No coordinates available for weather data.</td></tr>';
+        // Fetch weather data
+        async function fetchWeatherData() {
+            if (!sourceData || !sourceData.rows) {
+                document.getElementById('past-weather-body').innerHTML = '<tr><td colspan="10" data-label="Result">No stream data available.</td></tr>';
+                document.getElementById('forecast-weather-body').innerHTML = '<tr><td colspan="10" data-label="Result">No stream data available.</td></tr>';
                 return;
             }
-            try {
-                const today = new Date();
-                const endDate = new Date(today);
-                endDate.setDate(today.getDate() - 1); // Up to yesterday
-                const startDate = new Date(today);
-                startDate.setDate(today.getDate() - 3); // 3 days ago
-                const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${avgLat}&longitude=${avgLon}&start_date=${formatDate(startDate)}&end_date=${formatDate(endDate)}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weather_code,wind_speed_10m_max,wind_direction_10m_dominant,pressure_msl&timezone=America/Chicago&models=era5`;
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const data = await response.json();
-                processPastWeatherData(data);
-            } catch (error) {
-                document.getElementById('past-weather-body').innerHTML = `<tr><td colspan="10" data-label="Result">Error fetching past weather data: ${error.message}</td></tr>`;
-            }
-        }
 
-        // Fetch next 4 days weather data (including today)
-        async function fetchForecastWeatherData() {
-            if (!avgLat || !avgLon) {
-                document.getElementById('forecast-weather-body').innerHTML = '<tr><td colspan="10" data-label="Result">No coordinates available for weather data.</td></tr>';
-                return;
-            }
-            try {
-                const url = `https://api.open-meteo.com/v1/forecast?latitude=${avgLat}&longitude=${avgLon}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weather_code,wind_speed_10m_max,wind_direction_10m_dominant,pressure_msl&forecast_days=4&timezone=America/Chicago`;
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const data = await response.json();
-                processForecastWeatherData(data);
-            } catch (error) {
-                document.getElementById('forecast-weather-body').innerHTML = `<tr><td colspan="10" data-label="Result">Error fetching forecast weather data: ${error.message}</td></tr>`;
-            }
-        }
+            // Past weather: Fetch for unique date-GPS pairs from outings
+            const dateGPSMap = new Map();
+            const streamData = sourceData.rows
+                .filter(row => row[2]?.trim() === streamName && row.length >= 18)
+                .map(row => ({
+                    dateStr: new Date(row[0].replace(/(\d+)\/(\d+)\/(\d+)/, '$3-$1-$2')).toISOString().split('T')[0],
+                    lat: parseFloat(row[12]),
+                    lon: parseFloat(row[13])
+                }))
+                .filter(entry => !isNaN(entry.lat) && !isNaN(entry.lon));
 
-        // Format date as YYYY-MM-DD
-        function formatDate(date) {
-            return date.toISOString().split('T')[0];
-        }
-
-        let pastWeatherData = [];
-        let forecastWeatherData = [];
-
-        // Process past weather data
-        function processPastWeatherData(data) {
-            if (!data.daily) return;
-            const { time, temperature_2m_max, temperature_2m_min, precipitation_sum, weather_code, wind_speed_10m_max, wind_direction_10m_dominant, pressure_msl } = data.daily;
-            pastWeatherData = time.map((date, index) => {
-                const totalPrecip = precipitation_sum.slice(0, index + 1).reduce((sum, val) => sum + (val || 0), 0);
-                const prevPressure = index > 0 ? pressure_msl[index - 1] : null;
-                const currPressure = pressure_msl[index];
-                let pressureTrend = 'N/A';
-                if (prevPressure !== null) {
-                    const diff = currPressure - prevPressure;
-                    pressureTrend = diff > 0.5 ? 'Rising' : diff < -0.5 ? 'Falling' : 'Steady';
-                }
-                return {
-                    date,
-                    minTemp: celsiusToFahrenheit(temperature_2m_min[index]),
-                    maxTemp: celsiusToFahrenheit(temperature_2m_max[index]),
-                    condition: weatherCodeMap[weather_code[index]] || 'Unknown',
-                    precipitation: mmToInches(precipitation_sum[index] || 0),
-                    recentRainfall: mmToInches(totalPrecip),
-                    windSpeed: msToMph(wind_speed_10m_max[index] || 0),
-                    windDirection: degreesToDirection(wind_direction_10m_dominant[index] || 0),
-                    pressure: Math.round(pressure_msl[index] || 0),
-                    pressureTrend
-                };
+            streamData.forEach(entry => {
+                const key = `${entry.dateStr}|${entry.lat.toFixed(5)}|${entry.lon.toFixed(5)}`;
+                dateGPSMap.set(key, { date: entry.dateStr, lat: entry.lat, lon: entry.lon });
             });
-        }
 
-        // Process forecast weather data
-        function processForecastWeatherData(data) {
-            if (!data.daily) return;
-            const { time, temperature_2m_max, temperature_2m_min, precipitation_sum, weather_code, wind_speed_10m_max, wind_direction_10m_dominant, pressure_msl } = data.daily;
-            forecastWeatherData = time.map((date, index) => {
-                const totalPrecip = precipitation_sum.slice(Math.max(0, index - 2), index + 1).reduce((sum, val) => sum + (val || 0), 0);
-                const prevPressure = index > 0 ? pressure_msl[index - 1] : null;
-                const currPressure = pressure_msl[index];
-                let pressureTrend = 'N/A';
-                if (prevPressure !== null) {
-                    const diff = currPressure - prevPressure;
-                    pressureTrend = diff > 0.5 ? 'Rising' : diff < -0.5 ? 'Falling' : 'Steady';
+            const dateGPSPairs = Array.from(dateGPSMap.values());
+
+            for (const { date, lat, lon } of dateGPSPairs) {
+                try {
+                    const startDate = new Date(date);
+                    startDate.setDate(startDate.getDate() - 2);
+                    const startDateStr = startDate.toISOString().split('T')[0];
+                    const response = await fetch(
+                        `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${startDateStr}&end_date=${date}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,weather_code&hourly=pressure_msl,wind_direction_10m&timezone=auto&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch`
+                    );
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const data = await response.json();
+
+                    const noonIndex = data.hourly.time.findIndex(t => t.includes(`${date}T12:00`));
+                    const pressure = noonIndex !== -1 ? Math.round(data.hourly.pressure_msl[noonIndex]) : 'N/A';
+                    const wind_direction = noonIndex !== -1 ? data.hourly.wind_direction_10m[noonIndex] : 'N/A';
+
+                    const dayIndex = data.daily.time.findIndex(t => t === date);
+                    const temp_max = dayIndex !== -1 ? data.daily.temperature_2m_max[dayIndex].toFixed(1) : 'N/A';
+                    const temp_min = dayIndex !== -1 ? data.daily.temperature_2m_min[dayIndex].toFixed(1) : 'N/A';
+                    const precipitation = dayIndex !== -1 ? parseFloat(data.daily.precipitation_sum[dayIndex]).toFixed(2) : 'N/A';
+                    const wind_speed = dayIndex !== -1 ? data.daily.wind_speed_10m_max[dayIndex].toFixed(1) : 'N/A';
+                    const weather_code = dayIndex !== -1 ? data.daily.weather_code[dayIndex] : 'N/A';
+                    const recent_rainfall = data.daily.precipitation_sum.reduce((sum, val) => sum + (val || 0), 0).toFixed(2);
+
+                    let pressureTrend = 'N/A';
+                    if (pressure !== 'N/A') {
+                        const dayBefore = new Date(date);
+                        dayBefore.setDate(dayBefore.getDate() - 1);
+                        const dayAfter = new Date(date);
+                        dayAfter.setDate(dayAfter.getDate() + 1);
+                        const rangeStart = dayBefore.toISOString().split('T')[0];
+                        const rangeEnd = dayAfter.toISOString().split('T')[0];
+
+                        const trendResponse = await fetch(
+                            `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${rangeStart}&end_date=${rangeEnd}&hourly=pressure_msl&timezone=auto`
+                        );
+                        if (trendResponse.ok) {
+                            const trendData = await trendResponse.json();
+                            const times = trendData.hourly.time;
+                            const pressures = trendData.hourly.pressure_msl;
+
+                            const prevNoon = times.findIndex(t => t.includes(`${rangeStart}T12:00`));
+                            const currNoon = times.findIndex(t => t.includes(`${date}T12:00`));
+                            const nextNoon = times.findIndex(t => t.includes(`${rangeEnd}T12:00`));
+
+                            if (prevNoon !== -1 && currNoon !== -1 && nextNoon !== -1) {
+                                const prevPressure = pressures[prevNoon];
+                                const currPressure = pressures[currNoon];
+                                const nextPressure = pressures[nextNoon];
+                                const MIN_CHANGE = 1.0;
+                                const SIGNIFICANT_CHANGE = 5.0;
+
+                                const change = currPressure - prevPressure;
+                                if (change > SIGNIFICANT_CHANGE && currPressure <= nextPressure) {
+                                    pressureTrend = 'Significant Rising';
+                                } else if (change > MIN_CHANGE && currPressure <= nextPressure) {
+                                    pressureTrend = 'Rising';
+                                } else if (change < -SIGNIFICANT_CHANGE && currPressure >= nextPressure) {
+                                    pressureTrend = 'Significant Falling';
+                                } else if (change < -MIN_CHANGE && currPressure >= nextPressure) {
+                                    pressureTrend = 'Falling';
+                                } else {
+                                    pressureTrend = 'Stable';
+                                }
+                            }
+                        }
+                    }
+
+                    pastWeatherData.push({
+                        date,
+                        lat,
+                        lon,
+                        temp_max,
+                        temp_min,
+                        precipitation,
+                        recent_rainfall,
+                        wind_speed,
+                        wind_direction,
+                        pressure,
+                        pressure_trend: pressureTrend,
+                        weather_code
+                    });
+                } catch (error) {
+                    pastWeatherData.push({
+                        date,
+                        lat,
+                        lon,
+                        temp_max: 'N/A',
+                        temp_min: 'N/A',
+                        precipitation: 'N/A',
+                        recent_rainfall: 'N/A',
+                        wind_speed: 'N/A',
+                        wind_direction: 'N/A',
+                        pressure: 'N/A',
+                        pressure_trend: 'N/A',
+                        weather_code: 'N/A'
+                    });
                 }
-                return {
-                    date,
-                    minTemp: celsiusToFahrenheit(temperature_2m_min[index]),
-                    maxTemp: celsiusToFahrenheit(temperature_2m_max[index]),
-                    condition: weatherCodeMap[weather_code[index]] || 'Unknown',
-                    precipitation: mmToInches(precipitation_sum[index] || 0),
-                    recentRainfall: mmToInches(totalPrecip),
-                    windSpeed: msToMph(wind_speed_10m_max[index] || 0),
-                    windDirection: degreesToDirection(wind_direction_10m_dominant[index] || 0),
-                    pressure: Math.round(pressure_msl[index] || 0),
-                    pressureTrend
-                };
-            });
-        }
+            }
 
-        // Unit conversion functions
-        function celsiusToFahrenheit(celsius) {
-            return Math.round((celsius * 9 / 5) + 32);
-        }
+            // Forecast weather: Fetch for average coordinates
+            if (avgLat && avgLon) {
+                try {
+                    const response = await fetch(
+                        `https://api.open-meteo.com/v1/forecast?latitude=${avgLat}&longitude=${avgLon}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,weather_code&hourly=pressure_msl,wind_direction_10m&forecast_days=4&timezone=auto&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch`
+                    );
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const data = await response.json();
 
-        function mmToInches(mm) {
-            return (mm / 25.4).toFixed(2);
-        }
+                    forecastWeatherData = data.daily.time.map((date, index) => {
+                        const noonIndex = data.hourly.time.findIndex(t => t.includes(`${date}T12:00`));
+                        const pressure = noonIndex !== -1 ? Math.round(data.hourly.pressure_msl[noonIndex]) : 'N/A';
+                        const wind_direction = noonIndex !== -1 ? data.hourly.wind_direction_10m[noonIndex] : 'N/A';
 
-        function msToMph(ms) {
-            return Math.round(ms * 2.237);
-        }
+                        const temp_max = data.daily.temperature_2m_max[index].toFixed(1);
+                        const temp_min = data.daily.temperature_2m_min[index].toFixed(1);
+                        const precipitation = parseFloat(data.daily.precipitation_sum[index]).toFixed(2);
+                        const wind_speed = data.daily.wind_speed_10m_max[index].toFixed(1);
+                        const weather_code = data.daily.weather_code[index];
 
-        function degreesToDirection(degrees) {
-            const directions = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
-            const index = Math.round(degrees / 22.5) % 16;
-            return directions[index];
+                        // Recent rainfall: Use historical data up to today, note for future
+                        let recent_rainfall = 'N/A';
+                        const today = new Date().toISOString().split('T')[0];
+                        if (date <= today) {
+                            const startDate = new Date(date);
+                            startDate.setDate(startDate.getDate() - 2);
+                            const startDateStr = startDate.toISOString().split('T')[0];
+                            // Note: This requires an additional API call, omitted for simplicity
+                            recent_rainfall = 'See Past Weather';
+                        }
+
+                        let pressureTrend = 'N/A';
+                        if (pressure !== 'N/A' && index > 0) {
+                            const prevNoon = data.hourly.time.findIndex(t => t.includes(`${data.daily.time[index - 1]}T12:00`));
+                            if (prevNoon !== -1) {
+                                const prevPressure = data.hourly.pressure_msl[prevNoon];
+                                const currPressure = data.hourly.pressure_msl[noonIndex];
+                                const MIN_CHANGE = 1.0;
+                                const SIGNIFICANT_CHANGE = 5.0;
+                                const change = currPressure - prevPressure;
+                                if (change > SIGNIFICANT_CHANGE) {
+                                    pressureTrend = 'Significant Rising';
+                                } else if (change > MIN_CHANGE) {
+                                    pressureTrend = 'Rising';
+                                } else if (change < -SIGNIFICANT_CHANGE) {
+                                    pressureTrend = 'Significant Falling';
+                                } else if (change < -MIN_CHANGE) {
+                                    pressureTrend = 'Falling';
+                                } else {
+                                    pressureTrend = 'Stable';
+                                }
+                            }
+                        }
+
+                        return {
+                            date,
+                            lat: avgLat,
+                            lon: avgLon,
+                            temp_max,
+                            temp_min,
+                            precipitation,
+                            recent_rainfall,
+                            wind_speed,
+                            wind_direction,
+                            pressure,
+                            pressure_trend: pressureTrend,
+                            weather_code
+                        };
+                    });
+                } catch (error) {
+                    forecastWeatherData = Array(4).fill().map((_, i) => ({
+                        date: new Date(Date.now() + i * 86400000).toISOString().split('T')[0],
+                        lat: avgLat,
+                        lon: avgLon,
+                        temp_max: 'N/A',
+                        temp_min: 'N/A',
+                        precipitation: 'N/A',
+                        recent_rainfall: 'N/A',
+                        wind_speed: 'N/A',
+                        wind_direction: 'N/A',
+                        pressure: 'N/A',
+                        pressure_trend: 'N/A',
+                        weather_code: 'N/A'
+                    }));
+                }
+            } else {
+                forecastWeatherData = Array(4).fill().map((_, i) => ({
+                    date: new Date(Date.now() + i * 86400000).toISOString().split('T')[0],
+                    lat: null,
+                    lon: null,
+                    temp_max: 'N/A',
+                    temp_min: 'N/A',
+                    precipitation: 'N/A',
+                    recent_rainfall: 'N/A',
+                    wind_speed: 'N/A',
+                    wind_direction: 'N/A',
+                    pressure: 'N/A',
+                    pressure_trend: 'N/A',
+                    weather_code: 'N/A'
+                }));
+            }
         }
 
         // Display weather data
         function displayWeatherData() {
             const pastWeatherBody = document.getElementById('past-weather-body');
             pastWeatherBody.innerHTML = '';
-            pastWeatherData.forEach(weather => {
+            const uniqueDates = [...new Set(pastWeatherData.map(w => w.date))].sort().slice(-3); // Last 3 unique dates
+            uniqueDates.forEach(date => {
+                const weatherEntries = pastWeatherData.filter(w => w.date === date);
+                const weather = weatherEntries[0] || {
+                    temp_max: 'N/A',
+                    temp_min: 'N/A',
+                    precipitation: 'N/A',
+                    recent_rainfall: 'N/A',
+                    wind_speed: 'N/A',
+                    wind_direction: 'N/A',
+                    pressure: 'N/A',
+                    pressure_trend: 'N/A',
+                    weather_code: 'N/A'
+                };
                 const tr = document.createElement('tr');
-                const formattedDate = new Date(weather.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                const formattedDate = new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
                 tr.innerHTML = `
                     <td data-label="Date">${formattedDate}</td>
-                    <td data-label="Min Temp (°F)">${weather.minTemp}</td>
-                    <td data-label="Max Temp (°F)">${weather.maxTemp}</td>
-                    <td data-label="Weather Condition">${weather.condition}</td>
+                    <td data-label="Min Temp (°F)">${weather.temp_max}</td>
+                    <td data-label="Max Temp (°F)">${weather.temp_min}</td>
+                    <td data-label="Weather Condition">${getWeatherCondition(weather.weather_code)}</td>
                     <td data-label="Precipitation (in)">${weather.precipitation}</td>
-                    <td data-label="Recent Rainfall (3 days, in)">${weather.recentRainfall}</td>
-                    <td data-label="Wind Speed (mph)">${weather.windSpeed}</td>
-                    <td data-label="Wind Direction">${weather.windDirection}</td>
+                    <td data-label="Recent Rainfall (3 days, in)">${weather.recent_rainfall}</td>
+                    <td data-label="Wind Speed (mph)">${weather.wind_speed}</td>
+                    <td data-label="Wind Direction">${degreesToCardinal(weather.wind_direction)}</td>
                     <td data-label="Pressure at Noon (hPa)">${weather.pressure}</td>
-                    <td data-label="Pressure Trend">${weather.pressureTrend}</td>
+                    <td data-label="Pressure Trend">${weather.pressure_trend}</td>
                 `;
                 pastWeatherBody.appendChild(tr);
             });
+            if (uniqueDates.length === 0) {
+                pastWeatherBody.innerHTML = '<tr><td colspan="10" data-label="Result">No past weather data available.</td></tr>';
+            }
 
             const forecastWeatherBody = document.getElementById('forecast-weather-body');
             forecastWeatherBody.innerHTML = '';
@@ -643,15 +765,15 @@
                 const formattedDate = new Date(weather.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
                 tr.innerHTML = `
                     <td data-label="Date">${formattedDate}</td>
-                    <td data-label="Min Temp (°F)">${weather.minTemp}</td>
-                    <td data-label="Max Temp (°F)">${weather.maxTemp}</td>
-                    <td data-label="Weather Condition">${weather.condition}</td>
+                    <td data-label="Min Temp (°F)">${weather.temp_max}</td>
+                    <td data-label="Max Temp (°F)">${weather.temp_min}</td>
+                    <td data-label="Weather Condition">${getWeatherCondition(weather.weather_code)}</td>
                     <td data-label="Precipitation (in)">${weather.precipitation}</td>
-                    <td data-label="Recent Rainfall (3 days, in)">${weather.recentRainfall}</td>
-                    <td data-label="Wind Speed (mph)">${weather.windSpeed}</td>
-                    <td data-label="Wind Direction">${weather.windDirection}</td>
+                    <td data-label="Recent Rainfall (3 days, in)">${weather.recent_rainfall}</td>
+                    <td data-label="Wind Speed (mph)">${weather.wind_speed}</td>
+                    <td data-label="Wind Direction">${degreesToCardinal(weather.wind_direction)}</td>
                     <td data-label="Pressure at Noon (hPa)">${weather.pressure}</td>
-                    <td data-label="Pressure Trend">${weather.pressureTrend}</td>
+                    <td data-label="Pressure Trend">${weather.pressure_trend}</td>
                 `;
                 forecastWeatherBody.appendChild(tr);
             });
@@ -811,7 +933,6 @@
                     const date = new Date(row[0].replace(/(\d+)\/(\d+)\/(\d+)/, '$3-$1-$2'));
                     const stream = row[2]?.trim() || '';
                     const rating = row[17]?.toUpperCase();
-                    const section = row[15]?.trim();
                     const validRating = /^[SABCDE]|S+$/.test(rating);
                     const validStream = !excludedStreams.some(excluded => stream.includes(excluded));
                     return stream === streamName && validRating && validStream && !isNaN(date.getTime());
