@@ -259,6 +259,7 @@
                 <thead>
                     <tr>
                         <th>Date</th>
+                        <th>Location</th>
                         <th>Min Temp (°F)</th>
                         <th>Max Temp (°F)</th>
                         <th>Weather Condition</th>
@@ -278,6 +279,7 @@
                 <thead>
                     <tr>
                         <th>Date</th>
+                        <th>Location</th>
                         <th>Min Temp (°F)</th>
                         <th>Max Temp (°F)</th>
                         <th>Weather Condition</th>
@@ -395,8 +397,8 @@
         let widnrLink = ''; // Store the WIDNR link for use in the toggle
         let pastWeatherData = [];
         let forecastWeatherData = [];
-        let avgLat = null; // Average latitude for forecast
-        let avgLon = null; // Average longitude for forecast
+        let avgLat = null; // Average latitude for weather data
+        let avgLon = null; // Average longitude for weather data
 
         // Define section order for sorting (Lower → Middle → Upper)
         const sectionOrder = { 'LOWER': 1, 'MIDDLE': 2, 'UPPER': 3, 'UNKNOWN': 4 };
@@ -405,7 +407,7 @@
         const urlParams = new URLSearchParams(window.location.search);
         const streamName = urlParams.get('stream');
 
-        // Weather code mapping (based on provided script for consistency)
+        // Weather code mapping
         function getWeatherCondition(code) {
             if (code === null || code === undefined) return 'N/A';
             switch (code) {
@@ -452,7 +454,7 @@
             displayWeatherData();
         }
 
-        // Calculate average coordinates for forecast
+        // Calculate average coordinates for weather data
         function calculateAverageCoordinates() {
             if (!sourceData || !sourceData.rows) return;
             const validSpots = sourceData.rows
@@ -494,51 +496,30 @@
 
         // Fetch weather data
         async function fetchWeatherData() {
-            if (!sourceData || !sourceData.rows) {
-                document.getElementById('past-weather-body').innerHTML = '<tr><td colspan="10" data-label="Result">No stream data available.</td></tr>';
-                document.getElementById('forecast-weather-body').innerHTML = '<tr><td colspan="10" data-label="Result">No stream data available.</td></tr>';
+            if (!avgLat || !avgLon) {
+                document.getElementById('past-weather-body').innerHTML = '<tr><td colspan="11" data-label="Result">No coordinates available for weather data.</td></tr>';
+                document.getElementById('forecast-weather-body').innerHTML = '<tr><td colspan="11" data-label="Result">No coordinates available for weather data.</td></tr>';
                 return;
             }
 
-            // Past weather: Fetch for unique date-GPS pairs from outings
-            const dateGPSMap = new Map();
-            const streamData = sourceData.rows
-                .filter(row => row[2]?.trim() === streamName && row.length >= 18)
-                .map(row => ({
-                    dateStr: new Date(row[0].replace(/(\d+)\/(\d+)\/(\d+)/, '$3-$1-$2')).toISOString().split('T')[0],
-                    lat: parseFloat(row[12]),
-                    lon: parseFloat(row[13])
-                }))
-                .filter(entry => !isNaN(entry.lat) && !isNaN(entry.lon));
+            // Past weather: Fetch for April 16–18, 2025 (3 days before today, April 19, 2025)
+            try {
+                const response = await fetch(
+                    `https://archive-api.open-meteo.com/v1/archive?latitude=${avgLat}&longitude=${avgLon}&start_date=2025-04-16&end_date=2025-04-18&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,weather_code&hourly=pressure_msl,wind_direction_10m&timezone=auto&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch`
+                );
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
 
-            streamData.forEach(entry => {
-                const key = `${entry.dateStr}|${entry.lat.toFixed(5)}|${entry.lon.toFixed(5)}`;
-                dateGPSMap.set(key, { date: entry.dateStr, lat: entry.lat, lon: entry.lon });
-            });
-
-            const dateGPSPairs = Array.from(dateGPSMap.values());
-
-            for (const { date, lat, lon } of dateGPSPairs) {
-                try {
-                    const startDate = new Date(date);
-                    startDate.setDate(startDate.getDate() - 2);
-                    const startDateStr = startDate.toISOString().split('T')[0];
-                    const response = await fetch(
-                        `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${startDateStr}&end_date=${date}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,weather_code&hourly=pressure_msl,wind_direction_10m&timezone=auto&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch`
-                    );
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                    const data = await response.json();
-
+                pastWeatherData = data.daily.time.map((date, index) => {
                     const noonIndex = data.hourly.time.findIndex(t => t.includes(`${date}T12:00`));
                     const pressure = noonIndex !== -1 ? Math.round(data.hourly.pressure_msl[noonIndex]) : 'N/A';
                     const wind_direction = noonIndex !== -1 ? data.hourly.wind_direction_10m[noonIndex] : 'N/A';
 
-                    const dayIndex = data.daily.time.findIndex(t => t === date);
-                    const temp_max = dayIndex !== -1 ? data.daily.temperature_2m_max[dayIndex].toFixed(1) : 'N/A';
-                    const temp_min = dayIndex !== -1 ? data.daily.temperature_2m_min[dayIndex].toFixed(1) : 'N/A';
-                    const precipitation = dayIndex !== -1 ? parseFloat(data.daily.precipitation_sum[dayIndex]).toFixed(2) : 'N/A';
-                    const wind_speed = dayIndex !== -1 ? data.daily.wind_speed_10m_max[dayIndex].toFixed(1) : 'N/A';
-                    const weather_code = dayIndex !== -1 ? data.daily.weather_code[dayIndex] : 'N/A';
+                    const temp_max = data.daily.temperature_2m_max[index].toFixed(1);
+                    const temp_min = data.daily.temperature_2m_min[index].toFixed(1);
+                    const precipitation = parseFloat(data.daily.precipitation_sum[index]).toFixed(2);
+                    const wind_speed = data.daily.wind_speed_10m_max[index].toFixed(1);
+                    const weather_code = data.daily.weather_code[index];
                     const recent_rainfall = data.daily.precipitation_sum.reduce((sum, val) => sum + (val || 0), 0).toFixed(2);
 
                     let pressureTrend = 'N/A';
@@ -550,11 +531,15 @@
                         const rangeStart = dayBefore.toISOString().split('T')[0];
                         const rangeEnd = dayAfter.toISOString().split('T')[0];
 
-                        const trendResponse = await fetch(
-                            `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${rangeStart}&end_date=${rangeEnd}&hourly=pressure_msl&timezone=auto`
-                        );
-                        if (trendResponse.ok) {
-                            const trendData = await trendResponse.json();
+                        const trendResponse = fetch(
+                            `https://archive-api.open-meteo.com/v1/archive?latitude=${avgLat}&longitude=${avgLon}&start_date=${rangeStart}&end_date=${rangeEnd}&hourly=pressure_msl&timezone=auto`
+                        ).then(res => {
+                            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                            return res.json();
+                        }).catch(() => null);
+
+                        const trendData = trendResponse ? await trendResponse : null;
+                        if (trendData) {
                             const times = trendData.hourly.time;
                             const pressures = trendData.hourly.pressure_msl;
 
@@ -585,10 +570,10 @@
                         }
                     }
 
-                    pastWeatherData.push({
+                    return {
                         date,
-                        lat,
-                        lon,
+                        lat: avgLat,
+                        lon: avgLon,
                         temp_max,
                         temp_min,
                         precipitation,
@@ -598,115 +583,90 @@
                         pressure,
                         pressure_trend: pressureTrend,
                         weather_code
-                    });
-                } catch (error) {
-                    pastWeatherData.push({
-                        date,
-                        lat,
-                        lon,
-                        temp_max: 'N/A',
-                        temp_min: 'N/A',
-                        precipitation: 'N/A',
-                        recent_rainfall: 'N/A',
-                        wind_speed: 'N/A',
-                        wind_direction: 'N/A',
-                        pressure: 'N/A',
-                        pressure_trend: 'N/A',
-                        weather_code: 'N/A'
-                    });
-                }
+                    };
+                });
+            } catch (error) {
+                pastWeatherData = ['2025-04-16', '2025-04-17', '2025-04-18'].map(date => ({
+                    date,
+                    lat: avgLat,
+                    lon: avgLon,
+                    temp_max: 'N/A',
+                    temp_min: 'N/A',
+                    precipitation: 'N/A',
+                    recent_rainfall: 'N/A',
+                    wind_speed: 'N/A',
+                    wind_direction: 'N/A',
+                    pressure: 'N/A',
+                    pressure_trend: 'N/A',
+                    weather_code: 'N/A'
+                }));
             }
 
-            // Forecast weather: Fetch for average coordinates
-            if (avgLat && avgLon) {
-                try {
-                    const response = await fetch(
-                        `https://api.open-meteo.com/v1/forecast?latitude=${avgLat}&longitude=${avgLon}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,weather_code&hourly=pressure_msl,wind_direction_10m&forecast_days=4&timezone=auto&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch`
-                    );
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                    const data = await response.json();
+            // Forecast weather: Fetch for April 19–22, 2025 (today + 3 days)
+            try {
+                const response = await fetch(
+                    `https://api.open-meteo.com/v1/forecast?latitude=${avgLat}&longitude=${avgLon}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,weather_code&hourly=pressure_msl,wind_direction_10m&forecast_days=4&start_date=2025-04-19&end_date=2025-04-22&timezone=auto&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch`
+                );
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
 
-                    forecastWeatherData = data.daily.time.map((date, index) => {
-                        const noonIndex = data.hourly.time.findIndex(t => t.includes(`${date}T12:00`));
-                        const pressure = noonIndex !== -1 ? Math.round(data.hourly.pressure_msl[noonIndex]) : 'N/A';
-                        const wind_direction = noonIndex !== -1 ? data.hourly.wind_direction_10m[noonIndex] : 'N/A';
+                forecastWeatherData = data.daily.time.map((date, index) => {
+                    const noonIndex = data.hourly.time.findIndex(t => t.includes(`${date}T12:00`));
+                    const pressure = noonIndex !== -1 ? Math.round(data.hourly.pressure_msl[noonIndex]) : 'N/A';
+                    const wind_direction = noonIndex !== -1 ? data.hourly.wind_direction_10m[noonIndex] : 'N/A';
 
-                        const temp_max = data.daily.temperature_2m_max[index].toFixed(1);
-                        const temp_min = data.daily.temperature_2m_min[index].toFixed(1);
-                        const precipitation = parseFloat(data.daily.precipitation_sum[index]).toFixed(2);
-                        const wind_speed = data.daily.wind_speed_10m_max[index].toFixed(1);
-                        const weather_code = data.daily.weather_code[index];
+                    const temp_max = data.daily.temperature_2m_max[index].toFixed(1);
+                    const temp_min = data.daily.temperature_2m_min[index].toFixed(1);
+                    const precipitation = parseFloat(data.daily.precipitation_sum[index]).toFixed(2);
+                    const wind_speed = data.daily.wind_speed_10m_max[index].toFixed(1);
+                    const weather_code = data.daily.weather_code[index];
 
-                        // Recent rainfall: Use historical data up to today, note for future
-                        let recent_rainfall = 'N/A';
-                        const today = new Date().toISOString().split('T')[0];
-                        if (date <= today) {
-                            const startDate = new Date(date);
-                            startDate.setDate(startDate.getDate() - 2);
-                            const startDateStr = startDate.toISOString().split('T')[0];
-                            // Note: This requires an additional API call, omitted for simplicity
-                            recent_rainfall = 'See Past Weather';
-                        }
+                    // Recent rainfall: Only accurate for today (April 19)
+                    let recent_rainfall = date === '2025-04-19' ? pastWeatherData.find(w => w.date === '2025-04-18')?.recent_rainfall || 'N/A' : 'See Past Weather';
 
-                        let pressureTrend = 'N/A';
-                        if (pressure !== 'N/A' && index > 0) {
-                            const prevNoon = data.hourly.time.findIndex(t => t.includes(`${data.daily.time[index - 1]}T12:00`));
-                            if (prevNoon !== -1) {
-                                const prevPressure = data.hourly.pressure_msl[prevNoon];
-                                const currPressure = data.hourly.pressure_msl[noonIndex];
-                                const MIN_CHANGE = 1.0;
-                                const SIGNIFICANT_CHANGE = 5.0;
-                                const change = currPressure - prevPressure;
-                                if (change > SIGNIFICANT_CHANGE) {
-                                    pressureTrend = 'Significant Rising';
-                                } else if (change > MIN_CHANGE) {
-                                    pressureTrend = 'Rising';
-                                } else if (change < -SIGNIFICANT_CHANGE) {
-                                    pressureTrend = 'Significant Falling';
-                                } else if (change < -MIN_CHANGE) {
-                                    pressureTrend = 'Falling';
-                                } else {
-                                    pressureTrend = 'Stable';
-                                }
+                    let pressureTrend = 'N/A';
+                    if (pressure !== 'N/A' && index > 0) {
+                        const prevNoon = data.hourly.time.findIndex(t => t.includes(`${data.daily.time[index - 1]}T12:00`));
+                        if (prevNoon !== -1) {
+                            const prevPressure = data.hourly.pressure_msl[prevNoon];
+                            const currPressure = data.hourly.pressure_msl[noonIndex];
+                            const MIN_CHANGE = 1.0;
+                            const SIGNIFICANT_CHANGE = 5.0;
+                            const change = currPressure - prevPressure;
+                            if (change > SIGNIFICANT_CHANGE) {
+                                pressureTrend = 'Significant Rising';
+                            } else if (change > MIN_CHANGE) {
+                                pressureTrend = 'Rising';
+                            } else if (change < -SIGNIFICANT_CHANGE) {
+                                pressureTrend = 'Significant Falling';
+                            } else if (change < -MIN_CHANGE) {
+                                pressureTrend = 'Falling';
+                            } else {
+                                pressureTrend = 'Stable';
                             }
                         }
+                    }
 
-                        return {
-                            date,
-                            lat: avgLat,
-                            lon: avgLon,
-                            temp_max,
-                            temp_min,
-                            precipitation,
-                            recent_rainfall,
-                            wind_speed,
-                            wind_direction,
-                            pressure,
-                            pressure_trend: pressureTrend,
-                            weather_code
-                        };
-                    });
-                } catch (error) {
-                    forecastWeatherData = Array(4).fill().map((_, i) => ({
-                        date: new Date(Date.now() + i * 86400000).toISOString().split('T')[0],
+                    return {
+                        date,
                         lat: avgLat,
                         lon: avgLon,
-                        temp_max: 'N/A',
-                        temp_min: 'N/A',
-                        precipitation: 'N/A',
-                        recent_rainfall: 'N/A',
-                        wind_speed: 'N/A',
-                        wind_direction: 'N/A',
-                        pressure: 'N/A',
-                        pressure_trend: 'N/A',
-                        weather_code: 'N/A'
-                    }));
-                }
-            } else {
-                forecastWeatherData = Array(4).fill().map((_, i) => ({
-                    date: new Date(Date.now() + i * 86400000).toISOString().split('T')[0],
-                    lat: null,
-                    lon: null,
+                        temp_max,
+                        temp_min,
+                        precipitation,
+                        recent_rainfall,
+                        wind_speed,
+                        wind_direction,
+                        pressure,
+                        pressure_trend: pressureTrend,
+                        weather_code
+                    };
+                });
+            } catch (error) {
+                forecastWeatherData = ['2025-04-19', '2025-04-20', '2025-04-21', '2025-04-22'].map(date => ({
+                    date,
+                    lat: avgLat,
+                    lon: avgLon,
                     temp_max: 'N/A',
                     temp_min: 'N/A',
                     precipitation: 'N/A',
@@ -724,26 +684,17 @@
         function displayWeatherData() {
             const pastWeatherBody = document.getElementById('past-weather-body');
             pastWeatherBody.innerHTML = '';
-            const uniqueDates = [...new Set(pastWeatherData.map(w => w.date))].sort().slice(-3); // Last 3 unique dates
-            uniqueDates.forEach(date => {
-                const weatherEntries = pastWeatherData.filter(w => w.date === date);
-                const weather = weatherEntries[0] || {
-                    temp_max: 'N/A',
-                    temp_min: 'N/A',
-                    precipitation: 'N/A',
-                    recent_rainfall: 'N/A',
-                    wind_speed: 'N/A',
-                    wind_direction: 'N/A',
-                    pressure: 'N/A',
-                    pressure_trend: 'N/A',
-                    weather_code: 'N/A'
-                };
+            pastWeatherData.forEach(weather => {
                 const tr = document.createElement('tr');
-                const formattedDate = new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                const formattedDate = new Date(weather.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                const locationLink = weather.lat && weather.lon ? 
+                    `<a href="https://www.google.com/maps?q=${weather.lat},${weather.lon}" target="_blank">View on Google Maps</a>` : 
+                    'N/A';
                 tr.innerHTML = `
                     <td data-label="Date">${formattedDate}</td>
-                    <td data-label="Min Temp (°F)">${weather.temp_max}</td>
-                    <td data-label="Max Temp (°F)">${weather.temp_min}</td>
+                    <td data-label="Location">${locationLink}</td>
+                    <td data-label="Min Temp (°F)">${weather.temp_min}</td>
+                    <td data-label="Max Temp (°F)">${weather.temp_max}</td>
                     <td data-label="Weather Condition">${getWeatherCondition(weather.weather_code)}</td>
                     <td data-label="Precipitation (in)">${weather.precipitation}</td>
                     <td data-label="Recent Rainfall (3 days, in)">${weather.recent_rainfall}</td>
@@ -754,8 +705,8 @@
                 `;
                 pastWeatherBody.appendChild(tr);
             });
-            if (uniqueDates.length === 0) {
-                pastWeatherBody.innerHTML = '<tr><td colspan="10" data-label="Result">No past weather data available.</td></tr>';
+            if (pastWeatherData.length === 0) {
+                pastWeatherBody.innerHTML = '<tr><td colspan="11" data-label="Result">No past weather data available.</td></tr>';
             }
 
             const forecastWeatherBody = document.getElementById('forecast-weather-body');
@@ -763,10 +714,14 @@
             forecastWeatherData.forEach(weather => {
                 const tr = document.createElement('tr');
                 const formattedDate = new Date(weather.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                const locationLink = weather.lat && weather.lon ? 
+                    `<a href="https://www.google.com/maps?q=${weather.lat},${weather.lon}" target="_blank">View on Google Maps</a>` : 
+                    'N/A';
                 tr.innerHTML = `
                     <td data-label="Date">${formattedDate}</td>
-                    <td data-label="Min Temp (°F)">${weather.temp_max}</td>
-                    <td data-label="Max Temp (°F)">${weather.temp_min}</td>
+                    <td data-label="Location">${locationLink}</td>
+                    <td data-label="Min Temp (°F)">${weather.temp_min}</td>
+                    <td data-label="Max Temp (°F)">${weather.temp_max}</td>
                     <td data-label="Weather Condition">${getWeatherCondition(weather.weather_code)}</td>
                     <td data-label="Precipitation (in)">${weather.precipitation}</td>
                     <td data-label="Recent Rainfall (3 days, in)">${weather.recent_rainfall}</td>
@@ -777,6 +732,9 @@
                 `;
                 forecastWeatherBody.appendChild(tr);
             });
+            if (forecastWeatherData.length === 0) {
+                forecastWeatherBody.innerHTML = '<tr><td colspan="11" data-label="Result">No forecast weather data available.</td></tr>';
+            }
         }
 
         // Parse CSV
@@ -923,8 +881,8 @@
 
         // Display stream details
         function displayStreamDetails() {
-            const ratingMap = { 'E': 0, 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5, 'S+': 6 };
-            const ratingReverseMap = { 0: 'E', 1: 'D', 2: 'C', 3: 'B', 4: 'A', 5: 'S', 6: 'S+' };
+            const ratingMap = { 'F': -1, 'E': 0, 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5, 'S+': 6 };
+            const ratingReverseMap = { '-1': 'F', 0: 'E', 1: 'D', 2: 'C', 3: 'B', 4: 'A', 5: 'S', 6: 'S+' };
             const excludedStreams = ['Unknown', 'Central Sands', 'Minnesota', 'Southern WI'];
 
             const streamData = sourceData?.rows
@@ -933,7 +891,7 @@
                     const date = new Date(row[0].replace(/(\d+)\/(\d+)\/(\d+)/, '$3-$1-$2'));
                     const stream = row[2]?.trim() || '';
                     const rating = row[17]?.toUpperCase();
-                    const validRating = /^[SABCDE]|S+$/.test(rating);
+                    const validRating = /^[SFABCDE]|S+$/.test(rating);
                     const validStream = !excludedStreams.some(excluded => stream.includes(excluded));
                     return stream === streamName && validRating && validStream && !isNaN(date.getTime());
                 })
@@ -1128,7 +1086,7 @@
                         }
                     }
                 }
-                const validRatings = spot.ratings.filter(r => r >= 0);
+                const validRatings = spot.ratings.filter(r => r >= -1); // Include F rating
                 const avgRating = validRatings.length > 0
                     ? Math.round((validRatings.reduce((sum, r) => sum + r, 0) / validRatings.length) * 100) / 100
                     : 'N/A';
