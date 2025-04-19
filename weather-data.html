@@ -172,17 +172,15 @@
     <table class="results-table" id="results-table">
         <thead>
             <tr>
-                <th onclick="sortTable(0)">Date</th>
-                <th onclick="sortTable(1)">Stream</th>
-                <th onclick="sortTable(2)">Min Temp (°F)</th>
-                <th onclick="sortTable(3)">Max Temp (°F)</th>
-                <th onclick="sortTable(4)">Weather Condition</th>
-                <th onclick="sortTable(5)">Precipitation (in)</th>
-                <th onclick="sortTable(6)">Recent Rainfall (3 days, in)</th>
-                <th onclick="sortTable(7)">Wind Speed (mph)</th>
-                <th onclick="sortTable(8)">Wind Direction</th>
-                <th onclick="sortTable(9)">Pressure at Noon (hPa)</th>
-                <th onclick="sortTable(10)">Pressure Trend</th>
+                <th onclick="sortTable(0)">Min Temp (°F)</th>
+                <th onclick="sortTable(1)">Max Temp (°F)</th>
+                <th onclick="sortTable(2)">Weather Condition</th>
+                <th onclick="sortTable(3)">Precipitation (in)</th>
+                <th onclick="sortTable(4)">Recent Rainfall (3 days, in)</th>
+                <th onclick="sortTable(5)">Wind Speed (mph)</th>
+                <th onclick="sortTable(6)">Wind Direction</th>
+                <th onclick="sortTable(7)">Pressure at Noon (hPa)</th>
+                <th onclick="sortTable(8)">Pressure Trend</th>
             </tr>
         </thead>
         <tbody id="results-body"></tbody>
@@ -486,8 +484,6 @@
                     `${weather.pressure_trend} (${weather.pressure_change > 0 ? '+' : ''}${weather.pressure_change} hPa)`;
                 
                 return {
-                    date: entry.dateStr,
-                    stream: entry.stream,
                     temp_min: weather.temp_min !== 'N/A' ? parseFloat(weather.temp_min).toFixed(1) : 'N/A',
                     temp_max: weather.temp_max !== 'N/A' ? parseFloat(weather.temp_max).toFixed(1) : 'N/A',
                     weather_condition: getWeatherCondition(weather.weather_code),
@@ -504,7 +500,7 @@
             rows.sort((a, b) => {
                 let valueA = a[Object.keys(a)[sortColumn]];
                 let valueB = b[Object.keys(b)[sortColumn]];
-                if (sortColumn >= 2 && sortColumn <= 3 || sortColumn === 5 || sortColumn === 6 || sortColumn === 7 || sortColumn === 9) { // Numeric columns
+                if (sortColumn === 0 || sortColumn === 1 || sortColumn === 3 || sortColumn === 4 || sortColumn === 5 || sortColumn === 7) { // Numeric columns
                     valueA = valueA === 'N/A' ? -Infinity : parseFloat(valueA);
                     valueB = valueB === 'N/A' ? -Infinity : parseFloat(valueB);
                     return sortDirection * (valueA - valueB);
@@ -517,8 +513,6 @@
             rows.forEach(row => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td data-label="Date">${row.date}</td>
-                    <td data-label="Stream">${row.stream}</td>
                     <td data-label="Min Temp">${row.temp_min}</td>
                     <td data-label="Max Temp">${row.temp_max}</td>
                     <td data-label="Weather Condition">${row.weather_condition}</td>
@@ -604,7 +598,7 @@
         // Download as CSV
         function downloadCSV() {
             const headers = [
-                'Date', 'Stream', 'Min Temp (°F)', 'Max Temp (°F)', 'Weather Condition',
+                'Min Temp (°F)', 'Max Temp (°F)', 'Weather Condition',
                 'Precipitation (in)', 'Recent Rainfall (3 days, in)', 'Wind Speed (mph)',
                 'Wind Direction', 'Pressure at Noon (hPa)', 'Pressure Trend'
             ];
@@ -624,8 +618,6 @@
                         weather_code: 'N/A'
                     };
                     return [
-                        entry.dateStr,
-                        entry.stream,
                         weather.temp_min !== 'N/A' ? parseFloat(weather.temp_min).toFixed(1) : 'N/A',
                         weather.temp_max !== 'N/A' ? parseFloat(weather.temp_max).toFixed(1) : 'N/A',
                         getWeatherCondition(weather.weather_code),
