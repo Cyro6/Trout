@@ -6,7 +6,7 @@
     <title>Analysis Dashboard</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
-        h1 { text-align: center; color: #333; }
+        h1, h2 { text-align: center; color: #333; }
         .filter { text-align: center; margin-bottom: 20px; }
         select { padding: 8px; font-size: 1em; }
         table { width: 100%; max-width: 1200px; margin: 20px auto; border-collapse: collapse; background-color: #fff; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); }
@@ -47,6 +47,14 @@
         </table>
     </div>
 
+    <h2>Rating vs. Pressure Trend Analysis</h2>
+    <div id="rating-pressure-loading" class="loading">Loading Rating vs. Pressure Trend...</div>
+    <div id="rating-pressure-error" class="error"></div>
+    <table id="rating-pressure-table" style="display: none;">
+        <thead id="rating-pressure-header"></thead>
+        <tbody id="rating-pressure-body"></tbody>
+    </table>
+
     <script>
         const SHEET_ID = '1vRDZny6ZfKGXJOKIgoRo47knNJmmtDT2WTrNvOmQ0lwUiznaF1McQVgpTUa1kTMUpq5X6c3b888BGwz';
         const SOURCE_GID = '491893533'; // Rons Spots GPS GID
@@ -55,6 +63,7 @@
         let sourceData = null; // Store Rons Spots GPS data
         let processedData = null; // Store month-specific data
         let allData = null; // Store aggregated data across all months
+        let ratingPressureData = null; // Store Rating vs. Pressure Trend data
         let sortColumn = 'Stream'; // Default sort column
         let sortDirection = 1; // 1 for ascending, -1 for descending
         let filters = { Stream: '', Visits: '', Rating: '', Section: '' }; // Store filter values
@@ -70,34 +79,84 @@
                 processSourceData();
                 populateMonthDropdown();
                 filterMonthData(); // Initial display
+                displayRatingPressureData(); // Display new table
             } catch (error) {
                 document.getElementById('month-error').textContent = `Error: ${error.message}`;
+                document.getElementById('rating-pressure-error').textContent = `Error: ${error.message}`;
             } finally {
                 document.getElementById('month-loading').style.display = 'none';
+                document.getElementById('rating-pressure-loading').style.display = 'none';
             }
         }
 
-        // Parse CSV
+        // Parse CSV with handling for newlines and quoted fields
         function parseCSV(csvText) {
-            const lines = csvText.split('\n').filter(line => line.trim() !== '');
-            const headers = lines[0].split(',').map(header => header.trim());
-            const rows = lines.slice(1).map(line => {
+            // Preprocess: Replace newlines within quoted fields
+            let insideQuotes = false;
+            let processedText = '';
+            for (let i = 0; i < csvText.length; i++) {
+                const char = csvText[i];
+                if (char === '"') {
+                    insideQuotes = !insideQuotes;
+                    processedText += char;
+                } else if (char === '\n' && insideQuotes) {
+                    processedText += '\\n'; // Replace newline with placeholder
+                } else {
+                    processedText += char;
+                }
+            }
+
+            const lines = processedText.split('\n').filter(line => line.trim() !== '');
+            const headers = lines[0].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(header => header.trim().replace(/^"|"$/g, ''));
+            const expectedColumns = headers.length;
+            const rows = lines.slice(1).map((line, lineIndex) => {
                 const values = [];
                 let current = '';
                 let insideQuotes = false;
-                for (let char of line) {
-                    if (char === '"') {
+                let i = 0;
+
+                while (i < line.length) {
+                    const char = line[i];
+                    const nextChar = line[i + 1];
+
+                    if (char === '"' && nextChar === '"') {
+                        current += '"';
+                        i += 2;
+                    } else if (char === '"') {
                         insideQuotes = !insideQuotes;
+                        i++;
                     } else if (char === ',' && !insideQuotes) {
-                        values.push(current.trim());
+                        values.push(current.trim().replace(/^"|"$/g, '').replace(/\\n/g, '\n'));
                         current = '';
+                        i++;
                     } else {
                         current += char;
+                        i++;
                     }
                 }
-                values.push(current.trim());
+                values.push(current.trim().replace(/^"|"$/g, '').replace(/\\n/g, '\n'));
+
+                // Pad with empty strings if row is too short
+                const originalLength = values.length;
+                while (values.length < expectedColumns) {
+                    values.push('');
+                }
+
+                // Debug: Log if row was truncated
+                if (originalLength < expectedColumns) {
+                    console.log('CSV Parsing - Truncated Row:', {
+                        LineIndex: lineIndex + 1,
+                        RawLine: line,
+                        ParsedValues: values.slice(0, originalLength),
+                        ColumnCount: originalLength,
+                        ExpectedColumns: expectedColumns
+                    });
+                }
+
                 return values;
             });
+
+            console.log('Parsed CSV: Headers:', headers, 'Row Count:', rows.length);
             return { headers, rows };
         }
 
@@ -105,40 +164,90 @@
         function processSourceData() {
             if (!sourceData) return;
 
-            const ratingMap = { 'E': 0, 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5 };
+            const ratingMap = { 'F': 0, 'E': 1, 'D': 2, 'C': 3, 'B': 4, 'A': 5, 'S': 6 };
             const excludedStreams = ['Unknown', 'Central Sands', 'Minnesota', 'Southern WI'];
+            const pressureTrendIndex = 29; // Hardcode to column AD
 
-            // Filter valid data
+            // Clean Pressure Trend value with flexible regex
+            function cleanPressureTrend(value, row, index) {
+                if (!value || value.trim() === '') {
+                    console.log('Pressure Trend - Unknown (Empty/Blank):', { 
+                        Raw: value, 
+                        RowData: row.slice(0, 30), 
+                        ColumnIndex: index 
+                    });
+                    return 'Unknown';
+                }
+                // Remove quotes, parentheses, and extra whitespace
+                const cleanValue = value.replace(/['"]+/g, '').replace(/\([^)]*\)/g, '').trim().replace(/\s+/g, ' ');
+                const normalized = cleanValue.toLowerCase();
+                const trends = [
+                    { regex: /significant\s*falling/i, value: 'Significant Falling' },
+                    { regex: /significant\s*rising/i, value: 'Significant Rising' },
+                    { regex: /falling/i, value: 'Falling' },
+                    { regex: /rising/i, value: 'Rising' },
+                    { regex: /stable/i, value: 'Stable' }
+                ];
+                const matchedTrend = trends.find(trend => trend.regex.test(normalized));
+                if (!matchedTrend) {
+                    console.log('Pressure Trend - Unknown (Unmatched):', {
+                        Raw: value,
+                        Cleaned: cleanValue,
+                        Normalized: normalized,
+                        RowData: row.slice(0, 30),
+                        ColumnIndex: index,
+                        NearbyColumns: {
+                            Prev: row[index - 1] || 'N/A',
+                            Current: row[index] || 'N/A',
+                            Next: row[index + 1] || 'N/A'
+                        }
+                    });
+                } else {
+                    console.log('Pressure Trend - Matched:', {
+                        Raw: value,
+                        Cleaned: cleanValue,
+                        Normalized: normalized,
+                        Matched: matchedTrend.value
+                    });
+                }
+                return matchedTrend ? matchedTrend.value : 'Unknown';
+            }
+
+            // Filter valid data (no date restriction)
             const validData = sourceData.rows
                 .filter(row => {
                     if (row.length < 18) return false;
-                    const date = new Date(row[0].replace(/(\d+)\/(\d+)\/(\d+)/, '$3-$1-$2'));
                     const stream = row[2]?.trim() || '';
                     const rating = row[17]?.toUpperCase();
-                    const section = row[15]?.trim();
-                    const validRating = /^[SABCDE]$/.test(rating);
+                    const validRating = /^[SABCDEF]$/.test(rating);
                     const validStream = !excludedStreams.some(excluded => stream.includes(excluded));
-                    return validRating && validStream && !isNaN(date.getTime());
+                    return validRating && validStream;
                 })
                 .map(row => {
-                    const date = new Date(row[0].replace(/(\d+)\/(\d+)\/(\d+)/, '$3-$1-$2'));
-                    const month = date.toLocaleString('default', { month: 'long' });
+                    // Use date as-is for month, even if invalid
+                    const dateRaw = row[0] || '01/01/2000';
+                    const date = new Date(dateRaw.replace(/(\d+)\/(\d+)\/(\d+)/, '$3-$1-$2'));
+                    const month = isNaN(date.getTime()) ? 'Unknown' : date.toLocaleString('default', { month: 'long' });
                     const stream = row[2]?.trim() || '';
-                    const rating = ratingMap[row[17]?.toUpperCase()] ?? -1;
+                    const rating = row[17]?.toUpperCase();
                     const section = row[15]?.trim().toUpperCase() || 'UNKNOWN';
-                    const lat = parseFloat(row[12]); // Standardized Latitude (Column M)
-                    const lon = parseFloat(row[13]); // Standardized Longitude (Column N)
-                    return [month, stream, rating, section, lat, lon];
+                    const lat = parseFloat(row[12]);
+                    const lon = parseFloat(row[13]);
+                    const rawPressureTrend = row[pressureTrendIndex] || '';
+                    const pressureTrend = cleanPressureTrend(rawPressureTrend, row, pressureTrendIndex);
+                    return [month, stream, rating, section, lat, lon, pressureTrend];
                 });
+
+            console.log('Valid data rows:', validData.length);
 
             // Group by stream and month (for month-specific data)
             const groupedDataByMonth = {};
-            validData.forEach(([month, stream, rating, section, lat, lon]) => {
+            validData.forEach(([month, stream, rating, section, lat, lon, pressureTrend]) => {
                 const key = `${month}|${stream}`;
                 if (!groupedDataByMonth[key]) {
                     groupedDataByMonth[key] = { month, stream, ratings: [], sections: [], spots: [] };
                 }
-                groupedDataByMonth[key].ratings.push(rating);
+                groupedDataByMonth[key].ratings.push(ratingMap[rating]);
                 groupedDataByMonth[key].sections.push(section);
                 if (!isNaN(lat) && !isNaN(lon)) {
                     groupedDataByMonth[key].spots.push({ lat, lon });
@@ -174,11 +283,11 @@
 
             // Group by stream only (for ALL data)
             const groupedDataAll = {};
-            validData.forEach(([month, stream, rating, section, lat, lon]) => {
+            validData.forEach(([month, stream, rating, section, lat, lon, pressureTrend]) => {
                 if (!groupedDataAll[stream]) {
                     groupedDataAll[stream] = { stream, ratings: [], sections: [], spots: [] };
                 }
-                groupedDataAll[stream].ratings.push(rating);
+                groupedDataAll[stream].ratings.push(ratingMap[rating]);
                 groupedDataAll[stream].sections.push(section);
                 if (!isNaN(lat) && !isNaN(lon)) {
                     groupedDataAll[stream].spots.push({ lat, lon });
@@ -211,6 +320,26 @@
 
                 return [stream, visits, roundedAvg, sectionResult];
             });
+
+            // Compute Rating vs. Pressure Trend data
+            const ratingPressureCounts = {};
+            const ratings = ['S', 'A', 'B', 'C', 'D', 'E', 'F'];
+            const pressureTrends = ['Significant Falling', 'Falling', 'Stable', 'Rising', 'Significant Rising', 'Unknown'];
+            ratings.forEach(rating => {
+                ratingPressureCounts[rating] = {};
+                pressureTrends.forEach(trend => {
+                    ratingPressureCounts[rating][trend] = 0;
+                });
+            });
+
+            validData.forEach(([month, stream, rating, section, lat, lon, pressureTrend]) => {
+                if (ratings.includes(rating)) {
+                    ratingPressureCounts[rating][pressureTrend]++;
+                }
+            });
+
+            ratingPressureData = { ratings, pressureTrends, counts: ratingPressureCounts };
+            console.log('Rating vs. Pressure Trend counts:', ratingPressureCounts);
         }
 
         // Populate month dropdown in chronological order
@@ -219,7 +348,7 @@
 
             const monthOrder = [
                 'January', 'February', 'March', 'April', 'May', 'June',
-                'July', 'August', 'September', 'October', 'November', 'December'
+                'July', 'August', 'September', 'October', 'November', 'December', 'Unknown'
             ];
 
             const monthSelect = document.getElementById('month-select');
@@ -357,6 +486,46 @@
             });
 
             table.style.display = rows.length ? 'table' : 'none';
+        }
+
+        // Display Rating vs. Pressure Trend table
+        function displayRatingPressureData() {
+            if (!ratingPressureData) return;
+
+            const tableHeader = document.getElementById('rating-pressure-header');
+            const tableBody = document.getElementById('rating-pressure-body');
+            const table = document.getElementById('rating-pressure-table');
+
+            tableHeader.innerHTML = '';
+            tableBody.innerHTML = '';
+
+            // Create header row
+            const headerRow = document.createElement('tr');
+            const headers = ['Rating', ...ratingPressureData.pressureTrends];
+            headers.forEach(header => {
+                const th = document.createElement('th');
+                th.textContent = header;
+                headerRow.appendChild(th);
+            });
+            tableHeader.appendChild(headerRow);
+
+            // Create data rows
+            ratingPressureData.ratings.forEach(rating => {
+                const tr = document.createElement('tr');
+                const tdRating = document.createElement('td');
+                tdRating.textContent = rating;
+                tr.appendChild(tdRating);
+
+                ratingPressureData.pressureTrends.forEach(trend => {
+                    const td = document.createElement('td');
+                    td.textContent = ratingPressureData.counts[rating][trend] || 0;
+                    tr.appendChild(td);
+                });
+
+                tableBody.appendChild(tr);
+            });
+
+            table.style.display = 'table';
         }
 
         // Initialize
