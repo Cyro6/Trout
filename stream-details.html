@@ -24,14 +24,14 @@
         a:hover {
             text-decoration: underline;
         }
-        .stats, .month-stats, .top-outings, .stream-info, .widnr-map-section {
+        .stats, .month-stats, .top-outings, .stream-info, .widnr-map-section, .weather-section {
             margin: 20px 0;
             padding: 15px;
             background-color: #fff;
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
-        .stream-info p {
+        .stream-info p, .weather-section p {
             margin: 5px 0;
         }
         .widnr-map-section .toggle-button {
@@ -49,10 +49,10 @@
         }
         .widnr-map-section .iframe-container {
             position: relative;
-            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            padding-bottom: 56.25%;
             height: 0;
             overflow: hidden;
-            display: none; /* Collapsed by default */
+            display: none;
         }
         .widnr-map-section .iframe-container.active {
             display: block;
@@ -73,7 +73,7 @@
         .widnr-map-section .iframe-fallback.active {
             display: block;
         }
-        .spots-table, .top-outings-table, .month-outing-table {
+        .spots-table, .top-outings-table, .month-outing-table, .weather-table {
             width: 100%;
             max-width: 800px;
             margin: 20px 0;
@@ -81,12 +81,13 @@
             background-color: #fff;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
-        .spots-table th, .spots-table td, .top-outings-table th, .top-outings-table td, .month-outing-table th, .month-outing-table td {
+        .spots-table th, .spots-table td, .top-outings-table th, .top-outings-table td, 
+        .month-outing-table th, .month-outing-table td, .weather-table th, .weather-table td {
             padding: 12px;
             text-align: left;
             border: 1px solid #ddd;
         }
-        .spots-table th, .top-outings-table th, .month-outing-table th {
+        .spots-table th, .top-outings-table th, .month-outing-table th, .weather-table th {
             background-color: #4CAF50;
             color: white;
             cursor: pointer;
@@ -100,18 +101,20 @@
         .spots-table th.sort-desc::after, .top-outings-table th.sort-desc::after, .month-outing-table th.sort-desc::after {
             content: ' ↓';
         }
-        .spots-table tr:nth-child(even), .top-outings-table tr:nth-child(even), .month-outing-table tr:nth-child(even) {
+        .spots-table tr:nth-child(even), .top-outings-table tr:nth-child(even), 
+        .month-outing-table tr:nth-child(even), .weather-table tr:nth-child(even) {
             background-color: #f9f9f9;
         }
-        .spots-table tr:hover, .top-outings-table tr:hover, .month-outing-table tr:hover {
+        .spots-table tr:hover, .top-outings-table tr:hover, .month-outing-table tr:hover, 
+        .weather-table tr:hover {
             background-color: #f1f1f1;
         }
-        .loading {
+        .loading, .weather-loading {
             text-align: center;
             font-size: 1.2em;
             color: #555;
         }
-        .error {
+        .error, .weather-error {
             text-align: center;
             color: red;
         }
@@ -153,17 +156,23 @@
         }
         .month-stats .stats-row {
             display: block;
-            overflow: hidden; /* Prevent floating issues */
+            overflow: hidden;
         }
         .month-stats .stats-row p {
             margin: 0 0 10px 0;
         }
         .month-stats .month-outing-table {
-            width: 100%; /* Override previous width: 100%; max-width: 600px */
-            margin: 20px 0; /* Match the global margin */
+            width: 100%;
+            margin: 20px 0;
+        }
+        .weather-section .current-weather, .weather-section .total-rainfall {
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #e0f7fa;
+            border-radius: 5px;
+            text-align: center;
         }
 
-        /* Mobile Responsiveness */
         @media screen and (max-width: 600px) {
             body {
                 margin: 10px;
@@ -175,7 +184,7 @@
             h2 {
                 font-size: 1.2em;
             }
-            .stats, .month-stats, .top-outings, .stream-info, .widnr-map-section {
+            .stats, .month-stats, .top-outings, .stream-info, .widnr-map-section, .weather-section {
                 padding: 10px;
             }
             .widnr-map-section .iframe-container {
@@ -192,19 +201,19 @@
             .filter-section button {
                 width: 100%;
             }
-            .spots-table, .top-outings-table, .month-outing-table {
+            .spots-table, .top-outings-table, .month-outing-table, .weather-table {
                 box-shadow: none;
             }
-            .spots-table thead, .top-outings-table thead, .month-outing-table thead {
+            .spots-table thead, .top-outings-table thead, .month-outing-table thead, .weather-table thead {
                 display: none;
             }
-            .spots-table tr, .top-outings-table tr, .month-outing-table tr {
+            .spots-table tr, .top-outings-table tr, .month-outing-table tr, .weather-table tr {
                 display: block;
                 margin-bottom: 10px;
                 border: 1px solid #ddd;
                 border-radius: 5px;
             }
-            .spots-table td, .top-outings-table td, .month-outing-table td {
+            .spots-table td, .top-outings-table td, .month-outing-table td, .weather-table td {
                 display: block;
                 text-align: right;
                 padding: 8px;
@@ -212,7 +221,7 @@
                 border-bottom: 1px solid #eee;
                 position: relative;
             }
-            .spots-table td::before, .top-outings-table td::before, .month-outing-table td::before {
+            .spots-table td::before, .top-outings-table td::before, .month-outing-table td::before, .weather-table td::before {
                 content: attr(data-label);
                 position: absolute;
                 left: 8px;
@@ -221,10 +230,10 @@
                 font-weight: bold;
                 color: #333;
             }
-            .spots-table td:last-child, .top-outings-table td:last-child, .month-outing-table td:last-child {
+            .spots-table td:last-child, .top-outings-table td:last-child, .month-outing-table td:last-child, .weather-table td:last-child {
                 border-bottom: none;
             }
-            .spots-table tr:hover, .top-outings-table tr:hover, .month-outing-table tr:hover {
+            .spots-table tr:hover, .top-outings-table tr:hover, .month-outing-table tr:hover, .weather-table tr:hover {
                 background-color: #fff;
             }
         }
@@ -249,12 +258,53 @@
             <p id="stream-widnr-link-container"><strong>WIDNR Map:</strong> <span id="stream-widnr-link"></span> | <span id="stream-widnr-external-link"></span></p>
         </div>
 
+        <div class="weather-section">
+            <h2 id="weather-title">Weather</h2>
+            <div id="weather-loading" class="weather-loading">Loading weather data...</div>
+            <div id="weather-error" class="weather-error"></div>
+            <div class="total-rainfall" id="total-rainfall"></div>
+            <div class="current-weather" id="current-weather"></div>
+            <h3>Past 3 Days Weather</h3>
+            <table class="weather-table" id="past-weather-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Min Temp (°F)</th>
+                        <th>Max Temp (°F)</th>
+                        <th>Precipitation (in)</th>
+                        <th>Max Surface Pressure (hPa)</th>
+                        <th>Wind Direction</th>
+                        <th>Pressure Trend</th>
+                        <th>Weather</th>
+                    </tr>
+                </thead>
+                <tbody id="past-weather-body"></tbody>
+            </table>
+            <h3>Forecast (Today and Next 4 Days)</h3>
+            <table class="weather-table" id="forecast-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Min Temp (°F)</th>
+                        <th>Max Temp (°F)</th>
+                        <th>Precipitation (in)</th>
+                        <th>Max Surface Pressure (hPa)</th>
+                        <th>Wind Direction</th>
+                        <th>Pressure Trend</th>
+                        <th>Weather</th>
+                    </tr>
+                </thead>
+                <tbody id="forecast-body"></tbody>
+            </table>
+        </div>
+
         <div class="stats">
             <h2>Overall Statistics</h2>
             <p><strong>Total Visits:</strong> <span id="total-visits"></span></p>
             <p><strong>Average Rating:</strong> <span id="avg-rating"></span></p>
             <p><strong>Most Fished Section (Overall):</strong> <span id="most-fished-section"></span></p>
         </div>
+
         <h2>Fishing Spots (Downstream to Upstream)</h2>
         <div class="filter-section">
             <div>
@@ -291,7 +341,7 @@
             <tbody id="spots-body"></tbody>
         </table>
 
-                <div class="month-stats">
+        <div class="month-stats">
             <h2>Current Month (April) Statistics</h2>
             <div class="stats-row">
                 <p><strong>Typically Fished Section in April:</strong> <span id="april-section"></span></p>
@@ -326,10 +376,6 @@
             </table>
         </div>
 
-
-
-
-
         <div class="widnr-map-section" id="widnr-map-section">
             <h2>WIDNR Map</h2>
             <button class="toggle-button" onclick="toggleMap()">Expand Map</button>
@@ -340,27 +386,142 @@
 
     <script>
         const SHEET_ID = '1vRDZny6ZfKGXJOKIgoRo47knNJmmtDT2WTrNvOmQ0lwUiznaF1McQVgpTUa1kTMUpq5X6c3b888BGwz';
-        const SOURCE_GID = '491893533'; // Rons Spots GPS GID
-        const STREAM_INFO_GID = '1772368131'; // Stream Info GID
+        const SOURCE_GID = '491893533';
+        const STREAM_INFO_GID = '1772368131';
         const SOURCE_URL = `https://docs.google.com/spreadsheets/d/e/2PACX-${SHEET_ID}/pub?gid=${SOURCE_GID}&single=true&output=csv`;
         const STREAM_INFO_URL = `https://docs.google.com/spreadsheets/d/e/2PACX-${SHEET_ID}/pub?gid=${STREAM_INFO_GID}&single=true&output=csv`;
 
         let sourceData = null;
         let streamInfoData = null;
-        let spotsData = []; // Store all spots for filtering and sorting
-        let filteredSpotsData = []; // Store filtered spots for display
-        let sortSpotsColumn = 1; // Default sort by Section (to align with downstream-to-upstream)
-        let sortSpotsDirection = 1; // 1 for ascending, -1 for descending
-        let widnrLink = ''; // Store the WIDNR link for use in the toggle
+        let spotsData = [];
+        let filteredSpotsData = [];
+        let sortSpotsColumn = 1;
+        let sortSpotsDirection = 1;
+        let widnrLink = '';
 
-        // Define section order for sorting (Lower → Middle → Upper)
         const sectionOrder = { 'LOWER': 1, 'MIDDLE': 2, 'UPPER': 3, 'UNKNOWN': 4 };
-
-        // Get stream name from URL query parameter
         const urlParams = new URLSearchParams(window.location.search);
         const streamName = urlParams.get('stream');
 
-        // Initialize page
+        const weatherCodeMap = {
+            0: "Clear sky",
+            1: "Mainly clear",
+            2: "Partly cloudy",
+            3: "Overcast",
+            45: "Fog",
+            48: "Depositing rime fog",
+            51: "Light drizzle",
+            53: "Moderate drizzle",
+            55: "Dense drizzle",
+            61: "Light rain",
+            63: "Moderate rain",
+            65: "Heavy rain",
+            71: "Light snow",
+            73: "Moderate snow",
+            75: "Heavy snow",
+            80: "Light rain showers",
+            81: "Moderate rain showers",
+            82: "Heavy rain showers",
+            95: "Thunderstorm",
+            96: "Thunderstorm with slight hail",
+            99: "Thunderstorm with heavy hail"
+        };
+
+        function degreesToCardinal(degrees) {
+            const directions = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", 
+                               "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
+            const index = Math.round(degrees / 22.5) % 16;
+            return directions[index];
+        }
+
+        function formatDate(isoDate) {
+            const [year, month, day] = isoDate.split('-');
+            return `${month}/${day}/${year}`;
+        }
+
+        function getPressureTrend(currentPressure, previousPressure) {
+            if (previousPressure === null) return "N/A";
+            const deltaHPa = currentPressure - previousPressure;
+            if (deltaHPa >= 5) return "Significantly Rising";
+            if (deltaHPa >= 1) return "Rising";
+            if (deltaHPa > -1) return "Steady";
+            if (deltaHPa > -5) return "Falling";
+            return "Significantly Falling";
+        }
+
+        function calculateTotalRainfall(data) {
+            let total = 0;
+            for (let i = 1; i < 4; i++) {
+                total += data.daily.precipitation_sum[i];
+            }
+            return total.toFixed(2);
+        }
+
+        async function fetchWeatherData(latitude, longitude) {
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=precipitation_sum,surface_pressure_max,temperature_2m_min,temperature_2m_max,weather_code,wind_direction_10m_dominant&current=temperature_2m,weather_code,surface_pressure,wind_direction_10m&timezone=America%2FChicago&past_days=4&forecast_days=5&wind_speed_unit=mph&temperature_unit=fahrenheit&precipitation_unit=inch`;
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                displayWeatherData(data);
+            } catch (error) {
+                document.getElementById('weather-error').textContent = `Error loading weather data: ${error.message}`;
+                document.getElementById('weather-loading').style.display = 'none';
+            }
+        }
+
+        function displayWeatherData(data) {
+            const totalRainfall = document.getElementById('total-rainfall');
+            totalRainfall.innerText = `Total Rainfall (Past 3 Days): ${calculateTotalRainfall(data)} inches`;
+
+            const currentWeather = document.getElementById('current-weather');
+            const currentTemp = data.current.temperature_2m.toFixed(1);
+            const currentPressure = data.current.surface_pressure.toFixed(1);
+            const currentWindDir = degreesToCardinal(data.current.wind_direction_10m);
+            const currentWeatherDesc = weatherCodeMap[data.current.weather_code] || "Unknown";
+            currentWeather.innerHTML = `Temperature: ${currentTemp}°F<br>Pressure: ${currentPressure} hPa<br>Wind Direction: ${currentWindDir}<br>Weather: ${currentWeatherDesc}`;
+
+            const pastTableBody = document.getElementById('past-weather-body');
+            pastTableBody.innerHTML = '';
+            for (let i = 1; i < 4; i++) {
+                const previousPressure = data.daily.surface_pressure_max[i - 1];
+                const pressureTrend = getPressureTrend(data.daily.surface_pressure_max[i], previousPressure);
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td data-label="Date">${formatDate(data.daily.time[i])}</td>
+                    <td data-label="Min Temp (°F)">${data.daily.temperature_2m_min[i].toFixed(1)}</td>
+                    <td data-label="Max Temp (°F)">${data.daily.temperature_2m_max[i].toFixed(1)}</td>
+                    <td data-label="Precipitation (in)">${data.daily.precipitation_sum[i].toFixed(2)}</td>
+                    <td data-label="Max Surface Pressure (hPa)">${data.daily.surface_pressure_max[i].toFixed(1)}</td>
+                    <td data-label="Wind Direction">${degreesToCardinal(data.daily.wind_direction_10m_dominant[i])}</td>
+                    <td data-label="Pressure Trend">${pressureTrend}</td>
+                    <td data-label="Weather">${weatherCodeMap[data.daily.weather_code[i]] || "Unknown"}</td>
+                `;
+                pastTableBody.appendChild(row);
+            }
+
+            const forecastTableBody = document.getElementById('forecast-body');
+            forecastTableBody.innerHTML = '';
+            for (let i = 4; i < data.daily.time.length; i++) {
+                const previousPressure = i === 4 ? data.daily.surface_pressure_max[i - 1] : data.daily.surface_pressure_max[i - 1];
+                const pressureTrend = getPressureTrend(data.daily.surface_pressure_max[i], previousPressure);
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td data-label="Date">${formatDate(data.daily.time[i])}</td>
+                    <td data-label="Min Temp (°F)">${data.daily.temperature_2m_min[i].toFixed(1)}</td>
+                    <td data-label="Max Temp (°F)">${data.daily.temperature_2m_max[i].toFixed(1)}</td>
+                    <td data-label="Precipitation (in)">${data.daily.precipitation_sum[i].toFixed(2)}</td>
+                    <td data-label="Max Surface Pressure (hPa)">${data.daily.surface_pressure_max[i].toFixed(1)}</td>
+                    <td data-label="Wind Direction">${degreesToCardinal(data.daily.wind_direction_10m_dominant[i])}</td>
+                    <td data-label="Pressure Trend">${pressureTrend}</td>
+                    <td data-label="Weather">${weatherCodeMap[data.daily.weather_code[i]] || "Unknown"}</td>
+                `;
+                forecastTableBody.appendChild(row);
+            }
+
+            document.getElementById('weather-loading').style.display = 'none';
+        }
+
         async function init() {
             if (!streamName) {
                 document.getElementById('error').textContent = 'Error: No stream specified.';
@@ -373,7 +534,6 @@
             displayStreamDetails();
         }
 
-        // Fetch fishing spots data
         async function fetchData() {
             try {
                 const response = await fetch(SOURCE_URL);
@@ -381,13 +541,11 @@
                 const csvText = await response.text();
                 if (!csvText.trim()) throw new Error('Empty CSV data');
                 sourceData = parseCSV(csvText);
-                console.log('Raw Source Data:', sourceData.rows); // Debug: Log raw data
             } catch (error) {
                 document.getElementById('error').textContent = `Error fetching spots data: ${error.message}`;
             }
         }
 
-        // Fetch stream info data
         async function fetchStreamInfo() {
             try {
                 const response = await fetch(STREAM_INFO_URL);
@@ -400,7 +558,6 @@
             }
         }
 
-        // Parse CSV
         function parseCSV(csvText) {
             const lines = csvText.split('\n').filter(line => line.trim() !== '');
             const headers = lines[0].split(',').map(header => header.trim());
@@ -424,7 +581,6 @@
             return { headers, rows };
         }
 
-        // Toggle the WIDNR map visibility
         function toggleMap() {
             const iframeContainer = document.getElementById('stream-widnr-iframe');
             const fallback = document.getElementById('stream-widnr-fallback');
@@ -442,36 +598,21 @@
             }
         }
 
-        // Apply filters to the spots data
         function applyFilters() {
             const sectionFilter = document.getElementById('section-filter').value;
             const visitsFilter = document.getElementById('visits-filter').value;
             const ratingFilter = document.getElementById('rating-filter').value;
 
             filteredSpotsData = spotsData.filter(spot => {
-                // Section filter
-                if (sectionFilter !== 'All' && spot.section !== sectionFilter) {
-                    return false;
-                }
-
-                // Visits filter
-                if (visitsFilter !== '' && spot.visits < parseInt(visitsFilter)) {
-                    return false;
-                }
-
-                // Average Rating filter
-                if (ratingFilter !== '' && (spot.avgRating === 'N/A' || spot.avgRating < parseFloat(ratingFilter))) {
-                    return false;
-                }
-
+                if (sectionFilter !== 'All' && spot.section !== sectionFilter) return false;
+                if (visitsFilter !== '' && spot.visits < parseInt(visitsFilter)) return false;
+                if (ratingFilter !== '' && (spot.avgRating === 'N/A' || spot.avgRating < parseFloat(ratingFilter))) return false;
                 return true;
             });
 
-            // Re-sort the filtered data based on the current sort column and direction
             sortFilteredSpots();
         }
 
-        // Clear all filters
         function clearFilters() {
             document.getElementById('section-filter').value = 'All';
             document.getElementById('visits-filter').value = '';
@@ -480,7 +621,6 @@
             sortFilteredSpots();
         }
 
-        // Sort the filtered spots table
         function sortSpotsTable(colIndex) {
             if (sortSpotsColumn === colIndex) {
                 sortSpotsDirection = -sortSpotsDirection;
@@ -489,7 +629,6 @@
                 sortSpotsDirection = 1;
             }
 
-            // Update sort indicators
             const headers = document.querySelectorAll('.spots-table th');
             headers.forEach((th, index) => {
                 th.classList.remove('sort-asc', 'sort-desc');
@@ -501,23 +640,22 @@
             sortFilteredSpots();
         }
 
-        // Sort and render the filtered spots
         function sortFilteredSpots() {
             filteredSpotsData.sort((a, b) => {
                 let valueA, valueB;
-                if (sortSpotsColumn === 0) { // Spot (numeric)
+                if (sortSpotsColumn === 0) {
                     valueA = a.index;
                     valueB = b.index;
                     return sortSpotsDirection * (valueA - valueB);
-                } else if (sortSpotsColumn === 1) { // Section (custom order: Lower → Middle → Upper)
+                } else if (sortSpotsColumn === 1) {
                     valueA = sectionOrder[a.section] || 5;
                     valueB = sectionOrder[b.section] || 5;
                     return sortSpotsDirection * (valueA - valueB);
-                } else if (sortSpotsColumn === 2) { // Visits (numeric)
+                } else if (sortSpotsColumn === 2) {
                     valueA = a.visits;
                     valueB = b.visits;
                     return sortSpotsDirection * (valueA - valueB);
-                } else if (sortSpotsColumn === 3) { // Average Rating (numeric, handle N/A)
+                } else if (sortSpotsColumn === 3) {
                     valueA = a.avgRating !== 'N/A' ? a.avgRating : -1;
                     valueB = b.avgRating !== 'N/A' ? b.avgRating : -1;
                     return sortSpotsDirection * (valueA - valueB);
@@ -525,12 +663,10 @@
                 return 0;
             });
 
-            // Reassign Spot numbers based on the new sorted order
             filteredSpotsData.forEach((spot, idx) => {
                 spot.index = idx + 1;
             });
 
-            // Re-render the table body
             const spotsBody = document.getElementById('spots-body');
             const noResultsDiv = document.getElementById('no-results');
             spotsBody.innerHTML = '';
@@ -552,13 +688,11 @@
             }
         }
 
-        // Display stream details
         function displayStreamDetails() {
             const ratingMap = { 'E': 0, 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5, 'S+': 6 };
             const ratingReverseMap = { 0: 'E', 1: 'D', 2: 'C', 3: 'B', 4: 'A', 5: 'S', 6: 'S+' };
             const excludedStreams = ['Unknown', 'Central Sands', 'Minnesota', 'Southern WI'];
 
-            // Filter valid data for this stream
             const streamData = sourceData?.rows
                 .filter(row => {
                     if (row.length < 18) return false;
@@ -566,7 +700,7 @@
                     const stream = row[2]?.trim() || '';
                     const rating = row[17]?.toUpperCase();
                     const section = row[15]?.trim();
-                    const validRating = /^[SABCDE]|S+$/.test(rating); // Fixed regex to include S+
+                    const validRating = /^[SABCDE]|S+$/.test(rating);
                     const validStream = !excludedStreams.some(excluded => stream.includes(excluded));
                     return stream === streamName && validRating && validStream && !isNaN(date.getTime());
                 })
@@ -582,14 +716,13 @@
                     return { month, stream, rating, section, lat, lon, date, youtubeLink };
                 }) || [];
 
-            console.log('Processed Stream Data:', streamData); // Debug: Log processed data
-
             if (streamData.length === 0) {
                 document.getElementById('error').textContent = 'No data found for this stream.';
+                document.getElementById('weather-error').textContent = 'No fishing spots available for weather data.';
+                document.getElementById('weather-loading').style.display = 'none';
                 return;
             }
 
-            // Populate stream information
             if (streamInfoData) {
                 const streamInfoRow = streamInfoData.rows.find(row => row[0]?.trim() === streamName);
                 if (streamInfoRow) {
@@ -711,7 +844,6 @@
             document.getElementById('april-section').textContent = aprilSection;
 
             const sortedOutings = streamData.sort((a, b) => b.rating - a.rating).slice(0, 5);
-            console.log('Sorted Outings:', sortedOutings); // Debug: Log sorted outings
             const topOutingsBody = document.getElementById('top-outings-body');
             topOutingsBody.innerHTML = '';
             sortedOutings.forEach(outing => {
@@ -785,11 +917,36 @@
             filteredSpotsData = [...spotsData];
             sortFilteredSpots();
 
+            // Select coordinates for weather data (MIDDLE > UPPER > LOWER)
+            let selectedSpot = null;
+            let selectedSection = '';
+            selectedSpot = spotsData.find(spot => spot.section === 'MIDDLE');
+            if (selectedSpot) {
+                selectedSection = 'MIDDLE';
+            } else {
+                selectedSpot = spotsData.find(spot => spot.section === 'UPPER');
+                if (selectedSpot) {
+                    selectedSection = 'UPPER';
+                } else {
+                    selectedSpot = spotsData.find(spot => spot.section === 'LOWER');
+                    if (selectedSpot) {
+                        selectedSection = 'LOWER';
+                    }
+                }
+            }
+
+            if (selectedSpot) {
+                document.getElementById('weather-title').textContent = `Weather for ${streamName} (${selectedSection} Spot)`;
+                fetchWeatherData(selectedSpot.lat, selectedSpot.lon);
+            } else {
+                document.getElementById('weather-error').textContent = 'No valid fishing spots found for weather data.';
+                document.getElementById('weather-loading').style.display = 'none';
+            }
+
             document.getElementById('stream-details').style.display = 'block';
             document.getElementById('loading').style.display = 'none';
         }
 
-        // Initialize
         init();
     </script>
 </body>
