@@ -34,7 +34,8 @@
         .stream-info p, .weather-section p, .stats p {
             margin: 5px 0;
         }
-        .widnr-map-section .toggle-button {
+        .widnr-map-section .toggle-button, .past-weather-toggle, 
+        .stream-info-toggle, .month-stats-toggle, .top-outings-toggle {
             background-color: #4CAF50;
             color: white;
             border: none;
@@ -44,7 +45,8 @@
             display: inline-block;
             margin-bottom: 10px;
         }
-        .widnr-map-section .toggle-button:hover {
+        .widnr-map-section .toggle-button:hover, .past-weather-toggle:hover, 
+        .stream-info-toggle:hover, .month-stats-toggle:hover, .top-outings-toggle:hover {
             background-color: #45a049;
         }
         .widnr-map-section .iframe-container {
@@ -172,6 +174,12 @@
         .weather-section .weather-location {
             margin: 10px 0;
         }
+        .past-weather-container {
+            display: none;
+        }
+        .past-weather-container.active {
+            display: block;
+        }
 
         /* Widescreen Layout */
         @media screen and (min-width: 1200px) {
@@ -291,6 +299,24 @@
             .spots-table tr:hover, .top-outings-table tr:hover, .month-outing-table tr:hover, .weather-table tr:hover {
                 background-color: #fff;
             }
+            .stream-info-content, .month-stats-content, .top-outings-content {
+                display: none;
+            }
+            .stream-info-content.active, .month-stats-content.active, .top-outings-content.active {
+                display: block;
+            }
+            .stream-info-toggle, .month-stats-toggle, .top-outings-toggle {
+                display: block;
+            }
+        }
+
+        @media screen and (min-width: 601px) {
+            .stream-info-content, .month-stats-content, .top-outings-content {
+                display: block;
+            }
+            .stream-info-toggle, .month-stats-toggle, .top-outings-toggle {
+                display: none;
+            }
         }
     </style>
 </head>
@@ -307,12 +333,15 @@
             <div class="info-stats-container">
                 <div class="stream-info">
                     <h2>Stream Information</h2>
-                    <p><strong>Regulation:</strong> <span id="stream-regulation"></span></p>
-                    <p id="stream-special-regulations-container"><strong>Special Regulations:</strong> <span id="stream-special-regulations"></span></p>
-                    <p id="stream-gear-restrictions-container"><strong>Gear Restrictions:</strong> <span id="stream-gear-restrictions"></span></p>
-                    <p><strong>Season Information:</strong> <span id="stream-season-info"></span></p>
-                    <p><strong>Early Season:</strong> <span id="stream-early-season"></span></p>
-                    <p id="stream-widnr-link-container"><strong>WIDNR Map:</strong> <span id="stream-widnr-link"></span> | <span id="stream-widnr-external-link"></span></p>
+                    <button class="stream-info-toggle" onclick="toggleSection('stream-info-content')">Expand</button>
+                    <div class="stream-info-content">
+                        <p><strong>Regulation:</strong> <span id="stream-regulation"></span></p>
+                        <p id="stream-special-regulations-container"><strong>Special Regulations:</strong> <span id="stream-special-regulations"></span></p>
+                        <p id="stream-gear-restrictions-container"><strong>Gear Restrictions:</strong> <span id="stream-gear-restrictions"></span></p>
+                        <p><strong>Season Information:</strong> <span id="stream-season-info"></span></p>
+                        <p><strong>Early Season:</strong> <span id="stream-early-season"></span></p>
+                        <p id="stream-widnr-link-container"><strong>WIDNR Map:</strong> <span id="stream-widnr-link"></span> | <span id="stream-widnr-external-link"></span></p>
+                    </div>
                 </div>
                 <div class="stats">
                     <h2>Overall Statistics</h2>
@@ -328,22 +357,25 @@
                 <div class="total-rainfall" id="total-rainfall"></div>
                 <div class="current-weather" id="current-weather"></div>
                 <p class="weather-location" id="weather-location"></p>
-                <h3>Past 3 Days Weather</h3>
-                <table class="weather-table" id="past-weather-table">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Min Temp (°F)</th>
-                            <th>Max Temp (°F)</th>
-                            <th>Precipitation (in)</th>
-                            <th>Max Surface Pressure (hPa)</th>
-                            <th>Wind Direction</th>
-                            <th>Pressure Trend</th>
-                            <th>Weather</th>
-                        </tr>
-                    </thead>
-                    <tbody id="past-weather-body"></tbody>
-                </table>
+                <button class="past-weather-toggle" onclick="toggleSection('past-weather-container')">Show Past Weather</button>
+                <div class="past-weather-container" id="past-weather-container">
+                    <h3>Past 3 Days Weather</h3>
+                    <table class="weather-table" id="past-weather-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Min Temp (°F)</th>
+                                <th>Max Temp (°F)</th>
+                                <th>Precipitation (in)</th>
+                                <th>Max Surface Pressure (hPa)</th>
+                                <th>Wind Direction</th>
+                                <th>Pressure Trend</th>
+                                <th>Weather</th>
+                            </tr>
+                        </thead>
+                        <tbody id="past-weather-body"></tbody>
+                    </table>
+                </div>
                 <h3>Forecast (Today and Next 4 Days)</h3>
                 <table class="weather-table" id="forecast-table">
                     <thead>
@@ -409,9 +441,30 @@
             </div>
             <div class="month-stats">
                 <h2>Current Month (April) Statistics</h2>
-                <div class="stats-row">
-                    <p><strong>Typically Fished Section in April:</strong> <span id="april-section"></span></p>
-                    <table class="month-outing-table" id="month-outing-table">
+                <button class="month-stats-toggle" onclick="toggleSection('month-stats-content')">Expand</button>
+                <div class="month-stats-content">
+                    <div class="stats-row">
+                        <p><strong>Typically Fished Section in April:</strong> <span id="april-section"></span></p>
+                        <table class="month-outing-table" id="month-outing-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Rating</th>
+                                    <th>Location</th>
+                                    <th>Section</th>
+                                    <th>YouTube Link</th>
+                                </tr>
+                            </thead>
+                            <tbody id="month-outing-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="top-outings">
+                <h2>Top 5 Highest Rated Outings</h2>
+                <button class="top-outings-toggle" onclick="toggleSection('top-outings-content')">Expand</button>
+                <div class="top-outings-content">
+                    <table class="top-outings-table" id="top-outings-table">
                         <thead>
                             <tr>
                                 <th>Date</th>
@@ -421,24 +474,9 @@
                                 <th>YouTube Link</th>
                             </tr>
                         </thead>
-                        <tbody id="month-outing-body"></tbody>
+                        <tbody id="top-outings-body"></tbody>
                     </table>
                 </div>
-            </div>
-            <div class="top-outings">
-                <h2>Top 5 Highest Rated Outings</h2>
-                <table class="top-outings-table" id="top-outings-table">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Rating</th>
-                            <th>Location</th>
-                            <th>Section</th>
-                            <th>YouTube Link</th>
-                        </tr>
-                    </thead>
-                    <tbody id="top-outings-body"></tbody>
-                </table>
             </div>
         </div>
     </div>
@@ -595,6 +633,36 @@
             document.getElementById('weather-loading').style.display = 'none';
         }
 
+        function toggleSection(containerId) {
+            const container = document.getElementById(containerId);
+            const button = container.previousElementSibling;
+            const isExpanded = container.classList.contains('active');
+            if (isExpanded) {
+                container.classList.remove('active');
+                button.textContent = button.classList.contains('past-weather-toggle') ? 'Show Past Weather' : 'Expand';
+            } else {
+                container.classList.add('active');
+                button.textContent = button.classList.contains('past-weather-toggle') ? 'Hide Past Weather' : 'Collapse';
+            }
+        }
+
+        function toggleMap() {
+            const iframeContainer = document.getElementById('stream-widnr-iframe');
+            const fallback = document.getElementById('stream-widnr-fallback');
+            const toggleButton = document.querySelector('.toggle-button');
+            const isExpanded = iframeContainer.classList.contains('active');
+
+            if (isExpanded) {
+                iframeContainer.classList.remove('active');
+                fallback.classList.remove('active');
+                toggleButton.textContent = 'Expand Map';
+            } else {
+                iframeContainer.classList.add('active');
+                fallback.classList.add('active');
+                toggleButton.textContent = 'Collapse Map';
+            }
+        }
+
         async function init() {
             if (!streamName) {
                 document.getElementById('error').textContent = 'Error: No stream specified.';
@@ -652,23 +720,6 @@
                 return values;
             });
             return { headers, rows };
-        }
-
-        function toggleMap() {
-            const iframeContainer = document.getElementById('stream-widnr-iframe');
-            const fallback = document.getElementById('stream-widnr-fallback');
-            const toggleButton = document.querySelector('.toggle-button');
-            const isExpanded = iframeContainer.classList.contains('active');
-
-            if (isExpanded) {
-                iframeContainer.classList.remove('active');
-                fallback.classList.remove('active');
-                toggleButton.textContent = 'Expand Map';
-            } else {
-                iframeContainer.classList.add('active');
-                fallback.classList.add('active');
-                toggleButton.textContent = 'Collapse Map';
-            }
         }
 
         function applyFilters() {
@@ -1002,7 +1053,7 @@
                     selectedSection = 'UPPER';
                 } else {
                     selectedSpot = spotsData.find(spot => spot.section === 'LOWER');
-                    if (selectedSection) {
+                    if (selectedSpot) {
                         selectedSection = 'LOWER';
                     }
                 }
