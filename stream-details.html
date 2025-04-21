@@ -31,7 +31,7 @@
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
-        .stream-info p, .weather-section p {
+        .stream-info p, .weather-section p, .stats p {
             margin: 5px 0;
         }
         .widnr-map-section .toggle-button {
@@ -75,7 +75,6 @@
         }
         .spots-table, .top-outings-table, .month-outing-table, .weather-table {
             width: 100%;
-            max-width: 800px;
             margin: 20px 0;
             border-collapse: collapse;
             background-color: #fff;
@@ -161,10 +160,6 @@
         .month-stats .stats-row p {
             margin: 0 0 10px 0;
         }
-        .month-stats .month-outing-table {
-            width: 100%;
-            margin: 20px 0;
-        }
         .weather-section .current-weather, .weather-section .total-rainfall {
             margin-bottom: 20px;
             padding: 10px;
@@ -185,17 +180,35 @@
                 flex-wrap: wrap;
                 gap: 20px;
             }
-            .stream-info, .weather-section, .stats, .widnr-map-section {
+            .left-column {
                 width: 40%;
                 float: left;
                 margin-right: 20px;
             }
-            .spots-section, .month-stats, .top-outings {
+            .info-stats-container {
+                display: flex;
+                gap: 20px;
+            }
+            .stream-info, .stats {
+                flex: 1;
+                min-width: 200px;
+            }
+            .weather-section, .widnr-map-section {
+                width: 100%;
+            }
+            .right-column {
                 width: 55%;
                 float: right;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 20px;
+            }
+            .spots-section, .month-stats, .top-outings {
+                flex: 1;
+                min-width: 300px;
             }
             .spots-table, .month-outing-table, .top-outings-table {
-                max-width: 100%;
+                width: 100%;
             }
             .filter-section {
                 width: 100%;
@@ -204,10 +217,14 @@
 
         /* Mobile and Narrow Screens */
         @media screen and (max-width: 1199px) {
-            .stream-info, .weather-section, .stats, .widnr-map-section,
+            .left-column, .right-column,
+            .stream-info, .stats, .weather-section, .widnr-map-section,
             .spots-section, .month-stats, .top-outings {
                 width: 100%;
                 float: none;
+            }
+            .info-stats-container {
+                display: block;
             }
         }
 
@@ -286,107 +303,131 @@
     <div id="error" class="error"></div>
 
     <div id="stream-details" class="stream-details" style="display: none;">
-        <div class="stream-info">
-            <h2>Stream Information</h2>
-            <p><strong>Regulation:</strong> <span id="stream-regulation"></span></p>
-            <p id="stream-special-regulations-container"><strong>Special Regulations:</strong> <span id="stream-special-regulations"></span></p>
-            <p id="stream-gear-restrictions-container"><strong>Gear Restrictions:</strong> <span id="stream-gear-restrictions"></span></p>
-            <p><strong>Season Information:</strong> <span id="stream-season-info"></span></p>
-            <p><strong>Early Season:</strong> <span id="stream-early-season"></span></p>
-            <p id="stream-widnr-link-container"><strong>WIDNR Map:</strong> <span id="stream-widnr-link"></span> | <span id="stream-widnr-external-link"></span></p>
-        </div>
-
-        <div class="weather-section">
-            <h2 id="weather-title">Weather</h2>
-            <div id="weather-loading" class="weather-loading">Loading weather data...</div>
-            <div id="weather-error" class="weather-error"></div>
-            <div class="total-rainfall" id="total-rainfall"></div>
-            <div class="current-weather" id="current-weather"></div>
-            <p class="weather-location" id="weather-location"></p>
-            <h3>Past 3 Days Weather</h3>
-            <table class="weather-table" id="past-weather-table">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Min Temp (°F)</th>
-                        <th>Max Temp (°F)</th>
-                        <th>Precipitation (in)</th>
-                        <th>Max Surface Pressure (hPa)</th>
-                        <th>Wind Direction</th>
-                        <th>Pressure Trend</th>
-                        <th>Weather</th>
-                    </tr>
-                </thead>
-                <tbody id="past-weather-body"></tbody>
-            </table>
-            <h3>Forecast (Today and Next 4 Days)</h3>
-            <table class="weather-table" id="forecast-table">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Min Temp (°F)</th>
-                        <th>Max Temp (°F)</th>
-                        <th>Precipitation (in)</th>
-                        <th>Max Surface Pressure (hPa)</th>
-                        <th>Wind Direction</th>
-                        <th>Pressure Trend</th>
-                        <th>Weather</th>
-                    </tr>
-                </thead>
-                <tbody id="forecast-body"></tbody>
-            </table>
-        </div>
-
-        <div class="stats">
-            <h2>Overall Statistics</h2>
-            <p><strong>Total Visits:</strong> <span id="total-visits"></span></p>
-            <p><strong>Average Rating:</strong> <span id="avg-rating"></span></p>
-            <p><strong>Most Fished Section (Overall):</strong> <span id="most-fished-section"></span></p>
-        </div>
-
-        <div class="spots-section">
-            <h2>Fishing Spots (Downstream to Upstream)</h2>
-            <div class="filter-section">
-                <div>
-                    <label for="section-filter">Section:</label>
-                    <select id="section-filter" onchange="applyFilters()">
-                        <option value="All">All</option>
-                        <option value="LOWER">LOWER</option>
-                        <option value="MIDDLE">MIDDLE</option>
-                        <option value="UPPER">UPPER</option>
-                        <option value="UNKNOWN">UNKNOWN</option>
-                    </select>
+        <div class="left-column">
+            <div class="info-stats-container">
+                <div class="stream-info">
+                    <h2>Stream Information</h2>
+                    <p><strong>Regulation:</strong> <span id="stream-regulation"></span></p>
+                    <p id="stream-special-regulations-container"><strong>Special Regulations:</strong> <span id="stream-special-regulations"></span></p>
+                    <p id="stream-gear-restrictions-container"><strong>Gear Restrictions:</strong> <span id="stream-gear-restrictions"></span></p>
+                    <p><strong>Season Information:</strong> <span id="stream-season-info"></span></p>
+                    <p><strong>Early Season:</strong> <span id="stream-early-season"></span></p>
+                    <p id="stream-widnr-link-container"><strong>WIDNR Map:</strong> <span id="stream-widnr-link"></span> | <span id="stream-widnr-external-link"></span></p>
                 </div>
-                <div>
-                    <label for="visits-filter">Min Visits:</label>
-                    <input type="number" id="visits-filter" min="0" value="" placeholder="e.g., 2" oninput="applyFilters()">
+                <div class="stats">
+                    <h2>Overall Statistics</h2>
+                    <p><strong>Total Visits:</strong> <span id="total-visits"></span></p>
+                    <p><strong>Average Rating:</strong> <span id="avg-rating"></span></p>
+                    <p><strong>Most Fished Section (Overall):</strong> <span id="most-fished-section"></span></p>
                 </div>
-                <div>
-                    <label for="rating-filter">Min Avg Rating:</label>
-                    <input type="number" id="rating-filter" min="0" max="6" step="0.1" value="" placeholder="e.g., 3.5" oninput="applyFilters()">
-                </div>
-                <button onclick="clearFilters()">Clear Filters</button>
             </div>
-            <div id="no-results" class="no-results" style="display: none;">No spots match the filters.</div>
-            <table class="spots-table" id="spots-table">
-                <thead>
-                    <tr>
-                        <th onclick="sortSpotsTable(0)">Spot</th>
-                        <th onclick="sortSpotsTable(1)">Section</th>
-                        <th onclick="sortSpotsTable(2)">Visits</th>
-                        <th onclick="sortSpotsTable(3)">Average Rating</th>
-                        <th>Google Maps Link</th>
-                    </tr>
-                </thead>
-                <tbody id="spots-body"></tbody>
-            </table>
+            <div class="weather-section">
+                <h2 id="weather-title">Weather</h2>
+                <div id="weather-loading" class="weather-loading">Loading weather data...</div>
+                <div id="weather-error" class="weather-error"></div>
+                <div class="total-rainfall" id="total-rainfall"></div>
+                <div class="current-weather" id="current-weather"></div>
+                <p class="weather-location" id="weather-location"></p>
+                <h3>Past 3 Days Weather</h3>
+                <table class="weather-table" id="past-weather-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Min Temp (°F)</th>
+                            <th>Max Temp (°F)</th>
+                            <th>Precipitation (in)</th>
+                            <th>Max Surface Pressure (hPa)</th>
+                            <th>Wind Direction</th>
+                            <th>Pressure Trend</th>
+                            <th>Weather</th>
+                        </tr>
+                    </thead>
+                    <tbody id="past-weather-body"></tbody>
+                </table>
+                <h3>Forecast (Today and Next 4 Days)</h3>
+                <table class="weather-table" id="forecast-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Min Temp (°F)</th>
+                            <th>Max Temp (°F)</th>
+                            <th>Precipitation (in)</th>
+                            <th>Max Surface Pressure (hPa)</th>
+                            <th>Wind Direction</th>
+                            <th>Pressure Trend</th>
+                            <th>Weather</th>
+                        </tr>
+                    </thead>
+                    <tbody id="forecast-body"></tbody>
+                </table>
+            </div>
+            <div class="widnr-map-section" id="widnr-map-section">
+                <h2>WIDNR Map</h2>
+                <button class="toggle-button" onclick="toggleMap()">Expand Map</button>
+                <div id="stream-widnr-iframe" class="iframe-container"></div>
+                <div id="stream-widnr-fallback" class="iframe-fallback"></div>
+            </div>
         </div>
 
-        <div class="month-stats">
-            <h2>Current Month (April) Statistics</h2>
-            <div class="stats-row">
-                <p><strong>Typically Fished Section in April:</strong> <span id="april-section"></span></p>
-                <table class="month-outing-table" id="month-outing-table">
+        <div class="right-column">
+            <div class="spots-section">
+                <h2>Fishing Spots (Downstream to Upstream)</h2>
+                <div class="filter-section">
+                    <div>
+                        <label for="section-filter">Section:</label>
+                        <select id="section-filter" onchange="applyFilters()">
+                            <option value="All">All</option>
+                            <option value="LOWER">LOWER</option>
+                            <option value="MIDDLE">MIDDLE</option>
+                            <option value="UPPER">UPPER</option>
+                            <option value="UNKNOWN">UNKNOWN</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="visits-filter">Min Visits:</label>
+                        <input type="number" id="visits-filter" min="0" value="" placeholder="e.g., 2" oninput="applyFilters()">
+                    </div>
+                    <div>
+                        <label for="rating-filter">Min Avg Rating:</label>
+                        <input type="number" id="rating-filter" min="0" max="6" step="0.1" value="" placeholder="e.g., 3.5" oninput="applyFilters()">
+                    </div>
+                    <button onclick="clearFilters()">Clear Filters</button>
+                </div>
+                <div id="no-results" class="no-results" style="display: none;">No spots match the filters.</div>
+                <table class="spots-table" id="spots-table">
+                    <thead>
+                        <tr>
+                            <th onclick="sortSpotsTable(0)">Spot</th>
+                            <th onclick="sortSpotsTable(1)">Section</th>
+                            <th onclick="sortSpotsTable(2)">Visits</th>
+                            <th onclick="sortSpotsTable(3)">Average Rating</th>
+                            <th>Google Maps Link</th>
+                        </tr>
+                    </thead>
+                    <tbody id="spots-body"></tbody>
+                </table>
+            </div>
+            <div class="month-stats">
+                <h2>Current Month (April) Statistics</h2>
+                <div class="stats-row">
+                    <p><strong>Typically Fished Section in April:</strong> <span id="april-section"></span></p>
+                    <table class="month-outing-table" id="month-outing-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Rating</th>
+                                <th>Location</th>
+                                <th>Section</th>
+                                <th>YouTube Link</th>
+                            </tr>
+                        </thead>
+                        <tbody id="month-outing-body"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="top-outings">
+                <h2>Top 5 Highest Rated Outings</h2>
+                <table class="top-outings-table" id="top-outings-table">
                     <thead>
                         <tr>
                             <th>Date</th>
@@ -396,32 +437,9 @@
                             <th>YouTube Link</th>
                         </tr>
                     </thead>
-                    <tbody id="month-outing-body"></tbody>
+                    <tbody id="top-outings-body"></tbody>
                 </table>
             </div>
-        </div>
-        
-        <div class="top-outings">
-            <h2>Top 5 Highest Rated Outings</h2>
-            <table class="top-outings-table" id="top-outings-table">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Rating</th>
-                        <th>Location</th>
-                        <th>Section</th>
-                        <th>YouTube Link</th>
-                    </tr>
-                </thead>
-                <tbody id="top-outings-body"></tbody>
-            </table>
-        </div>
-
-        <div class="widnr-map-section" id="widnr-map-section">
-            <h2>WIDNR Map</h2>
-            <button class="toggle-button" onclick="toggleMap()">Expand Map</button>
-            <div id="stream-widnr-iframe" class="iframe-container"></div>
-            <div id="stream-widnr-fallback" class="iframe-fallback"></div>
         </div>
     </div>
 
@@ -501,7 +519,7 @@
         }
 
         async function fetchWeatherData(latitude, longitude) {
-            const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=precipitation_sum,surface_pressure_max,temperature_2m_min,temperature_2m_max,weather_code,wind_direction_10m_dominant¤t=temperature_2m,weather_code,surface_pressure,wind_direction_10m&timezone=America%2FChicago&past_days=4&forecast_days=5&wind_speed_unit=mph&temperature_unit=fahrenheit&precipitation_unit=inch`;
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=precipitation_sum,surface_pressure_max,temperature_2m_min,temperature_2m_max,weather_code,wind_direction_10m_dominant&current=temperature_2m,weather_code,surface_pressure,wind_direction_10m&timezone=America%2FChicago&past_days=4&forecast_days=5&wind_speed_unit=mph&temperature_unit=fahrenheit&precipitation_unit=inch`;
             try {
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -775,6 +793,7 @@
                 document.getElementById('error').textContent = 'No data found for this stream.';
                 document.getElementById('weather-error').textContent = 'No fishing spots available for weather data.';
                 document.getElementById('weather-loading').style.display = 'none';
+                document.getElementById('weather-location').textContent = 'Location: N/A';
                 return;
             }
 
@@ -983,7 +1002,7 @@
                     selectedSection = 'UPPER';
                 } else {
                     selectedSpot = spotsData.find(spot => spot.section === 'LOWER');
-                    if (selectedSpot) {
+                    if (selectedSection) {
                         selectedSection = 'LOWER';
                     }
                 }
