@@ -170,7 +170,45 @@
             padding: 10px;
             background-color: #e0f7fa;
             border-radius: 5px;
-            text-align: center;
+        }
+        .weather-section .current-weather p {
+            margin: 5px 0;
+        }
+        .weather-section .weather-location {
+            margin: 10px 0;
+        }
+
+        /* Widescreen Layout */
+        @media screen and (min-width: 1200px) {
+            .stream-details {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 20px;
+            }
+            .stream-info, .weather-section, .stats, .widnr-map-section {
+                width: 40%;
+                float: left;
+                margin-right: 20px;
+            }
+            .spots-section, .month-stats, .top-outings {
+                width: 55%;
+                float: right;
+            }
+            .spots-table, .month-outing-table, .top-outings-table {
+                max-width: 100%;
+            }
+            .filter-section {
+                width: 100%;
+            }
+        }
+
+        /* Mobile and Narrow Screens */
+        @media screen and (max-width: 1199px) {
+            .stream-info, .weather-section, .stats, .widnr-map-section,
+            .spots-section, .month-stats, .top-outings {
+                width: 100%;
+                float: none;
+            }
         }
 
         @media screen and (max-width: 600px) {
@@ -247,7 +285,7 @@
     <div id="loading" class="loading">Loading Stream Details...</div>
     <div id="error" class="error"></div>
 
-    <div id="stream-details" style="display: none;">
+    <div id="stream-details" class="stream-details" style="display: none;">
         <div class="stream-info">
             <h2>Stream Information</h2>
             <p><strong>Regulation:</strong> <span id="stream-regulation"></span></p>
@@ -264,6 +302,7 @@
             <div id="weather-error" class="weather-error"></div>
             <div class="total-rainfall" id="total-rainfall"></div>
             <div class="current-weather" id="current-weather"></div>
+            <p class="weather-location" id="weather-location"></p>
             <h3>Past 3 Days Weather</h3>
             <table class="weather-table" id="past-weather-table">
                 <thead>
@@ -305,41 +344,43 @@
             <p><strong>Most Fished Section (Overall):</strong> <span id="most-fished-section"></span></p>
         </div>
 
-        <h2>Fishing Spots (Downstream to Upstream)</h2>
-        <div class="filter-section">
-            <div>
-                <label for="section-filter">Section:</label>
-                <select id="section-filter" onchange="applyFilters()">
-                    <option value="All">All</option>
-                    <option value="LOWER">LOWER</option>
-                    <option value="MIDDLE">MIDDLE</option>
-                    <option value="UPPER">UPPER</option>
-                    <option value="UNKNOWN">UNKNOWN</option>
-                </select>
+        <div class="spots-section">
+            <h2>Fishing Spots (Downstream to Upstream)</h2>
+            <div class="filter-section">
+                <div>
+                    <label for="section-filter">Section:</label>
+                    <select id="section-filter" onchange="applyFilters()">
+                        <option value="All">All</option>
+                        <option value="LOWER">LOWER</option>
+                        <option value="MIDDLE">MIDDLE</option>
+                        <option value="UPPER">UPPER</option>
+                        <option value="UNKNOWN">UNKNOWN</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="visits-filter">Min Visits:</label>
+                    <input type="number" id="visits-filter" min="0" value="" placeholder="e.g., 2" oninput="applyFilters()">
+                </div>
+                <div>
+                    <label for="rating-filter">Min Avg Rating:</label>
+                    <input type="number" id="rating-filter" min="0" max="6" step="0.1" value="" placeholder="e.g., 3.5" oninput="applyFilters()">
+                </div>
+                <button onclick="clearFilters()">Clear Filters</button>
             </div>
-            <div>
-                <label for="visits-filter">Min Visits:</label>
-                <input type="number" id="visits-filter" min="0" value="" placeholder="e.g., 2" oninput="applyFilters()">
-            </div>
-            <div>
-                <label for="rating-filter">Min Avg Rating:</label>
-                <input type="number" id="rating-filter" min="0" max="6" step="0.1" value="" placeholder="e.g., 3.5" oninput="applyFilters()">
-            </div>
-            <button onclick="clearFilters()">Clear Filters</button>
+            <div id="no-results" class="no-results" style="display: none;">No spots match the filters.</div>
+            <table class="spots-table" id="spots-table">
+                <thead>
+                    <tr>
+                        <th onclick="sortSpotsTable(0)">Spot</th>
+                        <th onclick="sortSpotsTable(1)">Section</th>
+                        <th onclick="sortSpotsTable(2)">Visits</th>
+                        <th onclick="sortSpotsTable(3)">Average Rating</th>
+                        <th>Google Maps Link</th>
+                    </tr>
+                </thead>
+                <tbody id="spots-body"></tbody>
+            </table>
         </div>
-        <div id="no-results" class="no-results" style="display: none;">No spots match the filters.</div>
-        <table class="spots-table" id="spots-table">
-            <thead>
-                <tr>
-                    <th onclick="sortSpotsTable(0)">Spot</th>
-                    <th onclick="sortSpotsTable(1)">Section</th>
-                    <th onclick="sortSpotsTable(2)">Visits</th>
-                    <th onclick="sortSpotsTable(3)">Average Rating</th>
-                    <th>Google Maps Link</th>
-                </tr>
-            </thead>
-            <tbody id="spots-body"></tbody>
-        </table>
 
         <div class="month-stats">
             <h2>Current Month (April) Statistics</h2>
@@ -398,6 +439,8 @@
         let sortSpotsColumn = 1;
         let sortSpotsDirection = 1;
         let widnrLink = '';
+        let weatherLatitude = null;
+        let weatherLongitude = null;
 
         const sectionOrder = { 'LOWER': 1, 'MIDDLE': 2, 'UPPER': 3, 'UNKNOWN': 4 };
         const urlParams = new URLSearchParams(window.location.search);
@@ -458,7 +501,7 @@
         }
 
         async function fetchWeatherData(latitude, longitude) {
-            const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=precipitation_sum,surface_pressure_max,temperature_2m_min,temperature_2m_max,weather_code,wind_direction_10m_dominant&current=temperature_2m,weather_code,surface_pressure,wind_direction_10m&timezone=America%2FChicago&past_days=4&forecast_days=5&wind_speed_unit=mph&temperature_unit=fahrenheit&precipitation_unit=inch`;
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=precipitation_sum,surface_pressure_max,temperature_2m_min,temperature_2m_max,weather_code,wind_direction_10m_dominant¤t=temperature_2m,weather_code,surface_pressure,wind_direction_10m&timezone=America%2FChicago&past_days=4&forecast_days=5&wind_speed_unit=mph&temperature_unit=fahrenheit&precipitation_unit=inch`;
             try {
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -479,7 +522,19 @@
             const currentPressure = data.current.surface_pressure.toFixed(1);
             const currentWindDir = degreesToCardinal(data.current.wind_direction_10m);
             const currentWeatherDesc = weatherCodeMap[data.current.weather_code] || "Unknown";
-            currentWeather.innerHTML = `Temperature: ${currentTemp}°F<br>Pressure: ${currentPressure} hPa<br>Wind Direction: ${currentWindDir}<br>Weather: ${currentWeatherDesc}`;
+            currentWeather.innerHTML = `
+                <p><strong>Temperature:</strong> ${currentTemp}°F</p>
+                <p><strong>Pressure:</strong> ${currentPressure} hPa</p>
+                <p><strong>Wind Direction:</strong> ${currentWindDir}</p>
+                <p><strong>Weather:</strong> ${currentWeatherDesc}</p>
+            `;
+
+            const weatherLocation = document.getElementById('weather-location');
+            if (weatherLatitude && weatherLongitude) {
+                weatherLocation.innerHTML = `<strong>Location:</strong> <a href="https://www.google.com/maps?q=${weatherLatitude},${weatherLongitude}" target="_blank">View on Google Maps</a>`;
+            } else {
+                weatherLocation.innerText = 'Location: N/A';
+            }
 
             const pastTableBody = document.getElementById('past-weather-body');
             pastTableBody.innerHTML = '';
@@ -917,7 +972,6 @@
             filteredSpotsData = [...spotsData];
             sortFilteredSpots();
 
-            // Select coordinates for weather data (MIDDLE > UPPER > LOWER)
             let selectedSpot = null;
             let selectedSection = '';
             selectedSpot = spotsData.find(spot => spot.section === 'MIDDLE');
@@ -937,10 +991,13 @@
 
             if (selectedSpot) {
                 document.getElementById('weather-title').textContent = `Weather for ${streamName} (${selectedSection} Spot)`;
+                weatherLatitude = selectedSpot.lat;
+                weatherLongitude = selectedSpot.lon;
                 fetchWeatherData(selectedSpot.lat, selectedSpot.lon);
             } else {
                 document.getElementById('weather-error').textContent = 'No valid fishing spots found for weather data.';
                 document.getElementById('weather-loading').style.display = 'none';
+                document.getElementById('weather-location').textContent = 'Location: N/A';
             }
 
             document.getElementById('stream-details').style.display = 'block';
