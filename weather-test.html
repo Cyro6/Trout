@@ -3,467 +3,234 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plum Creek Weather</title>
+    <title>Weather Forecast - Plum Creek, MN</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
             background-color: #f4f4f9;
-            font-size: 16px;
         }
-        h1, h2 {
+        h1 {
+            text-align: center;
             color: #333;
         }
-        a {
-            color: #4CAF50;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-        .weather-section {
-            margin: 20px 0;
-            padding: 15px;
-            background-color: #fff;
+        .summary {
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #e0f7fa;
             border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            text-align: center;
         }
-        .weather-table {
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        table {
             width: 100%;
-            max-width: 800px;
-            margin: 20px 0;
             border-collapse: collapse;
+            margin-bottom: 20px;
             background-color: #fff;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
-        .weather-table th, .weather-table td {
-            padding: 12px;
+        th, td {
+            padding: 10px;
             text-align: left;
             border: 1px solid #ddd;
         }
-        .weather-table th {
+        th {
             background-color: #4CAF50;
             color: white;
         }
-        .weather-table tr:nth-child(even) {
+        tr:nth-child(even) {
             background-color: #f9f9f9;
         }
-        .weather-table tr:hover {
-            background-color: #f1f1f1;
-        }
-        .loading {
+        .current-weather {
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #e0f7fa;
+            border-radius: 5px;
             text-align: center;
-            font-size: 1.2em;
-            color: #555;
-        }
-        .error {
-            text-align: center;
-            color: red;
-        }
-        .debug {
-            text-align: center;
-            font-size: 1em;
-            color: #555;
-            margin-bottom: 10px;
-        }
-        /* Mobile Responsiveness */
-        @media screen and (max-width: 600px) {
-            body {
-                margin: 10px;
-                font-size: 14px;
-            }
-            h1 {
-                font-size: 1.5em;
-            }
-            h2 {
-                font-size: 1.2em;
-            }
-            .weather-section {
-                padding: 10px;
-            }
-            .weather-table {
-                box-shadow: none;
-            }
-            .weather-table thead {
-                display: none;
-            }
-            .weather-table tr {
-                display: block;
-                margin-bottom: 10px;
-                border: 1px solid #ddd;
-                border-radius: 5px;
-            }
-            .weather-table td {
-                display: block;
-                text-align: right;
-                padding: 8px;
-                border: none;
-                border-bottom: 1px solid #eee;
-                position: relative;
-            }
-            .weather-table td::before {
-                content: attr(data-label);
-                position: absolute;
-                left: 8px;
-                width: 45%;
-                text-align: left;
-                font-weight: bold;
-                color: #333;
-            }
-            .weather-table td:last-child {
-                border-bottom: none;
-            }
-            .weather-table tr:hover {
-                background-color: #fff;
-            }
         }
     </style>
 </head>
 <body>
-    <h1>Plum Creek Weather</h1>
-    <div id="debug" class="debug"></div>
-    <div id="loading" class="loading">Loading Weather Data...</div>
-    <div id="error" class="error"></div>
-
-    <div id="weather-details" style="display: none;">
-        <div class="weather-section">
-            <h2>Past 3 Days Weather</h2>
-            <table class="weather-table" id="past-weather-table">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Location</th>
-                        <th>Min Temp (°F)</th>
-                        <th>Max Temp (°F)</th>
-                        <th>Weather Condition</th>
-                        <th>Precipitation (in)</th>
-                        <th>Recent Rainfall (3 days, in)</th>
-                        <th>Wind Speed (mph)</th>
-                        <th>Wind Direction</th>
-                        <th>Pressure at Noon (hPa)</th>
-                        <th>Pressure Trend</th>
-                    </tr>
-                </thead>
-                <tbody id="past-weather-body"></tbody>
-            </table>
-
-            <h2>Today's Weather Forecast</h2>
-            <table class="weather-table" id="forecast-weather-table">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Location</th>
-                        <th>Min Temp (°F)</th>
-                        <th>Max Temp (°F)</th>
-                        <th>Weather Condition</th>
-                        <th>Precipitation (in)</th>
-                        <th>Recent Rainfall (3 days, in)</th>
-                        <th>Wind Speed (mph)</th>
-                        <th>Wind Direction</th>
-                        <th>Pressure at Noon (hPa)</th>
-                        <th>Pressure Trend</th>
-                    </tr>
-                </thead>
-                <tbody id="forecast-weather-body"></tbody>
-            </table>
+    <div class="container">
+        <h1>Weather Data for Plum Creek, MN</h1>
+        
+        <div class="summary">
+            <h2>Past 3 Days Total Rainfall</h2>
+            <p id="total-rainfall">Loading rainfall data...</p>
         </div>
+
+        <div class="current-weather">
+            <h2>Current Weather</h2>
+            <p id="current-weather">Loading current weather...</p>
+        </div>
+
+        <h2>Past 3 Days Weather</h2>
+        <table id="past-weather-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Min Temp (°F)</th>
+                    <th>Max Temp (°F)</th>
+                    <th>Precipitation (in)</th>
+                    <th>Max Surface Pressure (hPa)</th>
+                    <th>Wind Direction</th>
+                    <th>Pressure Trend</th>
+                    <th>Weather</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <h2>Forecast (Today and Next 4 Days)</h2>
+        <table id="forecast-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Min Temp (°F)</th>
+                    <th>Max Temp (°F)</th>
+                    <th>Precipitation (in)</th>
+                    <th>Max Surface Pressure (hPa)</th>
+                    <th>Wind Direction</th>
+                    <th>Pressure Trend</th>
+                    <th>Weather</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
     </div>
 
     <script>
-        let pastWeatherData = [];
-        let forecastWeatherData = [];
-        const avgLat = 44.53980;
-        const avgLon = -92.07398;
-        const streamName = 'Plum Creek';
+        // WMO Weather Code to Description Mapping
+        const weatherCodeMap = {
+            0: "Clear sky",
+            1: "Mainly clear",
+            2: "Partly cloudy",
+            3: "Overcast",
+            45: "Fog",
+            48: "Depositing rime fog",
+            51: "Light drizzle",
+            53: "Moderate drizzle",
+            55: "Dense drizzle",
+            61: "Light rain",
+            63: "Moderate rain",
+            65: "Heavy rain",
+            71: "Light snow",
+            73: "Moderate snow",
+            75: "Heavy snow",
+            80: "Light rain showers",
+            81: "Moderate rain showers",
+            82: "Heavy rain showers",
+            95: "Thunderstorm",
+            96: "Thunderstorm with slight hail",
+            99: "Thunderstorm with heavy hail"
+        };
 
-        // Weather code mapping
-        function getWeatherCondition(code) {
-            if (code === null || code === undefined) return 'N/A';
-            switch (code) {
-                case 0: return 'Sunny';
-                case 1: return 'Mostly Sunny';
-                case 2: return 'Partly Cloudy';
-                case 3: return 'Cloudy';
-                case 45: return 'Foggy';
-                case 48: return 'Foggy';
-                case 51: case 53: case 55: return 'Drizzle';
-                case 61: case 63: case 65: return 'Rainy';
-                case 66: case 67: return 'Freezing Rain';
-                case 71: case 73: case 75: return 'Snow';
-                case 77: return 'Snow Grains';
-                case 80: case 81: case 82: return 'Rain Showers';
-                case 85: case 86: return 'Snow Showers';
-                case 95: return 'Thunderstorm';
-                case 96: case 99: return 'Thunderstorm with Hail';
-                default: return 'Unknown';
-            }
-        }
-
-        // Convert wind direction (degrees) to cardinal direction
+        // Convert degrees to cardinal direction
         function degreesToCardinal(degrees) {
-            if (degrees === 'N/A' || isNaN(degrees)) return 'N/A';
-            const directions = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+            const directions = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", 
+                               "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
             const index = Math.round(degrees / 22.5) % 16;
             return directions[index];
         }
 
-        // Get dynamic date ranges
-        function getDateRanges() {
-            const today = new Date();
-            const yesterday = new Date(today);
-            yesterday.setDate(today.getDate() - 1);
-            const pastStart = new Date(yesterday);
-            pastStart.setDate(yesterday.getDate() - 2);
-
-            const formatDate = date => date.toISOString().split('T')[0];
-            return {
-                pastStart: formatDate(pastStart),
-                pastEnd: formatDate(yesterday),
-                forecastStart: formatDate(today),
-                pastDates: [0, 1, 2].map(i => {
-                    const d = new Date(pastStart);
-                    d.setDate(pastStart.getDate() + i);
-                    return formatDate(d);
-                }),
-                forecastDates: [formatDate(today)],
-                today: formatDate(today)
-            };
+        // Format date to MM/DD/YYYY
+        function formatDate(isoDate) {
+            const [year, month, day] = isoDate.split('-');
+            return `${month}/${day}/${year}`;
         }
 
-        // Fetch weather data
+        // Determine pressure trend
+        function getPressureTrend(currentPressure, previousPressure) {
+            if (previousPressure === null) return "N/A";
+            const deltaHPa = currentPressure - previousPressure;
+            if (deltaHPa >= 5) return "Significantly Rising";
+            if (deltaHPa >= 1) return "Rising";
+            if (deltaHPa > -1) return "Steady";
+            if (deltaHPa > -5) return "Falling";
+            return "Significantly Falling";
+        }
+
+        // Calculate total rainfall for past 3 days
+        function calculateTotalRainfall(data) {
+            let total = 0;
+            for (let i = 1; i < 4; i++) { // Indices 1, 2, 3 for past 3 days
+                total += data.daily.precipitation_sum[i];
+            }
+            return total.toFixed(2);
+        }
+
+        // Fetch weather data from Open-Meteo API
         async function fetchWeatherData() {
-            if (!avgLat || !avgLon) {
-                document.getElementById('past-weather-body').innerHTML = '<tr><td colspan="11" data-label="Result">No coordinates available for weather data.</td></tr>';
-                document.getElementById('forecast-weather-body').innerHTML = '<tr><td colspan="11" data-label="Result">No coordinates available for weather data.</td></tr>';
-                return;
-            }
-
-            const { pastStart, pastEnd, forecastStart, pastDates, forecastDates, today } = getDateRanges();
-
-            // Display assumed today date for debugging
-            document.getElementById('debug').textContent = `Assumed Today: ${new Date(today).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`;
-
-            // Single forecast API call
+            const url = "https://api.open-meteo.com/v1/forecast?latitude=44.5398&longitude=-92.07398&daily=precipitation_sum,surface_pressure_max,temperature_2m_min,temperature_2m_max,weather_code,wind_direction_10m_dominant&current=temperature_2m,weather_code,surface_pressure,wind_direction_10m&timezone=America%2FChicago&past_days=4&forecast_days=5&wind_speed_unit=mph&temperature_unit=fahrenheit&precipitation_unit=inch";
             try {
-                const response = await fetch(
-                    `https://api.open-meteo.com/v1/forecast?latitude=${avgLat}&longitude=${avgLon}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,weather_code&hourly=pressure_msl,wind_direction_10m&past_days=3&forecast_days=3&timezone=auto&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch`
-                );
-                if (!response.ok) throw new Error(`HTTP ${response.status}: Failed to fetch weather data`);
+                const response = await fetch(url);
                 const data = await response.json();
-
-                // Debug precipitation data
-                console.log('Weather Precipitation (in):', data.daily.precipitation_sum.map((val, i) => ({
-                    date: data.daily.time[i],
-                    precipitation: val?.toFixed(2) ?? 'N/A'
-                })));
-
-                // Process past weather (3 days ending yesterday)
-                pastWeatherData = data.daily.time.slice(0, 3).map((date, index) => {
-                    if (!pastDates.includes(date)) return null;
-                    const noonIndex = data.hourly.time.findIndex(t => t.includes(`${date}T12:00`));
-                    const pressure = noonIndex !== -1 ? Math.round(data.hourly.pressure_msl[noonIndex]) : 'N/A';
-                    const wind_direction = noonIndex !== -1 ? data.hourly.wind_direction_10m[noonIndex] : 'N/A';
-
-                    const temp_max = data.daily.temperature_2m_max[index]?.toFixed(1) ?? 'N/A';
-                    const temp_min = data.daily.temperature_2m_min[index]?.toFixed(1) ?? 'N/A';
-                    const precipitation = parseFloat(data.daily.precipitation_sum[index])?.toFixed(2) ?? 'N/A';
-                    const wind_speed = data.daily.wind_speed_10m_max[index]?.toFixed(1) ?? 'N/A';
-                    const weather_code = data.daily.weather_code[index] ?? 'N/A';
-                    const recent_rainfall = data.daily.precipitation_sum
-                        .slice(0, index + 1)
-                        .reduce((sum, val) => sum + (parseFloat(val) || 0), 0)
-                        .toFixed(2);
-
-                    let pressureTrend = 'N/A';
-                    if (pressure !== 'N/A' && index > 0) {
-                        const prevNoon = data.hourly.time.findIndex(t => t.includes(`${data.daily.time[index - 1]}T12:00`));
-                        if (prevNoon !== -1) {
-                            const prevPressure = data.hourly.pressure_msl[prevNoon];
-                            const currPressure = data.hourly.pressure_msl[noonIndex];
-                            const MIN_CHANGE = 1.0;
-                            const SIGNIFICANT_CHANGE = 5.0;
-                            const change = currPressure - prevPressure;
-                            if (change > SIGNIFICANT_CHANGE) {
-                                pressureTrend = 'Significant Rising';
-                            } else if (change > MIN_CHANGE) {
-                                pressureTrend = 'Rising';
-                            } else if (change < -SIGNIFICANT_CHANGE) {
-                                pressureTrend = 'Significant Falling';
-                            } else if (change < -MIN_CHANGE) {
-                                pressureTrend = 'Falling';
-                            } else {
-                                pressureTrend = 'Stable';
-                            }
-                        }
-                    }
-
-                    return {
-                        date,
-                        lat: avgLat,
-                        lon: avgLon,
-                        temp_max,
-                        temp_min,
-                        precipitation,
-                        recent_rainfall,
-                        wind_speed,
-                        wind_direction,
-                        pressure,
-                        pressure_trend: pressureTrend,
-                        weather_code
-                    };
-                }).filter(item => item !== null);
-
-                // Process forecast weather (today)
-                forecastWeatherData = data.daily.time.slice(3, 4).map((date, index) => {
-                    const adjustedIndex = index + 3;
-                    const noonIndex = data.hourly.time.findIndex(t => t.includes(`${date}T12:00`));
-                    const pressure = noonIndex !== -1 ? Math.round(data.hourly.pressure_msl[noonIndex]) : 'N/A';
-                    const wind_direction = noonIndex !== -1 ? data.hourly.wind_direction_10m[noonIndex] : 'N/A';
-
-                    const temp_max = data.daily.temperature_2m_max[adjustedIndex]?.toFixed(1) ?? 'N/A';
-                    const temp_min = data.daily.temperature_2m_min[adjustedIndex]?.toFixed(1) ?? 'N/A';
-                    const precipitation = parseFloat(data.daily.precipitation_sum[adjustedIndex])?.toFixed(2) ?? 'N/A';
-                    const wind_speed = data.daily.wind_speed_10m_max[adjustedIndex]?.toFixed(1) ?? 'N/A';
-                    const weather_code = data.daily.weather_code[adjustedIndex] ?? 'N/A';
-                    const recent_rainfall = pastWeatherData.find(w => w.date === pastEnd)?.recent_rainfall || 'N/A';
-
-                    let pressureTrend = 'N/A';
-                    if (pressure !== 'N/A') {
-                        const prevNoon = data.hourly.time.findIndex(t => t.includes(`${data.daily.time[adjustedIndex - 1]}T12:00`));
-                        if (prevNoon !== -1) {
-                            const prevPressure = data.hourly.pressure_msl[prevNoon];
-                            const currPressure = data.hourly.pressure_msl[noonIndex];
-                            const MIN_CHANGE = 1.0;
-                            const SIGNIFICANT_CHANGE = 5.0;
-                            const change = currPressure - prevPressure;
-                            if (change > SIGNIFICANT_CHANGE) {
-                                pressureTrend = 'Significant Rising';
-                            } else if (change > MIN_CHANGE) {
-                                pressureTrend = 'Rising';
-                            } else if (change < -SIGNIFICANT_CHANGE) {
-                                pressureTrend = 'Significant Falling';
-                            } else if (change < -MIN_CHANGE) {
-                                pressureTrend = 'Falling';
-                            } else {
-                                pressureTrend = 'Stable';
-                            }
-                        }
-                    }
-
-                    return {
-                        date,
-                        lat: avgLat,
-                        lon: avgLon,
-                        temp_max,
-                        temp_min,
-                        precipitation,
-                        recent_rainfall,
-                        wind_speed,
-                        wind_direction,
-                        pressure,
-                        pressure_trend: pressureTrend,
-                        weather_code
-                    };
-                });
+                displayWeatherData(data);
             } catch (error) {
-                pastWeatherData = pastDates.map(date => ({
-                    date,
-                    lat: avgLat,
-                    lon: avgLon,
-                    temp_max: 'N/A',
-                    temp_min: 'N/A',
-                    precipitation: 'N/A',
-                    recent_rainfall: 'N/A',
-                    wind_speed: 'N/A',
-                    wind_direction: 'N/A',
-                    pressure: 'N/A',
-                    pressure_trend: 'N/A',
-                    weather_code: 'N/A'
-                }));
-                forecastWeatherData = forecastDates.map(date => ({
-                    date,
-                    lat: avgLat,
-                    lon: avgLon,
-                    temp_max: 'N/A',
-                    temp_min: 'N/A',
-                    precipitation: 'N/A',
-                    recent_rainfall: 'N/A',
-                    wind_speed: 'N/A',
-                    wind_direction: 'N/A',
-                    pressure: 'N/A',
-                    pressure_trend: 'N/A',
-                    weather_code: 'N/A'
-                }));
-                document.getElementById('error').textContent += `Error fetching weather: ${error.message}. `;
+                console.error("Error fetching weather data:", error);
+                document.getElementById("current-weather").innerText = "Error loading weather data.";
+                document.getElementById("total-rainfall").innerText = "Error loading rainfall data.";
             }
         }
 
-        // Display weather data
-        function displayWeatherData() {
-            const pastWeatherBody = document.getElementById('past-weather-body');
-            pastWeatherBody.innerHTML = '';
-            pastWeatherData.forEach(weather => {
-                const tr = document.createElement('tr');
-                const formattedDate = new Date(weather.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-                const locationLink = weather.lat && weather.lon ? 
-                    `<a href="https://www.google.com/maps?q=${weather.lat},${weather.lon}" target="_blank">View on Google Maps</a>` : 
-                    'N/A';
-                tr.innerHTML = `
-                    <td data-label="Date">${formattedDate}</td>
-                    <td data-label="Location">${locationLink}</td>
-                    <td data-label="Min Temp (°F)">${weather.temp_min}</td>
-                    <td data-label="Max Temp (°F)">${weather.temp_max}</td>
-                    <td data-label="Weather Condition">${getWeatherCondition(weather.weather_code)}</td>
-                    <td data-label="Precipitation (in)">${weather.precipitation}</td>
-                    <td data-label="Recent Rainfall (3 days, in)">${weather.recent_rainfall}</td>
-                    <td data-label="Wind Speed (mph)">${weather.wind_speed}</td>
-                    <td data-label="Wind Direction">${degreesToCardinal(weather.wind_direction)}</td>
-                    <td data-label="Pressure at Noon (hPa)">${weather.pressure}</td>
-                    <td data-label="Pressure Trend">${weather.pressure_trend}</td>
+        // Display weather data in tables
+        function displayWeatherData(data) {
+            // Total Rainfall
+            const totalRainfall = document.getElementById("total-rainfall");
+            totalRainfall.innerText = `Total Rainfall: ${calculateTotalRainfall(data)} inches`;
+
+            // Current Weather
+            const currentWeather = document.getElementById("current-weather");
+            const currentTemp = data.current.temperature_2m.toFixed(1);
+            const currentPressure = data.current.surface_pressure.toFixed(1);
+            const currentWindDir = degreesToCardinal(data.current.wind_direction_10m);
+            const currentWeatherDesc = weatherCodeMap[data.current.weather_code] || "Unknown";
+            currentWeather.innerHTML = `Temperature: ${currentTemp}°F<br>Pressure: ${currentPressure} hPa<br>Wind Direction: ${currentWindDir}<br>Weather: ${currentWeatherDesc}`;
+
+            // Past Weather Table (show last 3 of 4 past days)
+            const pastTableBody = document.querySelector("#past-weather-table tbody");
+            for (let i = 1; i < 4; i++) { // Indices 1, 2, 3 for April 18th, 19th, 20th
+                const previousPressure = data.daily.surface_pressure_max[i - 1];
+                const pressureTrend = getPressureTrend(data.daily.surface_pressure_max[i], previousPressure);
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${formatDate(data.daily.time[i])}</td>
+                    <td>${data.daily.temperature_2m_min[i].toFixed(1)}</td>
+                    <td>${data.daily.temperature_2m_max[i].toFixed(1)}</td>
+                    <td>${data.daily.precipitation_sum[i].toFixed(2)}</td>
+                    <td>${data.daily.surface_pressure_max[i].toFixed(1)}</td>
+                    <td>${degreesToCardinal(data.daily.wind_direction_10m_dominant[i])}</td>
+                    <td>${pressureTrend}</td>
+                    <td>${weatherCodeMap[data.daily.weather_code[i]] || "Unknown"}</td>
                 `;
-                pastWeatherBody.appendChild(tr);
-            });
-            if (pastWeatherData.length === 0) {
-                pastWeatherBody.innerHTML = '<tr><td colspan="11" data-label="Result">No past weather data available.</td></tr>';
+                pastTableBody.appendChild(row);
             }
 
-            const forecastWeatherBody = document.getElementById('forecast-weather-body');
-            forecastWeatherBody.innerHTML = '';
-            forecastWeatherData.forEach(weather => {
-                const tr = document.createElement('tr');
-                const formattedDate = new Date(weather.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-                const locationLink = weather.lat && weather.lon ? 
-                    `<a href="https://www.google.com/maps?q=${weather.lat},${weather.lon}" target="_blank">View on Google Maps</a>` : 
-                    'N/A';
-                tr.innerHTML = `
-                    <td data-label="Date">${formattedDate}</td>
-                    <td data-label="Location">${locationLink}</td>
-                    <td data-label="Min Temp (°F)">${weather.temp_min}</td>
-                    <td data-label="Max Temp (°F)">${weather.temp_max}</td>
-                    <td data-label="Weather Condition">${getWeatherCondition(weather.weather_code)}</td>
-                    <td data-label="Precipitation (in)">${weather.precipitation}</td>
-                    <td data-label="Recent Rainfall (3 days, in)">${weather.recent_rainfall}</td>
-                    <td data-label="Wind Speed (mph)">${weather.wind_speed}</td>
-                    <td data-label="Wind Direction">${degreesToCardinal(weather.wind_direction)}</td>
-                    <td data-label="Pressure at Noon (hPa)">${weather.pressure}</td>
-                    <td data-label="Pressure Trend">${weather.pressure_trend}</td>
+            // Forecast Table (Today + Next 4 Days)
+            const forecastTableBody = document.querySelector("#forecast-table tbody");
+            for (let i = 4; i < data.daily.time.length; i++) { // Indices 4 to 8 for April 21st to 25th
+                const previousPressure = i === 4 ? data.daily.surface_pressure_max[i - 1] : data.daily.surface_pressure_max[i - 1];
+                const pressureTrend = getPressureTrend(data.daily.surface_pressure_max[i], previousPressure);
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${formatDate(data.daily.time[i])}</td>
+                    <td>${data.daily.temperature_2m_min[i].toFixed(1)}</td>
+                    <td>${data.daily.temperature_2m_max[i].toFixed(1)}</td>
+                    <td>${data.daily.precipitation_sum[i].toFixed(2)}</td>
+                    <td>${data.daily.surface_pressure_max[i].toFixed(1)}</td>
+                    <td>${degreesToCardinal(data.daily.wind_direction_10m_dominant[i])}</td>
+                    <td>${pressureTrend}</td>
+                    <td>${weatherCodeMap[data.daily.weather_code[i]] || "Unknown"}</td>
                 `;
-                forecastWeatherBody.appendChild(tr);
-            });
-            if (forecastWeatherData.length === 0) {
-                forecastWeatherBody.innerHTML = '<tr><td colspan="11" data-label="Result">No forecast weather data available.</td></tr>';
+                forecastTableBody.appendChild(row);
             }
         }
 
-        // Initialize
-        async function init() {
-            await fetchWeatherData();
-            displayWeatherData();
-            document.getElementById('weather-details').style.display = 'block';
-            document.getElementById('loading').style.display = 'none';
-        }
-
-        init();
+        // Fetch and display data on page load
+        fetchWeatherData();
     </script>
 </body>
 </html>
