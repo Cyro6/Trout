@@ -286,7 +286,7 @@
                 margin-right: 4px;
             }
             .filter-section select {
-              /*  width: 70px; */
+                width: 70px;
                 font-size: 12px;
                 padding: 4px;
             }
@@ -532,7 +532,7 @@
 
         <div class="right-column">
             <div class="spots-section">
-                <h2>Fishing Spots (Downstream to Upstream)</h2>
+                <h2>Fishing Spots (Upstream to Downstream)</h2>
                 <button class="spots-toggle" data-toggle="spots-content" onclick="toggleSection('spots-content')">Collapse</button>
                 <div class="spots-content" id="spots-content">
                     <div class="filter-section">
@@ -636,7 +636,7 @@
         let weatherLatitude = null;
         let weatherLongitude = null;
 
-        const sectionOrder = { 'LOWER': 1, 'MIDDLE': 2, 'UPPER': 3, 'UNKNOWN': 4 };
+        const sectionOrder = { 'UPPER': 1, 'MIDDLE': 2, 'LOWER': 3, 'UNKNOWN': 4 };
         const sectionMap = {
             'L': 'LOWER',
             'M': 'MIDDLE',
@@ -1231,12 +1231,15 @@
                 }
             }
 
+            // Reverse the latitude sort direction for upstream-to-downstream ordering within sections
+            latitudeSortDirection *= -1;
+
             // Sort spots: first by section, then within each section by latitude (direction determined above)
             spotsData.sort((a, b) => {
                 const sectionA = sectionOrder[a.section] || 5;
                 const sectionB = sectionOrder[b.section] || 5;
                 if (sectionA !== sectionB) {
-                    return sectionA - sectionB; // Sort by section (LOWER → MIDDLE → UPPER)
+                    return sectionA - sectionB; // Sort by section (UPPER → MIDDLE → LOWER)
                 }
                 // Within the same section, sort by latitude
                 return latitudeSortDirection * (a.lat - b.lat);
