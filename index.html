@@ -65,7 +65,8 @@
         let allData = null; // Store aggregated data across all months
         let ratingPressureData = null; // Store Rating vs. Pressure Trend data
         let sortColumn = 'Stream'; // Default sort column
-        let sortDirection = 1; // 1 for ascending, -1 for descending
+        let sortDirection = -1; // Default to descending for first click
+
         let filters = { Stream: '', Visits: '', Rating: '', Section: '' }; // Store filter values
 
         // Fetch and setup Rons Spots GPS data
@@ -291,7 +292,7 @@
                 groupedDataAll[stream].ratings.push(ratingMap[rating]);
                 groupedDataAll[stream].sections.push(section);
                 if (!isNaN(lat) && !isNaN(lon)) {
-                    groupedDataAll[stream].spots.push({ lat, lon });
+                    groupedDataByMonth[key].spots.push({ lat, lon });
                 }
             });
 
@@ -398,7 +399,7 @@
                        section.includes(sectionFilter);
             });
 
-            // Sort by default (Stream, ascending) on initial load
+            // Sort by default (Stream, descending) on initial load
             rowsToDisplay.sort((a, b) => {
                 const valueA = a[0];
                 const valueB = b[0];
@@ -444,7 +445,7 @@
                         sortDirection = -sortDirection;
                     } else {
                         sortColumn = header;
-                        sortDirection = 1;
+                        sortDirection = -1; // First click is descending
                     }
                     filterMonthData();
                 };
@@ -466,7 +467,7 @@
                     return sortDirection * (valueA - valueB);
                 }
                 // Handle alphabetical sorting for Stream and Section
-                return sortDirection * valueA.localeCompare(valueB);
+                return sortDirection * (valueA.localeCompare(valueB));
             });
 
             rows.forEach(row => {
