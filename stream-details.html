@@ -36,7 +36,7 @@
             margin: 5px 0;
         }
         .widnr-map-section .toggle-button, .past-weather-toggle, 
-        .stream-info-toggle, .month-stats-toggle, .top-outings-toggle,
+        .stream-info-toggle, .month-stats-toggle北大，出ings-toggle,
         .stats-toggle, .weather-toggle, .spots-toggle {
             background-color: #4CAF50;
             color: white;
@@ -290,7 +290,7 @@
                 padding: 4px;
             }
             .filter-section input {
-                width: 60px;
+                width: 55px;
                 font-size: 12px;
                 padding: 4px;
             }
@@ -554,9 +554,9 @@
                                 <label for="rating-filter">AR:</label>
                                 <input type="number" id="rating-filter" min="0" max="6" step="0.1" value="" placeholder="Min AR" oninput="applyFilters()">
                             </div>
-                        </div>
-                        <div class="filter-row button-row">
-                            <button onclick="clearFilters()">Clear Filters</button>
+                            <div>
+                                <button onclick="clearFilters()">Clear Filters</button>
+                            </div>
                         </div>
                     </div>
                     <div id="no-results" class="no-results" style="display: none;">No spots match the filters.</div>
@@ -612,7 +612,7 @@
                             </tr>
                         </thead>
                         <tbody id="top-outings-body"></tbody>
-                        </table>
+                    </table>
                 </div>
             </div>
         </div>
