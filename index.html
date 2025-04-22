@@ -202,6 +202,7 @@
                             Next: row[index + 1] || 'N/A'
                         }
                     });
+                    return 'Unknown';
                 } else {
                     console.log('Pressure Trend - Matched:', {
                         Raw: value,
@@ -209,8 +210,8 @@
                         Normalized: normalized,
                         Matched: matchedTrend.value
                     });
+                    return matchedTrend.value;
                 }
-                return matchedTrend ? matchedTrend.value : 'Unknown';
             }
 
             // Filter valid data (no date restriction)
@@ -324,7 +325,7 @@
             // Compute Rating vs. Pressure Trend data
             const ratingPressureCounts = {};
             const ratings = ['S', 'A', 'B', 'C', 'D', 'E', 'F'];
-            const pressureTrends = ['Significant Falling', 'Falling', 'Stable', 'Rising', 'Significant Rising', 'Unknown'];
+            const pressureTrends = ['Significant Falling', 'Falling', 'Stable', 'Rising', 'Significant Rising'];
             ratings.forEach(rating => {
                 ratingPressureCounts[rating] = {};
                 pressureTrends.forEach(trend => {
@@ -333,7 +334,7 @@
             });
 
             validData.forEach(([month, stream, rating, section, lat, lon, pressureTrend]) => {
-                if (ratings.includes(rating)) {
+                if (ratings.includes(rating) && pressureTrends.includes(pressureTrend)) {
                     ratingPressureCounts[rating][pressureTrend]++;
                 }
             });
