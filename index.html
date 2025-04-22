@@ -66,7 +66,6 @@
         let ratingPressureData = null; // Store Rating vs. Pressure Trend data
         let sortColumn = 'Stream'; // Default sort column
         let sortDirection = -1; // Default to descending for first click
-
         let filters = { Stream: '', Visits: '', Rating: '', Section: '' }; // Store filter values
 
         // Fetch and setup Rons Spots GPS data
@@ -292,7 +291,7 @@
                 groupedDataAll[stream].ratings.push(ratingMap[rating]);
                 groupedDataAll[stream].sections.push(section);
                 if (!isNaN(lat) && !isNaN(lon)) {
-                    groupedDataByMonth[key].spots.push({ lat, lon });
+                    groupedDataAll[stream].spots.push({ lat, lon });
                 }
             });
 
