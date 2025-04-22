@@ -260,17 +260,18 @@
                 padding-bottom: 75%;
             }
             .filter-section {
-                flex-direction: column;
-                gap: 8px;
+                flex-direction: row;
+                flex-wrap: nowrap;
+                gap: 5px;
                 padding: 8px;
-                align-items: flex-start;
+                align-items: center;
                 margin: 10px 0;
             }
             .filter-section .filter-row {
                 display: flex;
-                gap: 8px;
+                gap: 5px;
                 flex-wrap: nowrap;
-                width: 100%;
+                width: auto;
             }
             .filter-section .filter-row.button-row {
                 justify-content: flex-start;
@@ -284,12 +285,12 @@
                 margin-right: 4px;
             }
             .filter-section select {
-                width: 80px;
+                width: 70px;
                 font-size: 12px;
                 padding: 4px;
             }
             .filter-section input {
-                width: 70px;
+                width: 60px;
                 font-size: 12px;
                 padding: 4px;
             }
@@ -1040,7 +1041,7 @@
                         gearRestrictionsContainer.style.display = 'block';
                     }
                     document.getElementById('stream-season-info').textContent = streamInfoRow[4] || 'N/A';
-                    document.getElementById('stream-early-season').textContent = streamInfoRow[5] || 'N/A';
+                    document.get ricordaElementById('stream-early-season').textContent = streamInfoRow[5] || 'N/A';
                     widnrLink = streamInfoRow[6]?.trim();
                     const widnrLinkContainer = document.getElementById('stream-widnr-link-container');
                     if (widnrLink) {
