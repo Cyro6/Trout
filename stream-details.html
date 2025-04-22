@@ -184,13 +184,12 @@
         /* Widescreen Layout */
         @media screen and (min-width: 1200px) {
             .stream-details {
-                display: Flex;
+                display: flex;
                 flex-wrap: wrap;
                 gap: 20px;
             }
             .left-column {
                 width: 40%;
-                float: left;
                 margin-right: 20px;
             }
             .info-stats-container {
@@ -206,8 +205,7 @@
             }
             .right-column {
                 width: 55%;
-                float: right;
-                display: Block;
+                display: flex;
                 flex-wrap: wrap;
                 gap: 20px;
             }
@@ -299,23 +297,29 @@
             .spots-table tr:hover, .top-outings-table tr:hover, .month-outing-table tr:hover, .weather-table tr:hover {
                 background-color: #fff;
             }
-            .stream-info-content, .month-stats-content, .top-outings-content {
-                display: none;
+            .stream-info .stream-info-content,
+            .month-stats .month-stats-content,
+            .top-outings .top-outings-content {
+                display: none !important;
             }
-            .stream-info-content.active, .month-stats-content.active, .top-outings-content.active {
-                display: block;
+            .stream-info .stream-info-content.active,
+            .month-stats .month-stats-content.active,
+            .top-outings .top-outings-content.active {
+                display: block !important;
             }
             .stream-info-toggle, .month-stats-toggle, .top-outings-toggle {
-                display: block;
+                display: block !important;
             }
         }
 
         @media screen and (min-width: 601px) {
-            .stream-info-content, .month-stats-content, .top-outings-content {
-                display: block;
+            .stream-info .stream-info-content,
+            .month-stats .month-stats-content,
+            .top-outings .top-outings-content {
+                display: block !important;
             }
             .stream-info-toggle, .month-stats-toggle, .top-outings-toggle {
-                display: none;
+                display: none !important;
             }
         }
     </style>
@@ -333,8 +337,8 @@
             <div class="info-stats-container">
                 <div class="stream-info">
                     <h2>Stream Information</h2>
-                    <button class="stream-info-toggle" onclick="toggleSection('stream-info-content')">Expand</button>
-                    <div class="stream-info-content">
+                    <button class="stream-info-toggle" data-toggle="stream-info-content" onclick="toggleSection('stream-info-content')">Expand</button>
+                    <div class="stream-info-content" id="stream-info-content">
                         <p><strong>Regulation:</strong> <span id="stream-regulation"></span></p>
                         <p id="stream-special-regulations-container"><strong>Special Regulations:</strong> <span id="stream-special-regulations"></span></p>
                         <p id="stream-gear-restrictions-container"><strong>Gear Restrictions:</strong> <span id="stream-gear-restrictions"></span></p>
@@ -357,7 +361,7 @@
                 <div class="total-rainfall" id="total-rainfall"></div>
                 <div class="current-weather" id="current-weather"></div>
                 <p class="weather-location" id="weather-location"></p>
-                <button class="past-weather-toggle" onclick="toggleSection('past-weather-container')">Show Past Weather</button>
+                <button class="past-weather-toggle" data-toggle="past-weather-container" onclick="toggleSection('past-weather-container')">Show Past Weather</button>
                 <div class="past-weather-container" id="past-weather-container">
                     <h3>Past 3 Days Weather</h3>
                     <table class="weather-table" id="past-weather-table">
@@ -441,8 +445,8 @@
             </div>
             <div class="month-stats">
                 <h2>Current Month (April) Statistics</h2>
-                <button class="month-stats-toggle" onclick="toggleSection('month-stats-content')">Expand</button>
-                <div class="month-stats-content">
+                <button class="month-stats-toggle" data-toggle="month-stats-content" onclick="toggleSection('month-stats-content')">Expand</button>
+                <div class="month-stats-content" id="month-stats-content">
                     <div class="stats-row">
                         <p><strong>Typically Fished Section in April:</strong> <span id="april-section"></span></p>
                         <table class="month-outing-table" id="month-outing-table">
@@ -462,8 +466,8 @@
             </div>
             <div class="top-outings">
                 <h2>Top 5 Highest Rated Outings</h2>
-                <button class="top-outings-toggle" onclick="toggleSection('top-outings-content')">Expand</button>
-                <div class="top-outings-content">
+                <button class="top-outings-toggle" data-toggle="top-outings-content" onclick="toggleSection('top-outings-content')">Expand</button>
+                <div class="top-outings-content" id="top-outings-content">
                     <table class="top-outings-table" id="top-outings-table">
                         <thead>
                             <tr>
@@ -634,15 +638,26 @@
         }
 
         function toggleSection(containerId) {
+            console.log(`Toggling section: ${containerId}`);
             const container = document.getElementById(containerId);
-            const button = container.previousElementSibling;
+            if (!container) {
+                console.error(`Container not found: ${containerId}`);
+                return;
+            }
+            const button = document.querySelector(`[data-toggle="${containerId}"]`);
+            if (!button) {
+                console.error(`Button not found for container: ${containerId}`);
+                return;
+            }
             const isExpanded = container.classList.contains('active');
             if (isExpanded) {
                 container.classList.remove('active');
                 button.textContent = button.classList.contains('past-weather-toggle') ? 'Show Past Weather' : 'Expand';
+                console.log(`Collapsed: ${containerId}`);
             } else {
                 container.classList.add('active');
                 button.textContent = button.classList.contains('past-weather-toggle') ? 'Hide Past Weather' : 'Collapse';
+                console.log(`Expanded: ${containerId}`);
             }
         }
 
@@ -664,9 +679,11 @@
         }
 
         async function init() {
+            console.log('Initializing Stream Details Page');
             if (!streamName) {
                 document.getElementById('error').textContent = 'Error: No stream specified.';
                 document.getElementById('loading').style.display = 'none';
+                console.error('No stream name provided in URL');
                 return;
             }
 
@@ -684,6 +701,7 @@
                 sourceData = parseCSV(csvText);
             } catch (error) {
                 document.getElementById('error').textContent = `Error fetching spots data: ${error.message}`;
+                console.error(`Fetch data error: ${error.message}`);
             }
         }
 
@@ -696,6 +714,7 @@
                 streamInfoData = parseCSV(csvText);
             } catch (error) {
                 document.getElementById('error').textContent = `Error fetching stream info: ${error.message}`;
+                console.error(`Fetch stream info error: ${error.message}`);
             }
         }
 
