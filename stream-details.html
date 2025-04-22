@@ -35,7 +35,8 @@
             margin: 5px 0;
         }
         .widnr-map-section .toggle-button, .past-weather-toggle, 
-        .stream-info-toggle, .month-stats-toggle, .top-outings-toggle {
+        .stream-info-toggle, .month-stats-toggle, .top-outings-toggle,
+        .stats-toggle, .weather-toggle, .spots-toggle {
             background-color: #4CAF50;
             color: white;
             border: none;
@@ -46,7 +47,8 @@
             margin-bottom: 10px;
         }
         .widnr-map-section .toggle-button:hover, .past-weather-toggle:hover, 
-        .stream-info-toggle:hover, .month-stats-toggle:hover, .top-outings-toggle:hover {
+        .stream-info-toggle:hover, .month-stats-toggle:hover, .top-outings-toggle:hover,
+        .stats-toggle:hover, .weather-toggle:hover, .spots-toggle:hover {
             background-color: #45a049;
         }
         .widnr-map-section .iframe-container {
@@ -300,28 +302,48 @@
             .spots-table tr:hover, .top-outings-table tr:hover, .month-outing-table tr:hover, .weather-table tr:hover {
                 background-color: #fff;
             }
+            /* Ensure all sections can be toggled on mobile */
             .stream-info .stream-info-content,
+            .stats .stats-content,
+            .weather-section .weather-content,
             .month-stats .month-stats-content,
-            .top-outings .top-outings-content {
+            .top-outings .top-outings-content,
+            .spots-section .spots-content {
                 display: none !important;
             }
             .stream-info .stream-info-content.active,
+            .stats .stats-content.active,
+            .weather-section .weather-content.active,
             .month-stats .month-stats-content.active,
-            .top-outings .top-outings-content.active {
+            .top-outings .top-outings-content.active,
+            .spots-section .spots-content.active {
                 display: block !important;
             }
-            .stream-info-toggle, .month-stats-toggle, .top-outings-toggle {
+            .stream-info-toggle,
+            .stats-toggle,
+            .weather-toggle,
+            .month-stats-toggle,
+            .top-outings-toggle,
+            .spots-toggle {
                 display: block !important;
             }
         }
 
         @media screen and (min-width: 601px) {
             .stream-info .stream-info-content,
+            .stats .stats-content,
+            .weather-section .weather-content,
             .month-stats .month-stats-content,
-            .top-outings .top-outings-content {
+            .top-outings .top-outings-content,
+            .spots-section .spots-content {
                 display: block !important;
             }
-            .stream-info-toggle, .month-stats-toggle, .top-outings-toggle {
+            .stream-info-toggle,
+            .stats-toggle,
+            .weather-toggle,
+            .month-stats-toggle,
+            .top-outings-toggle,
+            .spots-toggle {
                 display: none !important;
             }
         }
@@ -352,22 +374,44 @@
                 </div>
                 <div class="stats">
                     <h2>Overall Statistics</h2>
-                    <p><strong>Total Visits:</strong> <span id="total-visits"></span></p>
-                    <p><strong>Average Rating:</strong> <span id="avg-rating"></span></p>
-                    <p><strong>Most Fished Section (Overall):</strong> <span id="most-fished-section"></span></p>
+                    <button class="stats-toggle" data-toggle="stats-content" onclick="toggleSection('stats-content')">Collapse</button>
+                    <div class="stats-content" id="stats-content">
+                        <p><strong>Total Visits:</strong> <span id="total-visits"></span></p>
+                        <p><strong>Average Rating:</strong> <span id="avg-rating"></span></p>
+                        <p><strong>Most Fished Section (Overall):</strong> <span id="most-fished-section"></span></p>
+                    </div>
                 </div>
             </div>
             <div class="weather-section">
                 <h2 id="weather-title">Weather</h2>
-                <div id="weather-loading" class="weather-loading">Loading weather data...</div>
-                <div id="weather-error" class="weather-error"></div>
-                <div class="total-rainfall" id="total-rainfall"></div>
-                <div class="current-weather" id="current-weather"></div>
-                <p class="weather-location" id="weather-location"></p>
-                <button class="past-weather-toggle" data-toggle="past-weather-container" onclick="toggleSection('past-weather-container')">Show Past Weather</button>
-                <div class="past-weather-container" id="past-weather-container">
-                    <h3>Past 3 Days Weather</h3>
-                    <table class="weather-table" id="past-weather-table">
+                <button class="weather-toggle" data-toggle="weather-content" onclick="toggleSection('weather-content')">Collapse</button>
+                <div class="weather-content" id="weather-content">
+                    <div id="weather-loading" class="weather-loading">Loading weather data...</div>
+                    <div id="weather-error" class="weather-error"></div>
+                    <div class="total-rainfall" id="total-rainfall"></div>
+                    <div class="current-weather" id="current-weather"></div>
+                    <p class="weather-location" id="weather-location"></p>
+                    <button class="past-weather-toggle" data-toggle="past-weather-container" onclick="toggleSection('past-weather-container')">Show Past Weather</button>
+                    <div class="past-weather-container" id="past-weather-container">
+                        <h3>Past 3 Days Weather</h3>
+                        <table class="weather-table" id="past-weather-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Min Temp (°F)</th>
+                                    <th>Max Temp (°F)</th>
+                                    <th>Precipitation (in)</th>
+                                    <th>Max Surface Pressure (hPa)</th>
+                                    <th>Wind Direction</th>
+                                    <th>Pressure Trend</th>
+                                    <th>Weather</th>
+                                </tr>
+                            </thead>
+                            <tbody id="past-weather-body"></tbody>
+                        </table>
+                    </div>
+                    <h3>Forecast (Today and Next 4 Days)</h3>
+                    <table class="weather-table" id="forecast-table">
                         <thead>
                             <tr>
                                 <th>Date</th>
@@ -380,25 +424,9 @@
                                 <th>Weather</th>
                             </tr>
                         </thead>
-                        <tbody id="past-weather-body"></tbody>
+                        <tbody id="forecast-body"></tbody>
                     </table>
                 </div>
-                <h3>Forecast (Today and Next 4 Days)</h3>
-                <table class="weather-table" id="forecast-table">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Min Temp (°F)</th>
-                            <th>Max Temp (°F)</th>
-                            <th>Precipitation (in)</th>
-                            <th>Max Surface Pressure (hPa)</th>
-                            <th>Wind Direction</th>
-                            <th>Pressure Trend</th>
-                            <th>Weather</th>
-                        </tr>
-                    </thead>
-                    <tbody id="forecast-body"></tbody>
-                </table>
             </div>
             <div class="widnr-map-section" id="widnr-map-section">
                 <h2>WIDNR Map</h2>
@@ -411,40 +439,43 @@
         <div class="right-column">
             <div class="spots-section">
                 <h2>Fishing Spots (Downstream to Upstream)</h2>
-                <div class="filter-section">
-                    <div>
-                        <label for="section-filter">Section:</label>
-                        <select id="section-filter" onchange="applyFilters()">
-                            <option value="All">All</option>
-                            <option value="LOWER">LOWER</option>
-                            <option value="MIDDLE">MIDDLE</option>
-                            <option value="UPPER">UPPER</option>
-                            <option value="UNKNOWN">UNKNOWN</option>
-                        </select>
+                <button class="spots-toggle" data-toggle="spots-content" onclick="toggleSection('spots-content')">Collapse</button>
+                <div class="spots-content" id="spots-content">
+                    <div class="filter-section">
+                        <div>
+                            <label for="section-filter">Section:</label>
+                            <select id="section-filter" onchange="applyFilters()">
+                                <option value="All">All</option>
+                                <option value="LOWER">LOWER</option>
+                                <option value="MIDDLE">MIDDLE</option>
+                                <option value="UPPER">UPPER</option>
+                                <option value="UNKNOWN">UNKNOWN</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="visits-filter">Min Visits:</label>
+                            <input type="number" id="visits-filter" min="0" value="" placeholder="e.g., 2" oninput="applyFilters()">
+                        </div>
+                        <div>
+                            <label for="rating-filter">Min Avg Rating:</label>
+                            <input type="number" id="rating-filter" min="0" max="6" step="0.1" value="" placeholder="e.g., 3.5" oninput="applyFilters()">
+                        </div>
+                        <button onclick="clearFilters()">Clear Filters</button>
                     </div>
-                    <div>
-                        <label for="visits-filter">Min Visits:</label>
-                        <input type="number" id="visits-filter" min="0" value="" placeholder="e.g., 2" oninput="applyFilters()">
-                    </div>
-                    <div>
-                        <label for="rating-filter">Min Avg Rating:</label>
-                        <input type="number" id="rating-filter" min="0" max="6" step="0.1" value="" placeholder="e.g., 3.5" oninput="applyFilters()">
-                    </div>
-                    <button onclick="clearFilters()">Clear Filters</button>
+                    <div id="no-results" class="no-results" style="display: none;">No spots match the filters.</div>
+                    <table class="spots-table" id="spots-table">
+                        <thead>
+                            <tr>
+                                <th onclick="sortSpotsTable(0)">Spot</th>
+                                <th onclick="sortSpotsTable(1)">Section</th>
+                                <th onclick="sortSpotsTable(2)">Visits</th>
+                                <th onclick="sortSpotsTable(3)">Average Rating</th>
+                                <th>Google Maps Link</th>
+                            </tr>
+                        </thead>
+                        <tbody id="spots-body"></tbody>
+                    </table>
                 </div>
-                <div id="no-results" class="no-results" style="display: none;">No spots match the filters.</div>
-                <table class="spots-table" id="spots-table">
-                    <thead>
-                        <tr>
-                            <th onclick="sortSpotsTable(0)">Spot</th>
-                            <th onclick="sortSpotsTable(1)">Section</th>
-                            <th onclick="sortSpotsTable(2)">Visits</th>
-                            <th onclick="sortSpotsTable(3)">Average Rating</th>
-                            <th>Google Maps Link</th>
-                        </tr>
-                    </thead>
-                    <tbody id="spots-body"></tbody>
-                </table>
             </div>
             <div class="month-stats">
                 <h2>Current Month (April) Statistics</h2>
@@ -693,6 +724,16 @@
             document.getElementById('stream-title').textContent = `${streamName} Details`;
             await Promise.all([fetchData(), fetchStreamInfo()]);
             displayStreamDetails();
+
+            // On mobile, set initial states for sections
+            if (window.innerWidth <= 600) {
+                // Default expanded: Overall Statistics, Weather, Fishing Spots
+                document.getElementById('stats-content').classList.add('active');
+                document.getElementById('weather-content').classList.add('active');
+                document.getElementById('spots-content').classList.add('active');
+                // Default collapsed: Stream Information, WIDNR Map, Current Month, Top 5 Outings, Past Weather
+                // (Already set via CSS, no need to add/remove .active)
+            }
         }
 
         async function fetchData() {
