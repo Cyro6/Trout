@@ -24,12 +24,13 @@
         a:hover {
             text-decoration: underline;
         }
-        .stats, .month-stats, .top-outings, .stream-info, .widnr-map-section, .weather-section {
+        .stats, .month-stats, .top-outings, .stream-info, .widnr-map-section, .weather-section, .spots-section {
             margin: 20px 0;
             padding: 15px;
             background-color: #fff;
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box;
         }
         .stream-info p, .weather-section p, .stats p {
             margin: 5px 0;
@@ -131,6 +132,7 @@
             gap: 15px;
             align-items: center;
             flex-wrap: wrap;
+            box-sizing: border-box;
         }
         .filter-section label {
             font-weight: bold;
@@ -250,8 +252,9 @@
             h2 {
                 font-size: 1.2em;
             }
-            .stats, .month-stats, .top-outings, .stream-info, .widnr-map-section, .weather-section {
-                padding: 10px;
+            .stats, .month-stats, .top-outings, .stream-info, .widnr-map-section, .weather-section, .spots-section {
+                padding: 8px;
+                margin: 10px 0;
             }
             .widnr-map-section .iframe-container {
                 padding-bottom: 75%;
@@ -261,6 +264,7 @@
                 gap: 8px;
                 padding: 8px;
                 align-items: flex-start;
+                margin: 10px 0;
             }
             .filter-section .filter-row {
                 display: flex;
@@ -296,6 +300,7 @@
             }
             .spots-table, .top-outings-table, .month-outing-table, .weather-table {
                 box-shadow: none;
+                margin: 10px 0;
             }
             /* Keep table layout for spots-table on mobile */
             .spots-table {
@@ -431,7 +436,7 @@
                 flex-wrap: wrap;
             }
             .filter-section .filter-row.button-row {
-                display: contents;
+                display: none;
             }
         }
     </style>
@@ -606,7 +611,7 @@
                             </tr>
                         </thead>
                         <tbody id="top-outings-body"></tbody>
-                    </table>
+                        </table>
                 </div>
             </div>
         </div>
