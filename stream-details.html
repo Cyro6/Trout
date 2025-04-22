@@ -185,12 +185,19 @@
         @media screen and (min-width: 1200px) {
             .stream-details {
                 display: flex;
-                flex-wrap: wrap;
+                flex-wrap: nowrap;
                 gap: 20px;
             }
             .left-column {
+                flex: 0 0 40%;
                 width: 40%;
-                margin-right: 20px;
+            }
+            .right-column {
+                flex: 0 0 58%;
+                width: 58%;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 20px;
             }
             .info-stats-container {
                 display: flex;
@@ -202,12 +209,6 @@
             }
             .weather-section, .widnr-map-section {
                 width: 100%;
-            }
-            .right-column {
-                width: 55%;
-                display: flex;
-                flex-wrap: wrap;
-                gap: 20px;
             }
             .spots-section, .month-stats, .top-outings {
                 flex: 1;
