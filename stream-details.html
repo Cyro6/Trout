@@ -192,13 +192,11 @@
                 flex: 0 0 40% !important;
                 width: 40% !important;
                 box-sizing: border-box;
-                background-color: #e0f7fa; /* Temporary for debugging */
             }
             .stream-details .right-column {
                 flex: 0 0 58% !important;
                 width: 58% !important;
                 box-sizing: border-box;
-                background-color: #f0f0f0; /* Temporary for debugging */
                 display: flex;
                 flex-wrap: wrap;
                 gap: 20px;
@@ -566,7 +564,7 @@
         }
 
         async function fetchWeatherData(latitude, longitude) {
-            const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=precipitation_sum,surface_pressure_max,temperature_2m_min,temperature_2m_max,weather_code,wind_direction_10m_dominant¤t=temperature_2m,weather_code,surface_pressure,wind_direction_10m&timezone=America%2FChicago&past_days=4&forecast_days=5&wind_speed_unit=mph&temperature_unit=fahrenheit&precipitation_unit=inch`;
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=precipitation_sum,surface_pressure_max,temperature_2m_min,temperature_2m_max,weather_code,wind_direction_10m_dominant&current=temperature_2m,weather_code,surface_pressure,wind_direction_10m&timezone=America%2FChicago&past_days=4&forecast_days=5&wind_speed_unit=mph&temperature_unit=fahrenheit&precipitation_unit=inch`;
             try {
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
