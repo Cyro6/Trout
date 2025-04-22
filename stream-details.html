@@ -257,15 +257,33 @@
                 padding-bottom: 75%;
             }
             .filter-section {
-                flex-direction: column;
-                gap: 10px;
+                flex-direction: row;
+                gap: 8px;
+                flex-wrap: nowrap;
+                padding: 8px;
             }
-            .filter-section select, .filter-section input {
-                width: 100%;
-                box-sizing: border-box;
+            .filter-section div {
+                display: flex;
+                align-items: center;
+            }
+            .filter-section label {
+                font-size: 12px;
+                margin-right: 4px;
+            }
+            .filter-section select {
+                width: 80px;
+                font-size: 12px;
+                padding: 4px;
+            }
+            .filter-section input {
+                width: 70px;
+                font-size: 12px;
+                padding: 4px;
             }
             .filter-section button {
-                width: 100%;
+                font-size: 12px;
+                padding: 4px 8px;
+                width: auto;
             }
             .spots-table, .top-outings-table, .month-outing-table, .weather-table {
                 box-shadow: none;
@@ -392,6 +410,12 @@
             .spots-table {
                 font-size: 16px;
             }
+            .filter-section select {
+                width: auto;
+            }
+            .filter-section input {
+                width: auto;
+            }
         }
     </style>
 </head>
@@ -492,19 +516,19 @@
                             <label for="section-filter">Section:</label>
                             <select id="section-filter" onchange="applyFilters()">
                                 <option value="All">All</option>
-                                <option value="LOWER">LOWER</option>
-                                <option value="MIDDLE">MIDDLE</option>
-                                <option value="UPPER">UPPER</option>
-                                <option value="UNKNOWN">UNKNOWN</option>
+                                <option value="L">L</option>
+                                <option value="M">M</option>
+                                <option value="U">U</option>
+                                <option value="UNK">UNK</option>
                             </select>
                         </div>
                         <div>
-                            <label for="visits-filter">Min Visits:</label>
-                            <input type="number" id="visits-filter" min="0" value="" placeholder="e.g., 2" oninput="applyFilters()">
+                            <label for="visits-filter">Visits:</label>
+                            <input type="number" id="visits-filter" min="0" value="" placeholder="Min Visits" oninput="applyFilters()">
                         </div>
                         <div>
-                            <label for="rating-filter">Min Avg Rating:</label>
-                            <input type="number" id="rating-filter" min="0" max="6" step="0.1" value="" placeholder="e.g., 3.5" oninput="applyFilters()">
+                            <label for="rating-filter">AR:</label>
+                            <input type="number" id="rating-filter" min="0" max="6" step="0.1" value="" placeholder="Min AR" oninput="applyFilters()">
                         </div>
                         <button onclick="clearFilters()">Clear Filters</button>
                     </div>
@@ -585,6 +609,13 @@
         let weatherLongitude = null;
 
         const sectionOrder = { 'LOWER': 1, 'MIDDLE': 2, 'UPPER': 3, 'UNKNOWN': 4 };
+        const sectionMap = {
+            'L': 'LOWER',
+            'M': 'MIDDLE',
+            'U': 'UPPER',
+            'UNK': 'UNKNOWN',
+            'All': 'All'
+        };
         const urlParams = new URLSearchParams(window.location.search);
         const streamName = urlParams.get('stream');
 
@@ -643,7 +674,7 @@
         }
 
         async function fetchWeatherData(latitude, longitude) {
-            const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=precipitation_sum,surface_pressure_max,temperature_2m_min,temperature_2m_max,weather_code,wind_direction_10m_dominant&current=temperature_2m,weather_code,surface_pressure,wind_direction_10m&timezone=America%2FChicago&past_days=4&forecast_days=5&wind_speed_unit=mph&temperature_unit=fahrenheit&precipitation_unit=inch`;
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=precipitation_sum,surface_pressure_max,temperature_2m_min,temperature_2m_max,weather_code,wind_direction_10m_dominant¤t=temperature_2m,weather_code,surface_pressure,wind_direction_10m&timezone=America%2FChicago&past_days=4&forecast_days=5&wind_speed_unit=mph&temperature_unit=fahrenheit&precipitation_unit=inch`;
             try {
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -834,7 +865,7 @@
         }
 
         function applyFilters() {
-            const sectionFilter = document.getElementById('section-filter').value;
+            const sectionFilter = sectionMap[document.getElementById('section-filter').value];
             const visitsFilter = document.getElementById('visits-filter').value;
             const ratingFilter = document.getElementById('rating-filter').value;
 
