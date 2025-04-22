@@ -834,188 +834,302 @@
             }
         }
 
-function displayStreamDetails() {
-    const ratingMap = { 'E': 0, 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5, 'S+': 6 };
-    const ratingReverseMap = { 0: 'E', 1: 'D', 2: 'C', 3: 'B', 4: 'A', 5: 'S', 6: 'S+' };
-    const excludedStreams = ['Unknown', 'Central Sands', 'Minnesota', 'Southern WI'];
+        function displayStreamDetails() {
+            const ratingMap = { 'E': 0, 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5, 'S+': 6 };
+            const ratingReverseMap = { 0: 'E', 1: 'D', 2: 'C', 3: 'B', 4: 'A', 5: 'S', 6: 'S+' };
+            const excludedStreams = ['Unknown', 'Central Sands', 'Minnesota', 'Southern WI'];
 
-    const streamData = sourceData?.rows
-        .filter(row => {
-            if (row.length < 18) return false;
-            const date = new Date(row[0].replace(/(\d+)\/(\d+)\/(\d+)/, '$3-$1-$2'));
-            const stream = row[2]?.trim() || '';
-            const rating = row[17]?.toUpperCase();
-            const section = row[15]?.trim();
-            const validRating = /^[SABCDE]|S+$/.test(rating);
-            const validStream = !excludedStreams.some(excluded => stream.includes(excluded));
-            return stream === streamName && validRating && validStream && !isNaN(date.getTime());
-        })
-        .map(row => {
-            const date = new Date(row[0].replace(/(\d+)\/(\d+)\/(\d+)/, '$3-$1-$2'));
-            const month = date.toLocaleString('default', { month: 'long' });
-            const stream = row[2]?.trim() || '';
-            const rating = ratingMap[row[17]?.toUpperCase()] ?? -1;
-            const section = row[15]?.trim().toUpperCase() || 'UNKNOWN';
-            const lat = parseFloat(row[12]);
-            const lon = parseFloat(row[13]);
-            const youtubeLink = row[1]?.trim() || '';
-            return { month, stream, rating, section, lat, lon, date, youtubeLink };
-        }) || [];
+            const streamData = sourceData?.rows
+                .filter(row => {
+                    if (row.length < 18) return false;
+                    const date = new Date(row[0].replace(/(\d+)\/(\d+)\/(\d+)/, '$3-$1-$2'));
+                    const stream = row[2]?.trim() || '';
+                    const rating = row[17]?.toUpperCase();
+                    const section = row[15]?.trim();
+                    const validRating = /^[SABCDE]|S+$/.test(rating);
+                    const validStream = !excludedStreams.some(excluded => stream.includes(excluded));
+                    return stream === streamName && validRating && validStream && !isNaN(date.getTime());
+                })
+                .map(row => {
+                    const date = new Date(row[0].replace(/(\d+)\/(\d+)\/(\d+)/, '$3-$1-$2'));
+                    const month = date.toLocaleString('default', { month: 'long' });
+                    const stream = row[2]?.trim() || '';
+                    const rating = ratingMap[row[17]?.toUpperCase()] ?? -1;
+                    const section = row[15]?.trim().toUpperCase() || 'UNKNOWN';
+                    const lat = parseFloat(row[12]);
+                    const lon = parseFloat(row[13]);
+                    const youtubeLink = row[1]?.trim() || '';
+                    return { month, stream, rating, section, lat, lon, date, youtubeLink };
+                }) || [];
 
-    if (streamData.length === 0) {
-        document.getElementById('error').textContent = 'No data found for this stream.';
-        document.getElementById('weather-error').textContent = 'No fishing spots available for weather data.';
-        document.getElementById('weather-loading').style.display = 'none';
-        document.getElementById('weather-location').textContent = 'Location: N/A';
-        return;
-    }
-
-    // ... (Stream Info section unchanged) ...
-
-    const totalVisits = streamData.length;
-    const avgRating = streamData.reduce((sum, entry) => sum + entry.rating, 0) / totalVisits;
-    const roundedAvg = Math.round(avgRating * 100) / 100;
-
-    const sectionCounts = { LOWER: 0, MIDDLE: 0, UPPER: 0 };
-    streamData.forEach(entry => {
-        if (entry.section in sectionCounts) sectionCounts[entry.section]++;
-        else sectionCounts['UNKNOWN'] = (sectionCounts['UNKNOWN'] || 0) + 1;
-    });
-    const maxCount = Math.max(sectionCounts.LOWER, sectionCounts.MIDDLE, sectionCounts.UPPER);
-    const tieCheck = (sectionCounts.LOWER === maxCount ? 1 : 0) +
-                     (sectionCounts.MIDDLE === maxCount ? 1 : 0) +
-                     (sectionCounts.UPPER === maxCount ? 1 : 0);
-    let mostFishedSection = 'Mixed';
-    if (maxCount > 0 && tieCheck === 1) {
-        if (sectionCounts.LOWER === maxCount) mostFishedSection = 'Lower';
-        else if (sectionCounts.MIDDLE === maxCount) mostFishedSection = 'Middle';
-        else if (sectionCounts.UPPER === maxCount) mostFishedSection = 'Upper';
-    }
-
-    // ... (April stats and top outings unchanged) ...
-
-    const spotsMap = new Map();
-    streamData.forEach((entry, index) => {
-        if (!isNaN(entry.lat) && !isNaN(entry.lon)) {
-            const lat = Number(entry.lat.toFixed(5));
-            const lon = Number(entry.lon.toFixed(5));
-            const key = `${lat},${lon}`;
-            if (!spotsMap.has(key)) {
-                spotsMap.set(key, { lat, lon, sections: [entry.section], visits: 1, ratings: [entry.rating] });
-            } else {
-                const spot = spotsMap.get(key);
-                spot.sections.push(entry.section);
-                spot.visits += 1;
-                spot.ratings.push(entry.rating);
+            if (streamData.length === 0) {
+                document.getElementById('error').textContent = 'No data found for this stream.';
+                document.getElementById('weather-error').textContent = 'No fishing spots available for weather data.';
+                document.getElementById('weather-loading').style.display = 'none';
+                document.getElementById('weather-location').textContent = 'Location: N/A';
+                return;
             }
-        }
-    });
 
-    spotsData = Array.from(spotsMap.values()).map(spot => {
-        const sectionCounts = { LOWER: 0, MIDDLE: 0, UPPER: 0, UNKNOWN: 0 };
-        spot.sections.forEach(section => {
-            sectionCounts[section] = (sectionCounts[section] || 0) + 1;
-        });
-        let maxCount = 0;
-        let selectedSection = 'UNKNOWN';
-        for (const [section, count] of Object.entries(sectionCounts)) {
-            if (count > maxCount) {
-                maxCount = count;
-                selectedSection = section;
-            } else if (count === maxCount) {
-                const order = sectionOrder[section] || 5;
-                const currentOrder = sectionOrder[selectedSection] || 5;
-                if (order < currentOrder) {
-                    selectedSection = section;
+            if (streamInfoData) {
+                const streamInfoRow = streamInfoData.rows.find(row => row[0]?.trim() === streamName);
+                if (streamInfoRow) {
+                    document.getElementById('stream-regulation').textContent = streamInfoRow[1] || 'N/A';
+                    const specialRegulations = streamInfoRow[2] || 'None';
+                    const specialRegulationsContainer = document.getElementById('stream-special-regulations-container');
+                    if (specialRegulations.toUpperCase() === 'N/A') {
+                        specialRegulationsContainer.style.display = 'none';
+                    } else {
+                        document.getElementById('stream-special-regulations').textContent = specialRegulations;
+                        specialRegulationsContainer.style.display = 'block';
+                    }
+                    const gearRestrictions = streamInfoRow[3] || 'N/A';
+                    const gearRestrictionsContainer = document.getElementById('stream-gear-restrictions-container');
+                    if (gearRestrictions.toUpperCase() === 'N/A') {
+                        gearRestrictionsContainer.style.display = 'none';
+                    } else {
+                        document.getElementById('stream-gear-restrictions').textContent = gearRestrictions;
+                        gearRestrictionsContainer.style.display = 'block';
+                    }
+                    document.getElementById('stream-season-info').textContent = streamInfoRow[4] || 'N/A';
+                    document.getElementById('stream-early-season').textContent = streamInfoRow[5] || 'N/A';
+                    widnrLink = streamInfoRow[6]?.trim();
+                    const widnrLinkContainer = document.getElementById('stream-widnr-link-container');
+                    if (widnrLink) {
+                        document.getElementById('stream-widnr-link').innerHTML = `<a href="#widnr-map-section" onclick="toggleMap()">View WIDNR Map</a>`;
+                        document.getElementById('stream-widnr-external-link').innerHTML = `<a href="${widnrLink}" target="_blank">View WIDNR Map External Link</a>`;
+                        widnrLinkContainer.style.display = 'block';
+                        document.getElementById('stream-widnr-iframe').innerHTML = `<iframe src="${widnrLink}" loading="lazy" allowfullscreen></iframe>`;
+                        document.getElementById('stream-widnr-fallback').innerHTML = `If the map doesn't load, <a href="${widnrLink}" target="_blank">view WIDNR details here</a>.`;
+                    } else {
+                        widnrLinkContainer.style.display = 'none';
+                        document.getElementById('stream-widnr-iframe').innerHTML = '';
+                        document.getElementById('stream-widnr-fallback').textContent = 'N/A';
+                    }
+                } else {
+                    document.getElementById('stream-regulation').textContent = 'N/A';
+                    document.getElementById('stream-special-regulations-container').style.display = 'none';
+                    document.getElementById('stream-gear-restrictions-container').style.display = 'none';
+                    document.getElementById('stream-season-info').textContent = 'N/A';
+                    document.getElementById('stream-early-season').textContent = 'N/A';
+                    document.getElementById('stream-widnr-link-container').style.display = 'none';
+                    document.getElementById('stream-widnr-iframe').innerHTML = '';
+                    document.getElementById('stream-widnr-fallback').textContent = 'N/A';
+                }
+            } else {
+                document.getElementById('stream-regulation').textContent = 'Error loading data';
+                document.getElementById('stream-special-regulations-container').style.display = 'none';
+                document.getElementById('stream-gear-restrictions-container').style.display = 'none';
+                document.getElementById('stream-season-info').textContent = 'Error loading data';
+                document.getElementById('stream-early-season').textContent = 'Error loading data';
+                document.getElementById('stream-widnr-link-container').style.display = 'none';
+                document.getElementById('stream-widnr-iframe').innerHTML = '';
+                document.getElementById('stream-widnr-fallback').textContent = 'Error loading data';
+            }
+
+            const totalVisits = streamData.length;
+            const avgRating = streamData.reduce((sum, entry) => sum + entry.rating, 0) / totalVisits;
+            const roundedAvg = Math.round(avgRating * 100) / 100;
+
+            const sectionCounts = { LOWER: 0, MIDDLE: 0, UPPER: 0 };
+            streamData.forEach(entry => {
+                if (entry.section in sectionCounts) sectionCounts[entry.section]++;
+                else sectionCounts['UNKNOWN'] = (sectionCounts['UNKNOWN'] || 0) + 1;
+            });
+            const maxCount = Math.max(sectionCounts.LOWER, sectionCounts.MIDDLE, sectionCounts.UPPER);
+            const tieCheck = (sectionCounts.LOWER === maxCount ? 1 : 0) +
+                             (sectionCounts.MIDDLE === maxCount ? 1 : 0) +
+                             (sectionCounts.UPPER === maxCount ? 1 : 0);
+            let mostFishedSection = 'Mixed';
+            if (maxCount > 0 && tieCheck === 1) {
+                if (sectionCounts.LOWER === maxCount) mostFishedSection = 'Lower';
+                else if (sectionCounts.MIDDLE === maxCount) mostFishedSection = 'Middle';
+                else if (sectionCounts.UPPER === maxCount) mostFishedSection = 'Upper';
+            }
+
+            const aprilData = streamData.filter(entry => entry.month === 'April');
+            const aprilSectionCounts = { LOWER: 0, MIDDLE: 0, UPPER: 0 };
+            aprilData.forEach(entry => {
+                if (entry.section in aprilSectionCounts) aprilSectionCounts[entry.section]++;
+                else aprilSectionCounts['UNKNOWN'] = (aprilSectionCounts['UNKNOWN'] || 0) + 1;
+            });
+            const aprilMaxCount = Math.max(aprilSectionCounts.LOWER, aprilSectionCounts.MIDDLE, aprilSectionCounts.UPPER);
+            const aprilTieCheck = (aprilSectionCounts.LOWER === aprilMaxCount ? 1 : 0) +
+                                  (aprilSectionCounts.MIDDLE === aprilMaxCount ? 1 : 0) +
+                                  (aprilSectionCounts.UPPER === aprilMaxCount ? 1 : 0);
+            let aprilSection = aprilData.length > 0 ? 'Mixed' : 'No April data';
+            if (aprilMaxCount > 0 && aprilTieCheck === 1) {
+                if (aprilSectionCounts.LOWER === aprilMaxCount) aprilSection = 'Lower';
+                else if (aprilSectionCounts.MIDDLE === aprilMaxCount) aprilSection = 'Middle';
+                else if (aprilSectionCounts.UPPER === aprilMaxCount) aprilSection = 'Upper';
+            }
+
+            const bestAprilOuting = aprilData.length > 0 ? aprilData.reduce((best, current) => best.rating > current.rating ? best : current) : null;
+            const monthOutingBody = document.getElementById('month-outing-body');
+            monthOutingBody.innerHTML = '';
+            if (bestAprilOuting) {
+                const formattedDate = bestAprilOuting.date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                const ratingLetter = ratingReverseMap[bestAprilOuting.rating] || 'N/A';
+                const youtubeLink = bestAprilOuting.youtubeLink ? `<a href="${bestAprilOuting.youtubeLink}" target="_blank">Watch on YouTube</a>` : 'N/A';
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td data-label="Date">${formattedDate}</td>
+                    <td data-label="Rating">${ratingLetter}</td>
+                    <td data-label="Location"><a href="https://www.google.com/maps?q=${bestAprilOuting.lat},${bestAprilOuting.lon}" target="_blank">View on Google Maps</a></td>
+                    <td data-label="Section">${bestAprilOuting.section}</td>
+                    <td data-label="YouTube Link">${youtubeLink}</td>
+                `;
+                monthOutingBody.appendChild(tr);
+            } else {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td colspan="5" data-label="Result">No April outings found.</td>`;
+                monthOutingBody.appendChild(tr);
+            }
+
+            document.getElementById('total-visits').textContent = totalVisits;
+            document.getElementById('avg-rating').textContent = roundedAvg;
+            document.getElementById('most-fished-section').textContent = mostFishedSection;
+            document.getElementById('april-section').textContent = aprilSection;
+
+            const sortedOutings = streamData.sort((a, b) => b.rating - a.rating).slice(0, 5);
+            const topOutingsBody = document.getElementById('top-outings-body');
+            topOutingsBody.innerHTML = '';
+            sortedOutings.forEach(outing => {
+                const tr = document.createElement('tr');
+                const formattedDate = outing.date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                const ratingLetter = ratingReverseMap[outing.rating] || 'N/A';
+                const youtubeLink = outing.youtubeLink ? `<a href="${outing.youtubeLink}" target="_blank">Watch on YouTube</a>` : 'N/A';
+                tr.innerHTML = `
+                    <td data-label="Date">${formattedDate}</td>
+                    <td data-label="Rating">${ratingLetter}</td>
+                    <td data-label="Location"><a href="https://www.google.com/maps?q=${outing.lat},${outing.lon}" target="_blank">View on Google Maps</a></td>
+                    <td data-label="Section">${outing.section}</td>
+                    <td data-label="YouTube Link">${youtubeLink}</td>
+                `;
+                topOutingsBody.appendChild(tr);
+            });
+
+            const spotsMap = new Map();
+            streamData.forEach((entry, index) => {
+                if (!isNaN(entry.lat) && !isNaN(entry.lon)) {
+                    const lat = Number(entry.lat.toFixed(5));
+                    const lon = Number(entry.lon.toFixed(5));
+                    const key = `${lat},${lon}`;
+                    if (!spotsMap.has(key)) {
+                        spotsMap.set(key, { lat, lon, sections: [entry.section], visits: 1, ratings: [entry.rating] });
+                    } else {
+                        const spot = spotsMap.get(key);
+                        spot.sections.push(entry.section);
+                        spot.visits += 1;
+                        spot.ratings.push(entry.rating);
+                    }
+                }
+            });
+
+            spotsData = Array.from(spotsMap.values()).map(spot => {
+                const sectionCounts = { LOWER: 0, MIDDLE: 0, UPPER: 0, UNKNOWN: 0 };
+                spot.sections.forEach(section => {
+                    sectionCounts[section] = (sectionCounts[section] || 0) + 1;
+                });
+                let maxCount = 0;
+                let selectedSection = 'UNKNOWN';
+                for (const [section, count] of Object.entries(sectionCounts)) {
+                    if (count > maxCount) {
+                        maxCount = count;
+                        selectedSection = section;
+                    } else if (count === maxCount) {
+                        const order = sectionOrder[section] || 5;
+                        const currentOrder = sectionOrder[selectedSection] || 5;
+                        if (order < currentOrder) {
+                            selectedSection = section;
+                        }
+                    }
+                }
+                const validRatings = spot.ratings.filter(r => r >= 0);
+                const avgRating = validRatings.length > 0
+                    ? Math.round((validRatings.reduce((sum, r) => sum + r, 0) / validRatings.length) * 100) / 100
+                    : 'N/A';
+                return { lat: spot.lat, lon: spot.lon, section: selectedSection, visits: spot.visits, avgRating };
+            });
+
+            // Determine stream flow direction by comparing average latitudes of LOWER and UPPER sections
+            const lowerSpots = spotsData.filter(spot => spot.section === 'LOWER');
+            const upperSpots = spotsData.filter(spot => spot.section === 'UPPER');
+            let latitudeSortDirection = 1; // Default: ascending (north-to-south)
+
+            if (lowerSpots.length > 0 && upperSpots.length > 0) {
+                const avgLowerLat = lowerSpots.reduce((sum, spot) => sum + spot.lat, 0) / lowerSpots.length;
+                const avgUpperLat = upperSpots.reduce((sum, spot) => sum + spot.lat, 0) / upperSpots.length;
+                if (avgLowerLat > avgUpperLat) {
+                    latitudeSortDirection = -1; // South-to-north: sort by descending latitude
+                }
+            } else if (lowerSpots.length > 0 && spotsData.some(spot => spot.section === 'MIDDLE')) {
+                // If no UPPER spots, compare LOWER to MIDDLE
+                const middleSpots = spotsData.filter(spot => spot.section === 'MIDDLE');
+                const avgLowerLat = lowerSpots.reduce((sum, spot) => sum + spot.lat, 0) / lowerSpots.length;
+                const avgMiddleLat = middleSpots.reduce((sum, spot) => sum + spot.lat, 0) / middleSpots.length;
+                if (avgLowerLat > avgMiddleLat) {
+                    latitudeSortDirection = -1;
+                }
+            } else if (upperSpots.length > 0 && spotsData.some(spot => spot.section === 'MIDDLE')) {
+                // If no LOWER spots, compare MIDDLE to UPPER
+                const middleSpots = spotsData.filter(spot => spot.section === 'MIDDLE');
+                const avgMiddleLat = middleSpots.reduce((sum, spot) => sum + spot.lat, 0) / middleSpots.length;
+                const avgUpperLat = upperSpots.reduce((sum, spot) => sum + spot.lat, 0) / upperSpots.length;
+                if (avgMiddleLat > avgUpperLat) {
+                    latitudeSortDirection = -1;
                 }
             }
-        }
-        const validRatings = spot.ratings.filter(r => r >= 0);
-        const avgRating = validRatings.length > 0
-            ? Math.round((validRatings.reduce((sum, r) => sum + r, 0) / validRatings.length) * 100) / 100
-            : 'N/A';
-        return { lat: spot.lat, lon: spot.lon, section: selectedSection, visits: spot.visits, avgRating };
-    });
 
-    // Determine stream flow direction by comparing average latitudes of LOWER and UPPER sections
-    const lowerSpots = spotsData.filter(spot => spot.section === 'LOWER');
-    const upperSpots = spotsData.filter(spot => spot.section === 'UPPER');
-    let latitudeSortDirection = 1; // Default: ascending (north-to-south)
+            // Sort spots: first by section, then within each section by latitude (direction determined above)
+            spotsData.sort((a, b) => {
+                const sectionA = sectionOrder[a.section] || 5;
+                const sectionB = sectionOrder[b.section] || 5;
+                if (sectionA !== sectionB) {
+                    return sectionA - sectionB; // Sort by section (LOWER → MIDDLE → UPPER)
+                }
+                // Within the same section, sort by latitude
+                return latitudeSortDirection * (a.lat - b.lat);
+            });
 
-    if (lowerSpots.length > 0 && upperSpots.length > 0) {
-        const avgLowerLat = lowerSpots.reduce((sum, spot) => sum + spot.lat, 0) / lowerSpots.length;
-        const avgUpperLat = upperSpots.reduce((sum, spot) => sum + spot.lat, 0) / upperSpots.length;
-        if (avgLowerLat > avgUpperLat) {
-            latitudeSortDirection = -1; // South-to-north: sort by descending latitude
-        }
-    } else if (lowerSpots.length > 0 && spotsData.some(spot => spot.section === 'MIDDLE')) {
-        // If no UPPER spots, compare LOWER to MIDDLE
-        const middleSpots = spotsData.filter(spot => spot.section === 'MIDDLE');
-        const avgLowerLat = lowerSpots.reduce((sum, spot) => sum + spot.lat, 0) / lowerSpots.length;
-        const avgMiddleLat = middleSpots.reduce((sum, spot) => sum + spot.lat, 0) / middleSpots.length;
-        if (avgLowerLat > avgMiddleLat) {
-            latitudeSortDirection = -1;
-        }
-    } else if (upperSpots.length > 0 && spotsData.some(spot => spot.section === 'MIDDLE')) {
-        // If no LOWER spots, compare MIDDLE to UPPER
-        const middleSpots = spotsData.filter(spot => spot.section === 'MIDDLE');
-        const avgMiddleLat = middleSpots.reduce((sum, spot) => sum + spot.lat, 0) / middleSpots.length;
-        const avgUpperLat = upperSpots.reduce((sum, spot) => sum + spot.lat, 0) / upperSpots.length;
-        if (avgMiddleLat > avgUpperLat) {
-            latitudeSortDirection = -1;
-        }
-    }
+            // Assign spot indices after sorting
+            spotsData.forEach((spot, idx) => {
+                spot.index = idx + 1;
+            });
 
-    // Sort spots: first by section, then within each section by latitude (direction determined above)
-    spotsData.sort((a, b) => {
-        const sectionA = sectionOrder[a.section] || 5;
-        const sectionB = sectionOrder[b.section] || 5;
-        if (sectionA !== sectionB) {
-            return sectionA - sectionB; // Sort by section (LOWER → MIDDLE → UPPER)
-        }
-        // Within the same section, sort by latitude
-        return latitudeSortDirection * (a.lat - b.lat);
-    });
+            filteredSpotsData = [...spotsData];
+            sortFilteredSpots();
 
-    // Assign spot indices after sorting
-    spotsData.forEach((spot, idx) => {
-        spot.index = idx + 1;
-    });
-
-    filteredSpotsData = [...spotsData];
-    sortFilteredSpots();
-
-    let selectedSpot = null;
-    let selectedSection = '';
-    selectedSpot = spotsData.find(spot => spot.section === 'MIDDLE');
-    if (selectedSpot) {
-        selectedSection = 'MIDDLE';
-    } else {
-        selectedSpot = spotsData.find(spot => spot.section === 'UPPER');
-        if (selectedSpot) {
-            selectedSection = 'UPPER';
-        } else {
-            selectedSpot = spotsData.find(spot => spot.section === 'LOWER');
+            let selectedSpot = null;
+            let selectedSection = '';
+            selectedSpot = spotsData.find(spot => spot.section === 'MIDDLE');
             if (selectedSpot) {
-                selectedSection = 'LOWER';
+                selectedSection = 'MIDDLE';
+            } else {
+                selectedSpot = spotsData.find(spot => spot.section === 'UPPER');
+                if (selectedSpot) {
+                    selectedSection = 'UPPER';
+                } else {
+                    selectedSpot = spotsData.find(spot => spot.section === 'LOWER');
+                    if (selectedSpot) {
+                        selectedSection = 'LOWER';
+                    }
+                }
             }
+
+            if (selectedSpot) {
+                document.getElementById('weather-title').textContent = `Weather for ${streamName} (${selectedSection} Spot)`;
+                weatherLatitude = selectedSpot.lat;
+                weatherLongitude = selectedSpot.lon;
+                fetchWeatherData(selectedSpot.lat, selectedSpot.lon);
+            } else {
+                document.getElementById('weather-error').textContent = 'No valid fishing spots found for weather data.';
+                document.getElementById('weather-loading').style.display = 'none';
+                document.getElementById('weather-location').textContent = 'Location: N/A';
+            }
+
+            document.getElementById('stream-details').style.display = 'block';
+            document.getElementById('loading').style.display = 'none';
         }
-    }
-
-    if (selectedSpot) {
-        document.getElementById('weather-title').textContent = `Weather for ${streamName} (${selectedSection} Spot)`;
-        weatherLatitude = selectedSpot.lat;
-        weatherLongitude = selectedSpot.lon;
-        fetchWeatherData(selectedSpot.lat, selectedSpot.lon);
-    } else {
-        document.getElementById('weather-error').textContent = 'No valid fishing spots found for weather data.';
-        document.getElementById('weather-loading').style.display = 'none';
-        document.getElementById('weather-location').textContent = 'Location: N/A';
-    }
-
-    document.getElementById('stream-details').style.display = 'block';
-    document.getElementById('loading').style.display = 'none';
-}
 
         init();
     </script>
