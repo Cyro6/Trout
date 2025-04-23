@@ -5,22 +5,70 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Analysis Dashboard</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
-        h1, h2 { text-align: center; color: #333; }
-        .filter { text-align: center; margin-bottom: 20px; }
-        select { padding: 8px; font-size: 1em; }
-        table { width: 100%; max-width: 1200px; margin: 20px auto; border-collapse: collapse; background-color: #fff; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); }
-        th, td { padding: 12px; text-align: left; border: 1px solid #ddd; }
-        th { background-color: #4CAF50; color: white; cursor: pointer; position: relative; }
-        th:hover { background-color: #45a049; }
-        th.sort-asc::after { content: ' ↑'; }
-        th.sort-desc::after { content: ' ↓'; }
-        tr:nth-child(even) { background-color: #f9f9f9; }
-        tr:hover { background-color: #f1f1f1; }
-        .loading { text-align: center; font-size: 1.2em; color: #555; }
-        .error { text-align: center; color: red; }
-        a { color: #4CAF50; text-decoration: none; }
-        a:hover { text-decoration: underline; }
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background-color: #f4f4f9; 
+            font-size: 16px;
+        }
+        h1, h2 { 
+            text-align: center; 
+            color: #333; 
+        }
+        .month-table-container, .rating-pressure-table-container {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        table { 
+            width: 100%; 
+            max-width: 1200px; 
+            margin: 20px auto; 
+            border-collapse: collapse; 
+            background-color: #fff; 
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); 
+        }
+        th, td { 
+            padding: 12px; 
+            text-align: left; 
+            border: 1px solid #ddd; 
+        }
+        th { 
+            background-color: #4CAF50; 
+            color: white; 
+            cursor: pointer; 
+            position: relative; 
+        }
+        th:hover { 
+            background-color: #45a049; 
+        }
+        th.sort-asc::after { 
+            content: ' ↑'; 
+        }
+        th.sort-desc::after { 
+            content: ' ↓'; 
+        }
+        tr:nth-child(even) { 
+            background-color: #f9f9f9; 
+        }
+        tr:hover { 
+            background-color: #f1f1f1; 
+        }
+        .loading { 
+            text-align: center; 
+            font-size: 1.2em; 
+            color: #555; 
+        }
+        .error { 
+            text-align: center; 
+            color: red; 
+        }
+        a { 
+            color: #4CAF50; 
+            text-decoration: none; 
+        }
+        a:hover { 
+            text-decoration: underline; 
+        }
         .filter-section {
             margin: 20px auto;
             max-width: 1200px;
@@ -38,7 +86,7 @@
             font-weight: bold;
             margin-right: 5px;
         }
-        .filter-section input {
+        .filter-section select, .filter-section input {
             padding: 5px;
             border: 1px solid #ddd;
             border-radius: 3px;
@@ -60,18 +108,123 @@
             color: #555;
             margin: 20px 0;
         }
+        .rating-pressure-section {
+            margin: 20px auto;
+            max-width: 1200px;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box;
+        }
+        .rating-pressure-toggle {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 3px;
+            cursor: pointer;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+        .rating-pressure-toggle:hover {
+            background-color: #45a049;
+        }
+        .rating-pressure-content {
+            display: none;
+        }
+        .rating-pressure-content.active {
+            display: block;
+        }
         @media screen and (max-width: 600px) {
+            body {
+                margin: 10px;
+                font-size: 14px;
+            }
+            h1 {
+                font-size: 1.5em;
+            }
+            h2 {
+                font-size: 1.2em;
+            }
+            table {
+                box-shadow: none;
+                margin: 10px 0;
+                font-size: 12px;
+            }
+            th, td {
+                padding: 6px;
+                text-align: center;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
             .filter-section {
                 flex-direction: column;
-                gap: 10px;
+                flex-wrap: wrap;
+                gap: 5px;
+                padding: 8px;
                 align-items: flex-start;
+                margin: 10px auto;
+            }
+            .filter-section .filter-row {
+                display: flex;
+                gap: 5px;
+                flex-wrap: nowrap;
+                width: auto;
+            }
+            .filter-section .button-row {
+                width: 100%;
+                justify-content: flex-start;
+            }
+            .filter-section div {
+                display: flex;
+                align-items: center;
+            }
+            .filter-section label {
+                font-size: 12px;
+                margin-right: 4px;
+            }
+            .filter-section select {
+                width: 70px;
+                font-size: 12px;
+                padding: 4px;
             }
             .filter-section input {
-                width: 100%;
-                box-sizing: border-box;
+                width: 55px;
+                font-size: 12px;
+                padding: 4px;
             }
             .filter-section button {
-                width: 100%;
+                font-size: 12px;
+                padding: 4px 8px;
+                width: auto;
+            }
+            .rating-pressure-section {
+                padding: 8px;
+                margin: 10px auto;
+            }
+            .rating-pressure-toggle {
+                display: block;
+            }
+        }
+        @media screen and (min-width: 601px) {
+            .filter-section select, .filter-section input {
+                width: auto;
+            }
+            .filter-section .filter-row {
+                display: flex;
+                gap: 15px;
+                flex-wrap: wrap;
+            }
+            .filter-section .button-row {
+                display: none;
+            }
+            .rating-pressure-toggle {
+                display: none;
+            }
+            .rating-pressure-content {
+                display: block !important;
             }
         }
     </style>
@@ -80,50 +233,70 @@
     <h1>Monthly Analysis Dashboard</h1>
 
     <div id="month" class="tab-content">
-        <div class="filter">
-            <label for="month-select">Select Month: </label>
-            <select id="month-select" onchange="applyFilters()">
-                <option value="ALL">ALL</option>
-                <!-- Populated dynamically -->
-            </select>
-        </div>
         <div class="filter-section">
-            <div>
-                <label for="stream-filter">Stream:</label>
-                <input type="text" id="stream-filter" placeholder="Filter Stream" oninput="applyFilters()">
+            <div class="filter-row">
+                <div>
+                    <label for="month-select">Month:</label>
+                    <select id="month-select" onchange="applyFilters()">
+                        <option value="ALL">ALL</option>
+                        <!-- Populated dynamically -->
+                    </select>
+                </div>
             </div>
-            <div>
-                <label for="visits-filter">Visits:</label>
-                <input type="number" id="visits-filter" min="0" placeholder="Min Visits" oninput="applyFilters()">
+            <div class="filter-row">
+                <div>
+                    <label for="stream-filter">Stream:</label>
+                    <input type="text" id="stream-filter" placeholder="Stream" oninput="applyFilters()">
+                </div>
+                <div>
+                    <label for="visits-filter">Visits:</label>
+                    <input type="number" id="visits-filter" min="0" placeholder="Visits" oninput="applyFilters()">
+                </div>
+                <div>
+                    <label for="rating-filter">Rating:</label>
+                    <input type="number" id="rating-filter" min="0" max="6" step="0.1" placeholder="Rating" oninput="applyFilters()">
+                </div>
+                <div>
+                    <label for="section-filter">Section:</label>
+                    <select id="section-filter" onchange="applyFilters()">
+                        <option value="All">All</option>
+                        <option value="L">L</option>
+                        <option value="M">M</option>
+                        <option value="U">U</option>
+                    </select>
+                </div>
             </div>
-            <div>
-                <label for="rating-filter">Rating:</label>
-                <input type="number" id="rating-filter" min="0" max="6" step="0.1" placeholder="Min Rating" oninput="applyFilters()">
+            <div class="filter-row button-row">
+                <button onclick="clearFilters()">Clear Filters</button>
             </div>
-            <div>
-                <label for="section-filter">Section:</label>
-                <input type="text" id="section-filter" placeholder="Filter Section" oninput="applyFilters()">
-            </div>
-            <button onclick="clearFilters()">Clear Filters</button>
         </div>
         <div id="no-results" class="no-results" style="display: none;">No data matches the filters.</div>
         <div id="month-loading" class="loading">Loading Analysis...</div>
         <div id="month-error" class="error"></div>
-        <table id="month-table" style="display: none;">
-            <thead id="month-header">
-                <tr id="month-header-row"></tr>
-            </thead>
-            <tbody id="month-body"></tbody>
-        </table>
+        <div class="month-table-container">
+            <table id="month-table" style="display: none;">
+                <thead id="month-header">
+                    <tr id="month-header-row"></tr>
+                </thead>
+                <tbody id="month-body"></tbody>
+            </table>
+        </div>
     </div>
 
-    <h2>Rating vs. Pressure Trend Analysis</h2>
-    <div id="rating-pressure-loading" class="loading">Loading Rating vs. Pressure Trend...</div>
-    <div id="rating-pressure-error" class="error"></div>
-    <table id="rating-pressure-table" style="display: none;">
-        <thead id="rating-pressure-header"></thead>
-        <tbody id="rating-pressure-body"></tbody>
-    </table>
+    <div class="rating-pressure-section">
+        <h2>Rating vs. Pressure Trend Analysis</h2>
+        <button class="rating-pressure-toggle" data-toggle="rating-pressure-content" onclick="toggleSection('rating-pressure-content')">Expand</button>
+        <div id="rating-pressure-content" class="rating-pressure-content">
+            <div id="rating-pressure-loading" class="loading">Loading Rating vs. Pressure Trend...</div>
+            <div id="rating-pressure-error" class="error"></div>
+            <div class="rating-pressure-table-container">
+                <table id="rating-pressure-table" style="display: none;">
+                    <thead id="rating-pressure-header"></thead>
+                    <tbody id="rating-pressure-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
     <script>
         const SHEET_ID = '1vRDZny6ZfKGXJOKIgoRo47knNJmmtDT2WTrNvOmQ0lwUiznaF1McQVgpTUa1kTMUpq5X6c3b888BGwz';
@@ -137,6 +310,31 @@
         let filteredData = []; // Store filtered rows
         let sortColumn = 'Stream'; // Default sort column
         let sortDirection = -1; // Default to descending for first click
+
+        // Toggle section visibility
+        function toggleSection(containerId) {
+            console.log(`Toggling section: ${containerId}`);
+            const container = document.getElementById(containerId);
+            if (!container) {
+                console.error(`Container not found: ${containerId}`);
+                return;
+            }
+            const button = document.querySelector(`[data-toggle="${containerId}"]`);
+            if (!button) {
+                console.error(`Button not found for container: ${containerId}`);
+                return;
+            }
+            const isExpanded = container.classList.contains('active');
+            if (isExpanded) {
+                container.classList.remove('active');
+                button.textContent = 'Expand';
+                console.log(`Collapsed: ${containerId}`);
+            } else {
+                container.classList.add('active');
+                button.textContent = 'Collapse';
+                console.log(`Expanded: ${containerId}`);
+            }
+        }
 
         // Fetch and setup Rons Spots GPS data
         async function fetchSourceData() {
@@ -331,21 +529,20 @@
                 const avgRating = ratings.reduce((sum, r) => sum + r, 0) / ratings.length;
                 const roundedAvg = Math.round(avgRating * 100) / 100;
 
-                const counts = { LOWER: 0, MIDDLE: 0, UPPER: 0 };
+                const counts = { LOWER: 0, MIDDLE: 0, UPPER: 0, UNKNOWN: 0 };
                 sections.forEach(section => {
-                    if (section in counts) counts[section]++;
-                    else counts['UNKNOWN'] = (counts['UNKNOWN'] || 0) + 1;
+                    counts[section] = (counts[section] || 0) + 1;
                 });
                 const maxCount = Math.max(counts.LOWER, counts.MIDDLE, counts.UPPER);
                 const tieCheck = (counts.LOWER === maxCount ? 1 : 0) +
                                  (counts.MIDDLE === maxCount ? 1 : 0) +
                                  (counts.UPPER === maxCount ? 1 : 0);
-                let sectionResult = 'Mixed';
+                let sectionResult = 'UNK';
                 if (maxCount > 0) {
                     if (tieCheck === 1) {
-                        if (counts.LOWER === maxCount) sectionResult = 'Lower';
-                        else if (counts.MIDDLE === maxCount) sectionResult = 'Middle';
-                        else if (counts.UPPER === maxCount) sectionResult = 'Upper';
+                        if (counts.LOWER === maxCount) sectionResult = 'L';
+                        else if (counts.MIDDLE === maxCount) sectionResult = 'M';
+                        else if (counts.UPPER === maxCount) sectionResult = 'U';
                     }
                 }
 
@@ -371,21 +568,20 @@
                 const avgRating = ratings.reduce((sum, r) => sum + r, 0) / ratings.length;
                 const roundedAvg = Math.round(avgRating * 100) / 100;
 
-                const counts = { LOWER: 0, MIDDLE: 0, UPPER: 0 };
+                const counts = { LOWER: 0, MIDDLE: 0, UPPER: 0, UNKNOWN: 0 };
                 sections.forEach(section => {
-                    if (section in counts) counts[section]++;
-                    else counts['UNKNOWN'] = (counts['UNKNOWN'] || 0) + 1;
+                    counts[section] = (counts[section] || 0) + 1;
                 });
                 const maxCount = Math.max(counts.LOWER, counts.MIDDLE, counts.UPPER);
                 const tieCheck = (counts.LOWER === maxCount ? 1 : 0) +
                                  (counts.MIDDLE === maxCount ? 1 : 0) +
                                  (counts.UPPER === maxCount ? 1 : 0);
-                let sectionResult = 'Mixed';
+                let sectionResult = 'UNK';
                 if (maxCount > 0) {
                     if (tieCheck === 1) {
-                        if (counts.LOWER === maxCount) sectionResult = 'Lower';
-                        else if (counts.MIDDLE === maxCount) sectionResult = 'Middle';
-                        else if (counts.UPPER === maxCount) sectionResult = 'Upper';
+                        if (counts.LOWER === maxCount) sectionResult = 'L';
+                        else if (counts.MIDDLE === maxCount) sectionResult = 'M';
+                        else if (counts.UPPER === maxCount) sectionResult = 'U';
                     }
                 }
 
@@ -441,7 +637,7 @@
             const streamFilter = document.getElementById('stream-filter').value.toLowerCase();
             const visitsFilter = document.getElementById('visits-filter').value;
             const ratingFilter = document.getElementById('rating-filter').value;
-            const sectionFilter = document.getElementById('section-filter').value.toLowerCase();
+            const sectionFilter = document.getElementById('section-filter').value;
 
             if (!processedData || !allData) return;
 
@@ -460,12 +656,12 @@
                 const stream = row[0].toLowerCase();
                 const visits = parseFloat(row[1]);
                 const rating = parseFloat(row[2]);
-                const section = row[3].toLowerCase();
+                const section = row[3];
 
                 return stream.includes(streamFilter) &&
                        (visitsFilter === '' || visits >= parseFloat(visitsFilter)) &&
                        (ratingFilter === '' || rating >= parseFloat(ratingFilter)) &&
-                       section.includes(sectionFilter);
+                       (sectionFilter === 'All' || section === sectionFilter);
             });
 
             // Sort by current sort column and direction
@@ -493,7 +689,7 @@
             document.getElementById('stream-filter').value = '';
             document.getElementById('visits-filter').value = '';
             document.getElementById('rating-filter').value = '';
-            document.getElementById('section-filter').value = '';
+            document.getElementById('section-filter').value = 'All';
             applyFilters();
         }
 
