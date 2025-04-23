@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -31,9 +30,31 @@
         a:hover {
             text-decoration: underline;
         }
+        .back-link {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+        .back-link a {
+            color: #28a745; /* Green color to match the image */
+            font-weight: bold;
+        }
+        .back-link a:hover {
+            text-decoration: none;
+        }
+        .back-link::before {
+            content: "← "; /* Arrow before the text */
+            color: #28a745;
+            font-size: 18px;
+            margin-right: 5px;
+        }
     </style>
 </head>
 <body>
+    <div class="back-link">
+        <a href="https://cyro6.github.io/Trout/index.html">Back to Dashboard</a>
+    </div>
     <h1>Resource Links</h1>
     <ul>
         <li><a href="https://docs.google.com/spreadsheets/d/1n9-99Fc3BzphLtOiZxukCQ5oKhvk1PecR8Ac6jOYyqM" target="_blank">Data</a> - Access the main data spreadsheet.</li>
