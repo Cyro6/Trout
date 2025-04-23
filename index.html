@@ -188,7 +188,7 @@
                 margin-right: 4px;
             }
             .filter-section select {
-                width: 70px;
+                width: 50px;
                 font-size: 12px;
                 padding: 4px;
             }
@@ -266,6 +266,9 @@
                     <label for="stream-filter">Stream:</label>
                     <input type="text" id="stream-filter" placeholder="Stream" oninput="applyFilters()">
                 </div>
+                <div>
+                    <button onclick="clearFilters()">Clear Filters</button>
+                </div>
             </div>
             <div class="filter-row">
                 <div>
@@ -285,9 +288,6 @@
                         <option value="U">U</option>
                         <option value="MX">MX</option>
                     </select>
-                </div>
-                                <div>
-                    <button onclick="clearFilters()">Clear Filters</button>
                 </div>
             </div>
         </div>
