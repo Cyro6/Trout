@@ -92,6 +92,9 @@
             border-radius: 3px;
             font-size: 0.9em;
         }
+        .filter-section input[type="text"] {
+            width: 70px;
+        }
         .filter-section button {
             padding: 5px 10px;
             background-color: #4CAF50;
@@ -195,6 +198,9 @@
                 font-size: 12px;
                 padding: 4px;
             }
+            .filter-section input[type="text"] {
+                width: 70px;
+            }
             .filter-section button {
                 font-size: 12px;
                 padding: 4px 8px;
@@ -236,17 +242,17 @@
         <div class="filter-section">
             <div class="filter-row">
                 <div>
+                    <label for="stream-filter">Stream:</label>
+                    <input type="text" id="stream-filter" placeholder="Stream" oninput="applyFilters()">
+                </div>
+            </div>
+            <div class="filter-row">
+                <div>
                     <label for="month-select">Month:</label>
                     <select id="month-select" onchange="applyFilters()">
                         <option value="ALL">ALL</option>
                         <!-- Populated dynamically -->
                     </select>
-                </div>
-            </div>
-            <div class="filter-row">
-                <div>
-                    <label for="stream-filter">Stream:</label>
-                    <input type="text" id="stream-filter" placeholder="Stream" oninput="applyFilters()">
                 </div>
                 <div>
                     <label for="visits-filter">Visits:</label>
@@ -263,6 +269,7 @@
                         <option value="L">L</option>
                         <option value="M">M</option>
                         <option value="U">U</option>
+                        <option value="MX">MX</option>
                     </select>
                 </div>
             </div>
@@ -537,7 +544,7 @@
                 const tieCheck = (counts.LOWER === maxCount ? 1 : 0) +
                                  (counts.MIDDLE === maxCount ? 1 : 0) +
                                  (counts.UPPER === maxCount ? 1 : 0);
-                let sectionResult = 'UNK';
+                let sectionResult = 'MX';
                 if (maxCount > 0) {
                     if (tieCheck === 1) {
                         if (counts.LOWER === maxCount) sectionResult = 'L';
@@ -576,7 +583,7 @@
                 const tieCheck = (counts.LOWER === maxCount ? 1 : 0) +
                                  (counts.MIDDLE === maxCount ? 1 : 0) +
                                  (counts.UPPER === maxCount ? 1 : 0);
-                let sectionResult = 'UNK';
+                let sectionResult = 'MX';
                 if (maxCount > 0) {
                     if (tieCheck === 1) {
                         if (counts.LOWER === maxCount) sectionResult = 'L';
@@ -759,9 +766,18 @@
             tableHeader.innerHTML = '';
             tableBody.innerHTML = '';
 
+            // Define mapping from abbreviated headers to full trend names
+            const trendMap = {
+                'SF': 'Significant Falling',
+                'F': 'Falling',
+                'S': 'Stable',
+                'R': 'Rising',
+                'SR': 'Significant Rising'
+            };
+
             // Create header row
             const headerRow = document.createElement('tr');
-            const headers = ['Rating', ...ratingPressureData.pressureTrends];
+            const headers = ['Rating', 'SF', 'F', 'S', 'R', 'SR'];
             headers.forEach(header => {
                 const th = document.createElement('th');
                 th.textContent = header;
@@ -776,7 +792,9 @@
                 tdRating.textContent = rating;
                 tr.appendChild(tdRating);
 
-                ratingPressureData.pressureTrends.forEach(trend => {
+                // Use abbreviated headers to access full trend names
+                headers.slice(1).forEach(abbrev => {
+                    const trend = trendMap[abbrev];
                     const td = document.createElement('td');
                     td.textContent = ratingPressureData.counts[rating][trend] || 0;
                     tr.appendChild(td);
