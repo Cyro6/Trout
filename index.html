@@ -19,10 +19,61 @@
         tr:hover { background-color: #f1f1f1; }
         .loading { text-align: center; font-size: 1.2em; color: #555; }
         .error { text-align: center; color: red; }
-        .filter-row th { background-color: #f0f0f0; padding: 5px; }
-        .filter-row input { width: 100%; padding: 5px; box-sizing: border-box; font-size: 0.9em; }
         a { color: #4CAF50; text-decoration: none; }
         a:hover { text-decoration: underline; }
+        .filter-section {
+            margin: 20px auto;
+            max-width: 1200px;
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+            box-sizing: border-box;
+        }
+        .filter-section label {
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        .filter-section input {
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+        .filter-section button {
+            padding: 5px 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .filter-section button:hover {
+            background-color: #45a049;
+        }
+        .no-results {
+            text-align: center;
+            color: #555;
+            margin: 20px 0;
+        }
+        @media screen and (max-width: 600px) {
+            .filter-section {
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
+            }
+            .filter-section input {
+                width: 100%;
+                box-sizing: border-box;
+            }
+            .filter-section button {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
@@ -31,16 +82,35 @@
     <div id="month" class="tab-content">
         <div class="filter">
             <label for="month-select">Select Month: </label>
-            <select id="month-select" onchange="filterMonthData()">
+            <select id="month-select" onchange="applyFilters()">
                 <option value="ALL">ALL</option>
                 <!-- Populated dynamically -->
             </select>
         </div>
+        <div class="filter-section">
+            <div>
+                <label for="stream-filter">Stream:</label>
+                <input type="text" id="stream-filter" placeholder="Filter Stream" oninput="applyFilters()">
+            </div>
+            <div>
+                <label for="visits-filter">Visits:</label>
+                <input type="number" id="visits-filter" min="0" placeholder="Min Visits" oninput="applyFilters()">
+            </div>
+            <div>
+                <label for="rating-filter">Rating:</label>
+                <input type="number" id="rating-filter" min="0" max="6" step="0.1" placeholder="Min Rating" oninput="applyFilters()">
+            </div>
+            <div>
+                <label for="section-filter">Section:</label>
+                <input type="text" id="section-filter" placeholder="Filter Section" oninput="applyFilters()">
+            </div>
+            <button onclick="clearFilters()">Clear Filters</button>
+        </div>
+        <div id="no-results" class="no-results" style="display: none;">No data matches the filters.</div>
         <div id="month-loading" class="loading">Loading Analysis...</div>
         <div id="month-error" class="error"></div>
         <table id="month-table" style="display: none;">
             <thead id="month-header">
-                <tr class="filter-row" id="month-filter-row"></tr>
                 <tr id="month-header-row"></tr>
             </thead>
             <tbody id="month-body"></tbody>
@@ -64,9 +134,9 @@
         let processedData = null; // Store month-specific data
         let allData = null; // Store aggregated data across all months
         let ratingPressureData = null; // Store Rating vs. Pressure Trend data
+        let filteredData = []; // Store filtered rows
         let sortColumn = 'Stream'; // Default sort column
         let sortDirection = -1; // Default to descending for first click
-        let filters = { Stream: '', Visits: '', Rating: '', Section: '' }; // Store filter values
 
         // Fetch and setup Rons Spots GPS data
         async function fetchSourceData() {
@@ -78,7 +148,7 @@
                 sourceData = parseCSV(csvText);
                 processSourceData();
                 populateMonthDropdown();
-                filterMonthData(); // Initial display
+                applyFilters(); // Initial display
                 displayRatingPressureData(); // Display new table
             } catch (error) {
                 document.getElementById('month-error').textContent = `Error: ${error.message}`;
@@ -364,10 +434,15 @@
             });
         }
 
-        // Filter and display Month Analysis by selected month or ALL
-        function filterMonthData() {
+        // Apply filters to the data and update the table
+        function applyFilters() {
             const monthSelect = document.getElementById('month-select');
             const selectedMonth = monthSelect.value;
+            const streamFilter = document.getElementById('stream-filter').value.toLowerCase();
+            const visitsFilter = document.getElementById('visits-filter').value;
+            const ratingFilter = document.getElementById('rating-filter').value;
+            const sectionFilter = document.getElementById('section-filter').value.toLowerCase();
+
             if (!processedData || !allData) return;
 
             let rowsToDisplay;
@@ -381,60 +456,56 @@
             }
 
             // Apply column filters
-            rowsToDisplay = rowsToDisplay.filter(row => {
+            filteredData = rowsToDisplay.filter(row => {
                 const stream = row[0].toLowerCase();
                 const visits = parseFloat(row[1]);
                 const rating = parseFloat(row[2]);
                 const section = row[3].toLowerCase();
 
-                const streamFilter = filters.Stream.toLowerCase();
-                const visitsFilter = filters.Visits ? parseFloat(filters.Visits) : null;
-                const ratingFilter = filters.Rating ? parseFloat(filters.Rating) : null;
-                const sectionFilter = filters.Section.toLowerCase();
-
                 return stream.includes(streamFilter) &&
-                       (visitsFilter === null || visits >= visitsFilter) &&
-                       (ratingFilter === null || rating >= ratingFilter) &&
+                       (visitsFilter === '' || visits >= parseFloat(visitsFilter)) &&
+                       (ratingFilter === '' || rating >= parseFloat(ratingFilter)) &&
                        section.includes(sectionFilter);
             });
 
-            // Sort by default (Stream, descending) on initial load
-            rowsToDisplay.sort((a, b) => {
-                const valueA = a[0];
-                const valueB = b[0];
+            // Sort by current sort column and direction
+            filteredData.sort((a, b) => {
+                const colIndex = ['Stream', 'Visits', 'Rating', 'Section'].indexOf(sortColumn);
+                let valueA = a[colIndex];
+                let valueB = b[colIndex];
+
+                if (colIndex === 1 || colIndex === 2) { // Visits or Rating
+                    valueA = parseFloat(valueA);
+                    valueB = parseFloat(valueB);
+                    return sortDirection * (valueA - valueB);
+                }
                 return sortDirection * (valueA.localeCompare(valueB));
             });
 
             displayData({
                 headers: ['Stream', 'Visits', 'Rating', 'Section'],
-                rows: rowsToDisplay
+                rows: filteredData
             }, 'month');
         }
 
-        // Display data in table with sorting and filtering
+        // Clear all filters and refresh the table
+        function clearFilters() {
+            document.getElementById('stream-filter').value = '';
+            document.getElementById('visits-filter').value = '';
+            document.getElementById('rating-filter').value = '';
+            document.getElementById('section-filter').value = '';
+            applyFilters();
+        }
+
+        // Display data in table with sorting
         function displayData({ headers, rows }, prefix) {
             const tableHeader = document.getElementById(`${prefix}-header-row`);
-            const filterRow = document.getElementById(`${prefix}-filter-row`);
             const tableBody = document.getElementById(`${prefix}-body`);
             const table = document.getElementById(`${prefix}-table`);
+            const noResultsDiv = document.getElementById('no-results');
 
             tableHeader.innerHTML = '';
-            filterRow.innerHTML = '';
             tableBody.innerHTML = '';
-
-            headers.forEach((header, index) => {
-                const th = document.createElement('th');
-                const input = document.createElement('input');
-                input.type = 'text';
-                input.placeholder = `Filter ${header}`;
-                input.value = filters[header] || '';
-                input.oninput = () => {
-                    filters[header] = input.value;
-                    filterMonthData();
-                };
-                th.appendChild(input);
-                filterRow.appendChild(th);
-            });
 
             headers.forEach((header, index) => {
                 const th = document.createElement('th');
@@ -446,7 +517,7 @@
                         sortColumn = header;
                         sortDirection = -1; // First click is descending
                     }
-                    filterMonthData();
+                    applyFilters();
                 };
                 if (sortColumn === header) {
                     th.classList.add(sortDirection === 1 ? 'sort-asc' : 'sort-desc');
@@ -454,21 +525,13 @@
                 tableHeader.appendChild(th);
             });
 
-            rows.sort((a, b) => {
-                const colIndex = headers.indexOf(sortColumn);
-                let valueA = a[colIndex];
-                let valueB = b[colIndex];
+            if (rows.length === 0) {
+                noResultsDiv.style.display = 'block';
+                table.style.display = 'none';
+                return;
+            }
 
-                // Handle numeric sorting for Visits and Rating
-                if (colIndex === 1 || colIndex === 2) { // Visits or Rating
-                    valueA = parseFloat(valueA);
-                    valueB = parseFloat(valueB);
-                    return sortDirection * (valueA - valueB);
-                }
-                // Handle alphabetical sorting for Stream and Section
-                return sortDirection * (valueA.localeCompare(valueB));
-            });
-
+            noResultsDiv.style.display = 'none';
             rows.forEach(row => {
                 const tr = document.createElement('tr');
                 row.forEach((cell, index) => {
@@ -486,7 +549,7 @@
                 tableBody.appendChild(tr);
             });
 
-            table.style.display = rows.length ? 'table' : 'none';
+            table.style.display = 'table';
         }
 
         // Display Rating vs. Pressure Trend table
