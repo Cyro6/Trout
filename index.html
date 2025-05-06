@@ -329,8 +329,8 @@
         let allData = null; // Store aggregated data across all months
         let ratingPressureData = null; // Store Rating vs. Pressure Trend data
         let filteredData = []; // Store filtered rows
-        let sortColumn = 'Stream'; // Default sort column
-        let sortDirection = -1; // Default to descending for first click
+        let sortColumn = 'Visits'; // Default sort column to Visits
+        let sortDirection = -1; // Default to descending for most visits
 
         // Toggle section visibility
         function toggleSection(containerId) {
@@ -630,7 +630,7 @@
             console.log('Rating vs. Pressure Trend counts:', ratingPressureCounts);
         }
 
-        // Populate month dropdown in chronological order
+        // Populate month dropdown in chronological order and set current month as default
         function populateMonthDropdown() {
             if (!processedData) return;
 
@@ -638,6 +638,7 @@
                 'January', 'February', 'March', 'April', 'May', 'June',
                 'July', 'August', 'September', 'October', 'November', 'December', 'Unknown'
             ];
+            const currentMonth = new Date().toLocaleString('default', { month: 'long' });
 
             const monthSelect = document.getElementById('month-select');
             const months = [...new Set(processedData.map(row => row[0]))]
@@ -647,6 +648,9 @@
                 const option = document.createElement('option');
                 option.value = month;
                 option.textContent = month;
+                if (month === currentMonth) {
+                    option.selected = true;
+                }
                 monthSelect.appendChild(option);
             });
         }
