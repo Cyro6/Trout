@@ -79,6 +79,13 @@
             color: #1f2937;
             margin-right: 10px;
             font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .filter-section label .icon {
+            font-size: 1.2rem;
         }
 
         .filter-section select,
@@ -394,13 +401,13 @@
         <div class="filter-section">
             <div class="filter-row">
                 <div>
-                    <label for="month-select">Month:</label>
+                    <label for="month-select"><span class="icon">📅</span> Month:&nbsp;</label>
                     <select id="month-select" onchange="applyFilters()">
                         <option value="ALL">ALL</option>
                     </select>
                 </div>
                 <div>
-                    <label for="stream-filter">Stream:</label>
+                    <label for="stream-filter"><span class="icon">🌊</span> Stream:&nbsp;</label>
                     <input type="text" id="stream-filter" placeholder="Stream" oninput="applyFilters()">
                 </div>
                 <div>
@@ -409,15 +416,15 @@
             </div>
             <div class="filter-row">
                 <div>
-                    <label for="visits-filter">Visits:</label>
+                    <label for="visits-filter"><span class="icon">👣</span> Visits:&nbsp;</label>
                     <input type="number" id="visits-filter" min="0" placeholder="Visits" oninput="applyFilters()">
                 </div>
                 <div>
-                    <label for="rating-filter">Rating:</label>
+                    <label for="rating-filter"><span class="icon">⭐</span> Rating:&nbsp;</label>
                     <input type="number" id="rating-filter" min="0" max="6" step="0.1" placeholder="Rating" oninput="applyFilters()">
                 </div>
                 <div>
-                    <label for="section-filter">Section:</label>
+                    <label for="section-filter"><span class="icon">📍</span> Section:&nbsp;</label>
                     <select id="section-filter" onchange="applyFilters()">
                         <option value="All">All</option>
                         <option value="L">L</option>
@@ -817,11 +824,11 @@
             let rowsToDisplay;
 
             if (selectedMonth === 'ALL') {
-                rowsToDisplay = allData.map(row => row.slice(0, 5));
+                rowsToDisplay = allData.map(row => row.slice(0, 4));
             } else {
                 rowsToDisplay = processedData
                     .filter(row => row[0] === selectedMonth)
-                    .map(row => row.slice(1, 6));
+                    .map(row => row.slice(1, 5));
             }
 
             filteredData = rowsToDisplay.filter(row => {
@@ -837,7 +844,7 @@
             });
 
             filteredData.sort((a, b) => {
-                const colIndex = ['Stream', 'Visits', 'Rating', 'Section', 'Pressure'].indexOf(sortColumn);
+                const colIndex = ['Stream', 'Visits', 'Rating', 'Section'].indexOf(sortColumn);
                 let valueA = a[colIndex];
                 let valueB = b[colIndex];
 
@@ -851,8 +858,8 @@
 
             displayData({
                 headers: selectedMonth === 'ALL' 
-                    ? ['Month', 'Stream', 'Visits', 'Rating', 'Section', 'Pressure']
-                    : ['Stream', 'Visits', 'Rating', 'Section', 'Pressure'],
+                    ? ['Month', 'Stream', 'Visits', 'Rating', 'Section']
+                    : ['Stream', 'Visits', 'Rating', 'Section'],
                 rows: filteredData
             }, 'month');
         }
@@ -966,11 +973,6 @@
                                 td.style.backgroundColor = '#22c55e';
                             }
                         }
-                    } else if (index === 4) {
-                        const indicator = document.createElement('span');
-                        indicator.className = `pressure-indicator pressure-${cell.toLowerCase().replace(/\s+/g, '-')}`;
-                        indicator.textContent = cell;
-                        td.appendChild(indicator);
                     } else {
                         td.textContent = cell;
                     }
