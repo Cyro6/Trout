@@ -260,6 +260,10 @@
             border-radius: 8px;
         }
 
+        #month-error {
+            background: #d6dcf4;
+        }
+
         .no-results {
             text-align: center;
             color: #6b7280;
@@ -368,12 +372,22 @@
             }
 
             th, td {
-                padding: 10px;
-                font-size: 0.9rem;
-                text-align: center;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
+                padding: 8px;
+                font-size: 0.85rem;
+                text-align: left;
+                white-space: normal;
+                min-width: 80px;
+                overflow-wrap: break-word;
+            }
+
+            th .header-content {
+                flex-direction: column;
+                align-items: center;
+                gap: 4px;
+            }
+
+            th .header-icon {
+                font-size: 1rem;
             }
 
             .rating-pressure-toggle {
@@ -401,13 +415,13 @@
         <div class="filter-section">
             <div class="filter-row">
                 <div>
-                    <label for="month-select"><span class="icon">📅</span> Month:&nbsp;</label>
+                    <label for="month-select"><span class="icon">📅</span> Month: </label>
                     <select id="month-select" onchange="applyFilters()">
                         <option value="ALL">ALL</option>
                     </select>
                 </div>
                 <div>
-                    <label for="stream-filter"><span class="icon">🌊</span> Stream:&nbsp;</label>
+                    <label for="stream-filter"><span class="icon">🌊</span> Stream: </label>
                     <input type="text" id="stream-filter" placeholder="Stream" oninput="applyFilters()">
                 </div>
                 <div>
@@ -416,15 +430,15 @@
             </div>
             <div class="filter-row">
                 <div>
-                    <label for="visits-filter"><span class="icon">👣</span> Visits:&nbsp;</label>
+                    <label for="visits-filter"><span class="icon">👣</span> Visits: </label>
                     <input type="number" id="visits-filter" min="0" placeholder="Visits" oninput="applyFilters()">
                 </div>
                 <div>
-                    <label for="rating-filter"><span class="icon">⭐</span> Rating:&nbsp;</label>
+                    <label for="rating-filter"><span class="icon">⭐</span> Rating: </label>
                     <input type="number" id="rating-filter" min="0" max="6" step="0.1" placeholder="Rating" oninput="applyFilters()">
                 </div>
                 <div>
-                    <label for="section-filter"><span class="icon">📍</span> Section:&nbsp;</label>
+                    <label for="section-filter"><span class="icon">📍</span> Section: </label>
                     <select id="section-filter" onchange="applyFilters()">
                         <option value="All">All</option>
                         <option value="L">L</option>
