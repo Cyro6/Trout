@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analysis Dashboard</title>
+    <title>Fishing Trip Planner Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         * {
@@ -90,7 +90,6 @@
 
         .filter-section select,
         .filter-section input {
- Greenfield, Wisconsin
             padding: 10px;
             border: 2px solid #d1d5db;
             border-radius: 8px;
@@ -137,7 +136,8 @@
             box-shadow: 0 4px 15px rgba(30, 64, 175, 0.4);
         }
 
-        .month-table-container {
+        .month-table-container,
+        .trip-plan-container {
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
         }
@@ -244,7 +244,7 @@
             border-radius: 8px;
         }
 
-        #month-error {
+        #month-error, #trip-plan-error {
             background: #d6dcf4;
         }
 
@@ -343,7 +343,7 @@
         }
 
         @media screen and (max-width: 360px) {
-            .month-table-container {
+            .month-table-container, .trip-plan-container {
                 max-width: 360px;
                 overflow-x: auto;
             }
@@ -374,7 +374,7 @@
     </style>
 </head>
 <body>
-    <h1>Monthly Analysis Dashboard</h1>
+    <h1>Fishing Trip Planner Dashboard</h1>
 
     <div id="month" class="tab-content card">
         <div class="filter-section">
@@ -412,6 +412,18 @@
                     </select>
                 </div>
                 <div>
+                    <label for="trip-days-select"><span class="icon">🗓️</span> Trip Days: </label>
+                    <select id="trip-days-select" onchange="applyFilters()">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3" selected>3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                    </select>
+                </div>
+                <div>
                     <button onclick="clearFilters()">Clear Filters</button>
                 </div>
             </div>
@@ -445,6 +457,27 @@
                     <tr id="month-header-row"></tr>
                 </thead>
                 <tbody id="month-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="trip-plan" class="tab-content card">
+        <h2>Fishing Trip Plan</h2>
+        <div id="trip-plan-loading" class="loading">Generating Trip Plan...</div>
+        <div id="trip-plan-error" class="error"></div>
+        <div class="trip-plan-container">
+            <table id="trip-plan-table" style="display: none;">
+                <thead id="trip-plan-header">
+                    <tr>
+                        <th><div class="header-content"><span class="header-icon">🗓️</span><span>Day</span></div></th>
+                        <th><div class="header-content"><span class="header-icon">🌊</span><span>Primary Stream</span></div></th>
+                        <th><div class="header-content"><span class="header-icon">🗺️</span><span>Primary GPS</span></div></th>
+                        <th><div class="header-content"><span class="header-icon">🌊</span><span>Backup Stream</span></div></th>
+                        <th><div class="header-content"><span class="header-icon">🗺️</span><span>Backup GPS</span></div></th>
+                        <th><div class="header-content"><span class="header-icon">📏</span><span>Distance (miles)</span></div></th>
+                    </tr>
+                </thead>
+                <tbody id="trip-plan-body"></tbody>
             </table>
         </div>
     </div>
@@ -498,8 +531,10 @@
                 applyFilters();
             } catch (error) {
                 document.getElementById('month-error').textContent = `Error: ${error.message}`;
+                document.getElementById('trip-plan-error').textContent = `Error: ${error.message}`;
             } finally {
                 document.getElementById('month-loading').style.display = 'none';
+                document.getElementById('trip-plan-loading').style.display = 'none';
             }
         }
 
@@ -733,6 +768,125 @@
             });
         }
 
+        function generateTripPlan(filteredStreams, numDays) {
+            const tripPlan = [];
+            const usedStreams = new Set();
+            const maxDistance = 20; // Backup stream must be within 20 miles
+
+            for (let day = 1; day <= numDays; day++) {
+                // Get available streams not yet used
+                let availableStreams = filteredStreams.filter(stream => !usedStreams.has(stream.stream) && stream.midpoint);
+
+                if (availableStreams.length === 0) {
+                    tripPlan.push({
+                        day,
+                        primary: { stream: 'None', gps: 'N/A' },
+                        backup: { stream: 'None', gps: 'N/A' },
+                        distance: 'N/A'
+                    });
+                    continue;
+                }
+
+                // Select primary stream with highest rating
+                availableStreams.sort((a, b) => b.rating - a.rating);
+                const primaryStream = availableStreams[0];
+                usedStreams.add(primaryStream.stream);
+
+                // Find backup stream within 20 miles
+                const backupCandidates = filteredStreams
+                    .filter(stream => 
+                        !usedStreams.has(stream.stream) && 
+                        stream.midpoint && 
+                        haversineDistance(
+                            primaryStream.midpoint.lat, 
+                            primaryStream.midpoint.lon, 
+                            stream.midpoint.lat, 
+                            stream.midpoint.lon
+                        ) <= maxDistance
+                    )
+                    .sort((a, b) => b.rating - a.rating);
+
+                let backupStream;
+                if (backupCandidates.length > 0) {
+                    backupStream = backupCandidates[0];
+                    usedStreams.add(backupStream.stream);
+                } else {
+                    backupStream = { stream: 'None', midpoint: null };
+                }
+
+                const distance = backupStream.midpoint && primaryStream.midpoint
+                    ? haversineDistance(
+                        primaryStream.midpoint.lat, 
+                        primaryStream.midpoint.lon, 
+                        backupStream.midpoint.lat, 
+                        backupStream.midpoint.lon
+                    ).toFixed(2)
+                    : 'N/A';
+
+                tripPlan.push({
+                    day,
+                    primary: {
+                        stream: primaryStream.stream,
+                        gps: primaryStream.midpoint ? `${primaryStream.midpoint.lat.toFixed(4)}, ${primaryStream.midpoint.lon.toFixed(4)}` : 'N/A'
+                    },
+                    backup: {
+                        stream: backupStream.stream,
+                        gps: backupStream.midpoint ? `${backupStream.midpoint.lat.toFixed(4)}, ${backupStream.midpoint.lon.toFixed(4)}` : 'N/A'
+                    },
+                    distance
+                });
+            }
+
+            return tripPlan;
+        }
+
+        function displayTripPlan(tripPlan) {
+            const tableBody = document.getElementById('trip-plan-body');
+            const table = document.getElementById('trip-plan-table');
+            const errorDiv = document.getElementById('trip-plan-error');
+
+            if (!tableBody || !table || !errorDiv) {
+                console.error('Trip plan table elements not found');
+                document.getElementById('trip-plan-error').textContent = 'Error: Table elements missing';
+                return;
+            }
+
+            tableBody.innerHTML = '';
+
+            if (tripPlan.length === 0 || tripPlan.every(plan => plan.primary.stream === 'None')) {
+                errorDiv.textContent = 'No streams available for the selected filters.';
+                table.style.display = 'none';
+                return;
+            }
+
+            errorDiv.textContent = '';
+            tripPlan.forEach(plan => {
+                const tr = document.createElement('tr');
+                [
+                    plan.day,
+                    plan.primary.stream,
+                    plan.primary.gps,
+                    plan.backup.stream,
+                    plan.backup.gps,
+                    plan.distance
+                ].forEach((cell, index) => {
+                    const td = document.createElement('td');
+                    if (index === 1 || index === 3) {
+                        const link = document.createElement('a');
+                        link.href = `stream-details.html?stream=${encodeURIComponent(cell)}`;
+                        link.textContent = cell;
+                        td.appendChild(link);
+                    } else {
+                        td.textContent = cell;
+                    }
+                    tr.appendChild(td);
+                });
+                tableBody.appendChild(tr);
+            });
+
+            table.style.display = 'table';
+        }
+
         function applyFilters() {
             const monthSelect = document.getElementById('month-select');
             const streamFilter = document.getElementById('stream-filter');
@@ -741,10 +895,12 @@
             const sectionFilter = document.getElementById('section-filter');
             const campsiteSelect = document.getElementById('campsite-select');
             const radiusSelect = document.getElementById('radius-select');
+            const tripDaysSelect = document.getElementById('trip-days-select');
 
-            if (!monthSelect || !streamFilter || !visitsFilter || !ratingFilter || !sectionFilter || !campsiteSelect || !radiusSelect) {
+            if (!monthSelect || !streamFilter || !visitsFilter || !ratingFilter || !sectionFilter || !campsiteSelect || !radiusSelect || !tripDaysSelect) {
                 console.error('One or more filter elements not found');
                 document.getElementById('month-error').textContent = 'Error: Filter elements missing';
+                document.getElementById('trip-plan-error').textContent = 'Error: Filter elements missing';
                 return;
             }
 
@@ -755,6 +911,7 @@
             const sectionFilterValue = sectionFilter.value || 'All';
             const selectedCampsite = campsiteSelect.value;
             const selectedRadius = radiusSelect.value;
+            const numDays = parseInt(tripDaysSelect.value) || 3;
 
             if (!processedData || !allData) return;
 
@@ -815,6 +972,9 @@
                     row.distance
                 ])
             }, 'month');
+
+            const tripPlan = generateTripPlan(filteredData, numDays);
+            displayTripPlan(tripPlan);
         }
 
         function clearFilters() {
@@ -824,6 +984,7 @@
             const sectionFilter = document.getElementById('section-filter');
             const campsiteSelect = document.getElementById('campsite-select');
             const radiusSelect = document.getElementById('radius-select');
+            const tripDaysSelect = document.getElementById('trip-days-select');
 
             if (streamFilter) streamFilter.value = '';
             if (visitsFilter) visitsFilter.value = '';
@@ -831,6 +992,7 @@
             if (sectionFilter) sectionFilter.value = 'All';
             if (campsiteSelect) campsiteSelect.value = 'ALL';
             if (radiusSelect) radiusSelect.value = 'ALL';
+            if (tripDaysSelect) tripDaysSelect.value = '3';
 
             applyFilters();
         }
