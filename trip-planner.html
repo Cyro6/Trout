@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fishing Trip Planner</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #c7d2fe 0%, #e5e7eb 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #1f2937;
+        }
+
+        .card {
+            background: white;
+            border-radius: 14px;
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.12);
+            padding: 25px;
+            margin: 25px auto;
+            max-width: 1200px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        h2 {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #1e40af;
+            margin-bottom: 1.5rem;
+        }
+
+        h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1e40af;
+            margin-bottom: 1rem;
+        }
+
+        .filter-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid #e0e7ff;
+            margin-bottom: 20px;
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-section label {
+            font-weight: 600;
+            color: #1f2937;
+            margin-right: 10px;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .filter-section input[type="number"],
+        .filter-section select {
+            padding: 10px;
+            border: 2px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background: white;
+            width: 90px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+        }
+
+        .filter-section input[type="number"]:focus,
+        .filter-section select:focus {
+            outline: none;
+            border-color: #1e40af;
+            box-shadow: 0 0 0 4px rgba(30, 64, 175, 0.25);
+            transform: scale(1.02);
+        }
+
+        .filter-section select {
+            width: auto;
+            max-width: 300px;
+            white-space: pre-wrap;
+        }
+
+        .filter-section button {
+            padding: 10px 20px;
+            background: linear-gradient(90deg, #1e40af, #60a5fa);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+        }
+
+        .filter-section button:hover {
+            background: linear-gradient(90deg, #1e3a8a, #3b82f6);
+            transform: translateY(-3px);
+            box-shadow: 0 4px 15px rgba(30, 64, 175, 0.4);
+        }
+
+        .trip-day {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 10px;
+            border: 1px solid #e0e7ff;
+        }
+
+        .trip-day p {
+            margin: 5px 0;
+            font-size: 0.95rem;
+        }
+
+        .trip-day strong {
+            color: #1e40af;
+        }
+
+        .error {
+            text-align: center;
+            color: #dc2626;
+            font-weight: 600;
+            padding: 15px;
+            background: #fee2e2;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        @media screen and (max-width: 600px) {
+            body {
+                padding: 12px;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
+
+            h3 {
+                font-size: 1.25rem;
+            }
+
+            .card {
+                padding: 15px;
+                margin: 15px auto;
+            }
+
+            .filter-section {
+                padding: 12px;
+            }
+
+            .filter-row {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+            }
+
+            .filter-section input[type="number"],
+            .filter-section select {
+                width: 100%;
+                font-size: 0.9rem;
+            }
+
+            .filter-section button {
+                width: 100%;
+                padding: 12px;
+            }
+        }
+
+        @media screen and (max-width: 360px) {
+            .card {
+                max-width: 360px;
+            }
+
+            .filter-section input[type="number"],
+            .filter-section select {
+                font-size: 0.75rem;
+            }
+
+            .trip-day {
+                padding: 10px;
+            }
+
+            .trip-day p {
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>3-Day Fishing Trip Planner</h2>
+        <div class="filter-section">
+            <div class="filter-row">
+                <div>
+                    <label for="campsite-select"><span class="icon">🏕️</span> Campsite: </label>
+                    <select id="campsite-select" onchange="generateTripPlan()">
+                        <option value="">Loading campsites...</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="min-rating"><span class="icon">⭐</span> Min Rating: </label>
+                    <input type="number" id="min-rating" min="0" max="6" step="0.1" placeholder="Rating" value="3">
+                </div>
+                <div>
+                    <label for="min-visits"><span class="icon">👣</span> Min Visits: </label>
+                    <input type="number" id="min-visits" min="0" placeholder="Visits" value="5">
+                </div>
+                <div>
+                    <label for="max-distance"><span class="icon">📍</span> Max Distance (miles): </label>
+                    <select id="max-distance">
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="30">30</option>
+                        <option value="40">40</option>
+                        <option value="50" selected>50</option>
+                        <option value="60">60</option>
+                        <option value="70">70</option>
+                        <option value="80">80</option>
+                        <option value="90">90</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+            </div>
+            <div class="filter-row">
+                <div>
+                    <button onclick="generateTripPlan()">Generate Trip Plan</button>
+                </div>
+            </div>
+        </div>
+        <div id="trip-plan-error" class="error"></div>
+        <div id="trip-plan-result"></div>
+    </div>
+
+    <script>
+        const streamLocations = {
+            'Black River': { lat: 44.2941, lon: -90.8493 },
+            'Wolf River': { lat: 44.8386, lon: -88.7326 },
+            'Fox River': { lat: 44.5400, lon: -88.0898 },
+            'Pecatonica River': { lat: 42.6351, lon: -89.8373 },
+            'Kickapoo River': { lat: 43.4761, lon: -90.6871 }
+        };
+
+        let filteredData = [];
+
+        const fallbackCampsites = {
+            'tourist_park': { name: 'Tourist Park (Mondovi, WI)', lat: 44.4615229, lon: -91.5884672 },
+            'perrot_state_park': { name: 'Perrot State Park (Trempealeau, WI)', lat: 44.0169, lon: -91.2319 },
+            'blackhawk_campground': { name: 'Blackhawk Campground (La Crosse, WI)', lat: 43.8436, lon: -91.2258 }
+        };
+
+        const CAMPSITE_SHEET_ID = '1vRDZny6ZfKGXJOKIgoRo47knNJmmtDT2WTrNvOmQ0lwUiznaF1McQVgpTUa1kTMUpq5X6c3b888BGwz';
+        const CAMPSITE_SOURCE_GID = '212109608';
+        const CAMPSITE_SOURCE_URL = `https://docs.google.com/spreadsheets/d/e/2PACX-${CAMPSITE_SHEET_ID}/pub?gid=${CAMPSITE_SOURCE_GID}&single=true&output=csv`;
+
+        const STREAM_SHEET_ID = '1vRDZny6ZfKGXJOKIgoRo47knNJmmtDT2WTrNvOmQ0lwUiznaF1McQVgpTUa1kTMUpq5X6c3b888BGwz';
+        const STREAM_SOURCE_GID = '491893533';
+        const STREAM_SOURCE_URL = `https://docs.google.com/spreadsheets/d/e/2PACX-${STREAM_SHEET_ID}/pub?gid=${STREAM_SOURCE_GID}&single=true&output=csv`;
+
+        async function loadCampsites() {
+            const campsiteSelect = document.getElementById('campsite-select');
+            const errorDiv = document.getElementById('trip-plan-error');
+            let campsites = {};
+
+            try {
+                const response = await fetch(CAMPSITE_SOURCE_URL);
+                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                const csvText = await response.text();
+                campsiteSelect.innerHTML = '<option value="">Select a Campsite</option>';
+
+                const rows = csvText.split('\n').slice(1);
+                rows.forEach(row => {
+                    const firstCommaIndex = row.indexOf(',');
+                    if (firstCommaIndex === -1) return;
+
+                    const name = row.substring(0, firstCommaIndex).trim().replace(/^"|"$/g, '');
+                    const coordsStr = row.substring(firstCommaIndex + 1).trim().replace(/^"|"$/g, '');
+
+                    if (name && coordsStr) {
+                        const [lat, lon] = coordsStr.split(',').map(coord => parseFloat(coord.trim())).map(coord => isNaN(coord) ? 0 : coord);
+                        if (lat && lon) {
+                            const value = name.toLowerCase().replace(/[\s,()]/g, '_');
+                            const displayText = `${name}\nLat: ${lat.toFixed(6)}, Lon: ${lon.toFixed(6)}`;
+                            const option = new Option(displayText, value);
+                            option.setAttribute('data-coords', `${lat},${lon}`);
+                            campsiteSelect.appendChild(option);
+                            campsites[value] = { name, lat, lon };
+                        }
+                    }
+                });
+
+                if (Object.keys(campsites).length === 0) {
+                    throw new Error('No valid campsite data found in the sheet.');
+                }
+            } catch (error) {
+                console.error('Error loading campsites:', error);
+                errorDiv.textContent = `Failed to load campsites: ${error.message}. Using fallback data.`;
+                campsites = fallbackCampsites;
+                campsiteSelect.innerHTML = '<option value="">Select a Campsite</option>';
+                Object.entries(fallbackCampsites).forEach(([value, data]) => {
+                    const displayText = `${data.name}\nLat: ${data.lat.toFixed(6)}, Lon: ${data.lon.toFixed(6)}`;
+                    const option = new Option(displayText, value);
+                    option.setAttribute('data-coords', `${data.lat},${data.lon}`);
+                    campsiteSelect.appendChild(option);
+                });
+            }
+
+            window.campsites = campsites;
+        }
+
+        async function fetchStreamData() {
+            try {
+                const response = await fetch(STREAM_SOURCE_URL);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const csvText = await response.text();
+                if (!csvText.trim()) throw new Error('Empty CSV data');
+                const sourceData = parseCSV(csvText);
+                processStreamData(sourceData);
+            } catch (error) {
+                console.error('Error fetching stream data:', error);
+                filteredData = [
+                    ['Black River', 10, 4.5, 'L'],
+                    ['Wolf River', 8, 4.2, 'M'],
+                    ['Fox River', 6, 3.8, 'U'],
+                    ['Pecatonica River', 7, 3.5, 'L'],
+                    ['Kickapoo River', 5, 3.0, 'MX']
+                ].map(row => [row[0], parseInt(row[1]), parseFloat(row[2]), row[3]]);
+            }
+        }
+
+        function parseCSV(csvText) {
+            let insideQuotes = false;
+            let processedText = '';
+            for (let i = 0; i < csvText.length; i++) {
+                const char = csvText[i];
+                if (char === '"') {
+                    insideQuotes = !insideQuotes;
+                    processedText += char;
+                } else if (char === '\n' && insideQuotes) {
+                    processedText += '\\n';
+                } else {
+                    processedText += char;
+                }
+            }
+
+            const lines = processedText.split('\n').filter(line => line.trim() !== '');
+            const headers = lines[0].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(header => header.trim().replace(/^"|"$/g, ''));
+            const expectedColumns = headers.length;
+            const rows = lines.slice(1).map((line, lineIndex) => {
+                const values = [];
+                let current = '';
+                let insideQuotes = false;
+                let i = 0;
+
+                while (i < line.length) {
+                    const char = line[i];
+                    const nextChar = line[i + 1];
+
+                    if (char === '"' && nextChar === '"') {
+                        current += '"';
+                        i += 2;
+                    } else if (char === '"') {
+                        insideQuotes = !insideQuotes;
+                        i++;
+                    } else if (char === ',' && !insideQuotes) {
+                        values.push(current.trim().replace(/^"|"$/g, '').replace(/\\n/g, '\n'));
+                        current = '';
+                        i++;
+                    } else {
+                        current += char;
+                        i++;
+                    }
+                }
+                values.push(current.trim().replace(/^"|"$/g, '').replace(/\\n/g, '\n'));
+
+                while (values.length < expectedColumns) {
+                    values.push('');
+                }
+
+                return values;
+            });
+
+            return { headers, rows };
+        }
+
+        function processStreamData(sourceData) {
+            const ratingMap = { 'F': 0, 'E': 1, 'D': 2, 'C': 3, 'B': 4, 'A': 5, 'S': 6 };
+            const excludedStreams = ['Unknown', 'Central Sands', 'Minnesota', 'Southern WI'];
+
+            const validData = sourceData.rows
+                .filter(row => {
+                    if (row.length < 18) return false;
+                    const stream = row[2]?.trim() || '';
+                    const rating = row[17]?.toUpperCase();
+                    const validRating = /^[SABCDEF]$/.test(rating);
+                    const validStream = !excludedStreams.some(excluded => stream.includes(excluded));
+                    return validRating && validStream;
+                })
+                .map(row => {
+                    const dateRaw = row[0] || '01/01/2000';
+                    const date = new Date(dateRaw.replace(/(\d+)\/(\d+)\/(\d+)/, '$3-$1-$2'));
+                    const month = isNaN(date.getTime()) ? 'Unknown' : date.toLocaleString('default', { month: 'long' });
+                    const stream = row[2]?.trim() || '';
+                    const rating = row[17]?.toUpperCase();
+                    const section = row[15]?.trim().toUpperCase() || 'UNKNOWN';
+                    return [month, stream, rating, section];
+                });
+
+            const groupedDataByMonth = {};
+            validData.forEach(([month, stream, rating, section]) => {
+                const key = `${month}|${stream}`;
+                if (!groupedDataByMonth[key]) {
+                    groupedDataByMonth[key] = { month, stream, ratings: [], sections: [] };
+                }
+                groupedDataByMonth[key].ratings.push(ratingMap[rating]);
+                groupedDataByMonth[key].sections.push(section);
+            });
+
+            const processedData = Object.values(groupedDataByMonth).map(({ month, stream, ratings, sections }) => {
+                const visits = ratings.length;
+                const avgRating = ratings.length > 0 ? ratings.reduce((sum, r) => sum + r, 0) / ratings.length : 0;
+                const roundedAvg = Math.round(avgRating * 100) / 100;
+
+                const counts = { LOWER: 0, MIDDLE: 0, UPPER: 0, UNKNOWN: 0 };
+                sections.forEach(section => {
+                    counts[section] = (counts[section] || 0) + 1;
+                });
+                const maxCount = Math.max(counts.LOWER, counts.MIDDLE, counts.UPPER);
+                const tieCheck = (counts.LOWER === maxCount ? 1 : 0) +
+                                 (counts.MIDDLE === maxCount ? 1 : 0) +
+                                 (counts.UPPER === maxCount ? 1 : 0);
+                let sectionResult = 'MX';
+                if (maxCount > 0) {
+                    if (tieCheck === 1) {
+                        if (counts.LOWER === maxCount) sectionResult = 'L';
+                        else if (counts.MIDDLE === maxCount) sectionResult = 'M';
+                        else if (counts.UPPER === maxCount) sectionResult = 'U';
+                    }
+                }
+
+                return [month, stream, visits, roundedAvg, sectionResult];
+            });
+
+            const currentMonth = new Date().toLocaleString('default', { month: 'long' });
+            filteredData = processedData
+                .filter(row => row[0] === currentMonth)
+                .map(row => [row[1], row[2], row[3], row[4]])
+                .filter(row => streamLocations[row[0]]);
+
+            if (filteredData.length === 0) {
+                filteredData = [
+                    ['Black River', 10, 4.5, 'L'],
+                    ['Wolf River', 8, 4.2, 'M'],
+                    ['Fox River', 6, 3.8, 'U'],
+                    ['Pecatonica River', 7, 3.5, 'L'],
+                    ['Kickapoo River', 5, 3.0, 'MX']
+                ].map(row => [row[0], parseInt(row[1]), parseFloat(row[2]), row[3]]);
+            }
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 3958.8;
+            const toRad = (degrees) => degrees * Math.PI / 180;
+            const dLat = toRad(lat2 - lat1);
+            const dLon = toRad(lon2 - lon1);
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        function findNearbyBackup(primaryStream, eligibleStreams, usedStreams, minRating, minVisits) {
+            const primaryCoords = streamLocations[primaryStream[0]];
+            if (!primaryCoords) return null;
+
+            const nearbyStreams = eligibleStreams
+                .filter(stream => {
+                    if (stream[0] === primaryStream[0] || usedStreams.includes(stream[0])) return false;
+                    if (parseFloat(stream[2]) < minRating || parseInt(stream[1]) < minVisits) return false;
+                    const coords = streamLocations[stream[0]];
+                    if (!coords) return false;
+                    const distance = calculateDistance(
+                        primaryCoords.lat, primaryCoords.lon,
+                        coords.lat, coords.lon
+                    );
+                    return distance <= 20;
+                })
+                .sort((a, b) => parseFloat(b[2]) - parseFloat(a[2]));
+
+            return nearbyStreams.length > 0 ? nearbyStreams[0] : null;
+        }
+
+        function generateTripPlan() {
+            const resultDiv = document.getElementById('trip-plan-result');
+            const errorDiv = document.getElementById('trip-plan-error');
+            resultDiv.innerHTML = '';
+            errorDiv.textContent = '';
+
+            const campsiteSelect = document.getElementById('campsite-select');
+            const minRating = parseFloat(document.getElementById('min-rating').value) || 0;
+            const minVisits = parseInt(document.getElementById('min-visits').value) || 0;
+            const maxDistance = parseInt(document.getElementById('max-distance').value) || 50;
+            const campsiteKey = campsiteSelect.value;
+            if (!campsiteKey) {
+                errorDiv.textContent = 'Please select a campsite.';
+                return;
+            }
+
+            const campsiteData = window.campsites[campsiteKey];
+            if (!campsiteData || isNaN(campsiteData.lat) || isNaN(campsiteData.lon)) {
+                errorDiv.textContent = 'Invalid campsite coordinates.';
+                return;
+            }
+
+            if (!filteredData || filteredData.length < 3) {
+                errorDiv.textContent = 'Not enough stream data to generate a 3-day trip plan.';
+                return;
+            }
+
+            let eligibleStreams = filteredData.filter(row => {
+                const coords = streamLocations[row[0]];
+                if (!coords) return false;
+                const distance = calculateDistance(campsiteData.lat, campsiteData.lon, coords.lat, coords.lon);
+                return distance <= maxDistance &&
+                       parseFloat(row[2]) >= minRating &&
+                       parseInt(row[1]) >= minVisits;
+            });
+
+            if (eligibleStreams.length < 3) {
+                errorDiv.textContent = `Not enough streams within ${maxDistance} miles of ${campsiteData.name} with rating >= ${minRating} and visits >= ${minVisits} to generate a 3-day trip plan.`;
+                return;
+            }
+
+            eligibleStreams.sort((a, b) => parseFloat(b[2]) - parseFloat(a[2]));
+
+            const days = [];
+            const usedStreams = [];
+
+            for (let i = 0; i < 3; i++) {
+                const remainingStreams = eligibleStreams.filter(stream => !usedStreams.includes(stream[0]));
+                if (remainingStreams.length === 0) {
+                    errorDiv.textContent = `Not enough unique streams available for Day ${i + 1}.`;
+                    resultDiv.innerHTML = '';
+                    return;
+                }
+
+                const primary = remainingStreams[0];
+                usedStreams.push(primary[0]);
+
+                const backup = findNearbyBackup(primary, eligibleStreams, usedStreams, minRating, minVisits);
+                if (backup) usedStreams.push(backup[0]);
+
+                const type = i < 2 ? 'Full Day' : 'Half Day';
+                days.push({ primary, backup, type });
+            }
+
+            days.forEach((day, index) => {
+                const dayDiv = document.createElement('div');
+                dayDiv.className = 'trip-day';
+                const dayTitle = document.createElement('h3');
+                dayTitle.textContent = `Day ${index + 1} (${day.type})`;
+                dayDiv.appendChild(dayTitle);
+
+                const primaryStream = day.primary[0];
+                const primaryRating = day.primary[2].toFixed(1);
+                const primarySection = day.primary[3];
+                const primaryLat = streamLocations[primaryStream]?.lat?.toFixed(4) || 'Unknown';
+
+                const primaryP = document.createElement('p');
+                primaryP.innerHTML = `<strong>Primary Stream:</strong> ${primaryStream} (Rating: ${primaryRating}, Section: ${primarySection}, Approx. Latitude: ${primaryLat}°N)`;
+                dayDiv.appendChild(primaryP);
+
+                if (day.backup) {
+                    const backupStream = day.backup[0];
+                    const backupRating = day.backup[2].toFixed(1);
+                    const backupSection = day.backup[3];
+                    const backupLat = streamLocations[backupStream]?.lat?.toFixed(4) || 'Unknown';
+
+                    const backupP = document.createElement('p');
+                    backupP.innerHTML = `<strong>Backup Stream:</strong> ${backupStream} (Rating: ${backupRating}, Section: ${backupSection}, Approx. Latitude: ${backupLat}°N)`;
+                    dayDiv.appendChild(backupP);
+                } else {
+                    const backupP = document.createElement('p');
+                    backupP.innerHTML = `<strong>Backup Stream:</strong> None available (no streams within 20 miles)`;
+                    dayDiv.appendChild(backupP);
+                }
+
+                resultDiv.appendChild(dayDiv);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await Promise.all([loadCampsites(), fetchStreamData()]);
+            generateTripPlan();
+        });
+    </script>
+</body>
+</html>
