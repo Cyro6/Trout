@@ -20,6 +20,26 @@
             color: #1f2937;
         }
 
+        .back-link {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+        }
+
+        .back-link a {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1e40af;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .back-link a:hover {
+            color: #3b82f6;
+            text-decoration: underline;
+        }
+
         h1 {
             text-align: center;
             font-size: 2.8rem;
@@ -118,7 +138,8 @@
             width: 140px;
         }
 
-        .filter-section button {
+        .filter-section button,
+        #toggle-stream-table {
             padding: 10px 20px;
             background: linear-gradient(90deg, #1e40af, #60a5fa);
             color: white;
@@ -128,9 +149,11 @@
             font-size: 0.95rem;
             font-weight: 600;
             transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            margin-bottom: 20px;
         }
 
-        .filter-section button:hover {
+        .filter-section button:hover,
+        #toggle-stream-table:hover {
             background: linear-gradient(90deg, #1e3a8a, #3b82f6);
             transform: translateY(-3px);
             box-shadow: 0 4px 15px rgba(30, 64, 175, 0.4);
@@ -282,6 +305,15 @@
                 padding: 12px;
             }
 
+            .back-link {
+                top: 12px;
+                left: 12px;
+            }
+
+            .back-link a {
+                font-size: 0.9rem;
+            }
+
             h1 {
                 font-size: 2rem;
             }
@@ -317,9 +349,11 @@
                 width: 100%;
             }
 
-            .filter-section button {
+            .filter-section button,
+            #toggle-stream-table {
                 width: 100%;
                 padding: 12px;
+                margin-bottom: 12px;
             }
 
             th, td {
@@ -374,9 +408,13 @@
     </style>
 </head>
 <body>
+    <div class="back-link">
+        <a href="index.html">← Back to Dashboard</a>
+    </div>
     <h1>Fishing Trip Planner Dashboard</h1>
 
-    <div id="month" class="tab-content card">
+    <div id="trip-plan" class="tab-content card">
+        <h2>Fishing Trip Plan</h2>
         <div class="filter-section">
             <div class="filter-row">
                 <div>
@@ -456,6 +494,26 @@
                 </div>
             </div>
         </div>
+        <div id="trip-plan-loading" class="loading">Generating Trip Plan...</div>
+        <div id="trip-plan-error" class="error"></div>
+        <div class="trip-plan-container">
+            <table id="trip-plan-table" style="display: none;">
+                <thead id="trip-plan-header">
+                    <tr>
+                        <th><div class="header-content"><span class="header-icon">🗓️</span><span>Day</span></div></th>
+                        <th><div class="header-content"><span class="header-icon">🌊</span><span>Primary Stream</span></div></th>
+                        <th><div class="header-content"><span class="header-icon">🌊</span><span>Backup Stream</span></div></th>
+                        <th><div class="header-content"><span class="header-icon">📏</span><span>Straight-Line Distance (miles)</span></div></th>
+                        <th><div class="header-content"><span class="header-icon">🚗</span><span>Est. Driving Distance (miles)</span></div></th>
+                    </tr>
+                </thead>
+                <tbody id="trip-plan-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="month" class="tab-content card">
+        <button id="toggle-stream-table">Show Stream Data</button>
         <div id="no-results" class="no-results" style="display: none;">No data matches the filters.</div>
         <div id="month-loading" class="loading">Loading Analysis...</div>
         <div id="month-error" class="error"></div>
@@ -465,28 +523,6 @@
                     <tr id="month-header-row"></tr>
                 </thead>
                 <tbody id="month-body"></tbody>
-            </table>
-        </div>
-    </div>
-
-    <div id="trip-plan" class="tab-content card">
-        <h2>Fishing Trip Plan</h2>
-        <div id="trip-plan-loading" class="loading">Generating Trip Plan...</div>
-        <div id="trip-plan-error" class="error"></div>
-        <div class="trip-plan-container">
-            <table id="trip-plan-table" style="display: none;">
-                <thead id="trip-plan-header">
-                    <tr>
-                        <th><div class="header-content"><span class="header-icon">🗓️</span><span>Day</span></div></th>
-                        <th><div class="header-content"><span class="header-icon">🌊</span><span>Primary Stream</span></div></th>
-                        <th><div class="header-content"><span class="header-icon">🗺️</span><span>Primary GPS</span></div></th>
-                        <th><div class="header-content"><span class="header-icon">🌊</span><span>Backup Stream</span></div></th>
-                        <th><div class="header-content"><span class="header-icon">🗺️</span><span>Backup GPS</span></div></th>
-                        <th><div class="header-content"><span class="header-icon">📏</span><span>Straight-Line Distance (miles)</span></div></th>
-                        <th><div class="header-content"><span class="header-icon">🚗</span><span>Est. Driving Distance (miles)</span></div></th>
-                    </tr>
-                </thead>
-                <tbody id="trip-plan-body"></tbody>
             </table>
         </div>
     </div>
@@ -510,6 +546,7 @@
         const MIN_RATING = 2.0; // Minimum rating for backup streams
         const DRIVING_DISTANCE_FACTOR = 1.5; // Heuristic multiplier for driving distance
         const MAX_DRIVING_DISTANCE = 30; // Maximum estimated driving distance for backup streams
+        let isStreamTableVisible = false;
 
         function haversineDistance(lat1, lon1, lat2, lon2) {
             const R = 3958.8; // Earth's radius in miles
@@ -521,6 +558,18 @@
                       Math.sin(dLon / 2) * Math.sin(dLon / 2);
             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
             return R * c;
+        }
+
+        function toggleStreamTable() {
+            const streamTable = document.getElementById('month-table');
+            const toggleButton = document.getElementById('toggle-stream-table');
+            if (!streamTable || !toggleButton) {
+                console.error('Stream table or toggle button not found');
+                return;
+            }
+            isStreamTableVisible = !isStreamTableVisible;
+            streamTable.style.display = isStreamTableVisible ? 'table' : 'none';
+            toggleButton.textContent = isStreamTableVisible ? 'Hide Stream Data' : 'Show Stream Data';
         }
 
         async function fetchSourceData() {
@@ -880,14 +929,12 @@
                 [
                     plan.day,
                     plan.primary.stream,
-                    plan.primary.gps,
                     plan.backup.stream,
-                    plan.backup.gps,
                     plan.straightDistance,
                     plan.drivingDistance
                 ].forEach((cell, index) => {
                     const td = document.createElement('td');
-                    if (index === 1 || index === 3) {
+                    if (index === 1 || index === 2) {
                         const link = document.createElement('a');
                         link.href = `stream-details.html?stream=${encodeURIComponent(cell)}`;
                         link.textContent = cell;
@@ -1135,6 +1182,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             fetchSourceData();
+            document.getElementById('toggle-stream-table').addEventListener('click', toggleStreamTable);
         });
     </script>
 </body>
