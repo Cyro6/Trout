@@ -23,7 +23,7 @@
         .back-link {
             position: absolute;
             top: 20px;
-            left: 20px;
+            left:  SELF: 20px;
             z-index: 10;
         }
 
@@ -300,6 +300,12 @@
             color: #3b82f6;
         }
 
+        /* Styles for precipitation columns */
+        th.precipitation, td.precipitation {
+            text-align: center;
+            min-width: 120px;
+        }
+
         @media screen and (max-width: 600px) {
             body {
                 padding: 12px;
@@ -365,6 +371,19 @@
                 overflow-wrap: break-word;
             }
 
+            th.precipitation, td.precipitation {
+                min-width: 100px;
+                text-align: center;
+            }
+
+            th.precipitation .header-content span:last-child {
+                display: none;
+            }
+
+            th.precipitation .header-content::after {
+                content: 'Precip. (3d)';
+            }
+
             th .header-content {
                 flex-direction: column;
                 align-items: center;
@@ -393,6 +412,10 @@
                 white-space: normal;
                 min-width: 60px;
                 overflow-wrap: break-word;
+            }
+
+            th.precipitation, td.precipitation {
+                min-width: 80px;
             }
 
             th .header-content {
@@ -547,6 +570,7 @@
         const DRIVING_DISTANCE_FACTOR = 1.5; // Heuristic multiplier for driving distance
         const MAX_DRIVING_DISTANCE = 30; // Maximum estimated driving distance for backup streams
         let isStreamTableVisible = false;
+        const precipitationCache = new Map(); // Cache for precipitation data
 
         function haversineDistance(lat1, lon1, lat2, lon2) {
             const R = 3958.8; // Earth's radius in miles
@@ -558,6 +582,36 @@
                       Math.sin(dLon / 2) * Math.sin(dLon / 2);
             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
             return R * c;
+        }
+
+        function calculateTotalRainfall(data) {
+            let total = 0;
+            for (let i = 1; i < 4; i++) {
+                total += data.daily.precipitation_sum[i];
+            }
+            return total.toFixed(2);
+        }
+
+        async function fetchPrecipitationData(lat, lon) {
+            const key = `${Number(lat).toFixed(5)},${Number(lon).toFixed(5)}`;
+            if (precipitationCache.has(key)) {
+                return precipitationCache.get(key);
+            }
+
+            try {
+                const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=precipitation_sum&timezone=America%2FChicago&past_days=4&precipitation_unit=inch`;
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                const total = calculateTotalRainfall(data);
+                const result = `${total} in`;
+                precipitationCache.set(key, result);
+                return result;
+            } catch (error) {
+                console.error(`Error fetching precipitation for ${key}: ${error.message}`);
+                precipitationCache.set(key, 'Error');
+                return 'Error';
+            }
         }
 
         function toggleStreamTable() {
@@ -843,7 +897,9 @@
                         primary: { stream: 'None', gps: 'N/A' },
                         backup: { stream: 'None', gps: 'N/A' },
                         straightDistance: 'N/A',
-                        drivingDistance: 'N/A'
+                        drivingDistance: 'N/A',
+                        primaryPrecipitation: 'N/A',
+                        backupPrecipitation: 'N/A'
                     });
                     continue;
                 }
@@ -854,14 +910,13 @@
                 usedStreams.add(primaryStream.stream);
 
                 // Find backup stream: closest stream within maxDistance with rating >= MIN_RATING
-                // Use allStreams (not filtered by campsite radius) for backup selection
                 const backupCandidates = allStreams
                     .map(stream => {
                         if (!usedStreams.has(stream.stream) && stream.midpoint && stream.rating >= MIN_RATING) {
                             const distance = haversineDistance(
-                                primaryStream.midpoint.lat, 
-                                primaryStream.midpoint.lon, 
-                                stream.midpoint.lat, 
+                                primaryStream.midpoint.lat,
+                                primaryStream.midpoint.lon,
+                                stream.midpoint.lat,
                                 stream.midpoint.lon
                             );
                             const drivingDistance = distance * DRIVING_DISTANCE_FACTOR;
@@ -872,7 +927,7 @@
                         return null;
                     })
                     .filter(stream => stream !== null)
-                    .sort((a, b) => a.distance - b.distance); // Sort by straight-line distance
+                    .sort((a, b) => a.distance - b.distance);
 
                 let backupStream;
                 let straightDistance = 'N/A';
@@ -897,7 +952,9 @@
                         gps: backupStream.midpoint ? `${backupStream.midpoint.lat.toFixed(4)}, ${backupStream.midpoint.lon.toFixed(4)}` : 'N/A'
                     },
                     straightDistance,
-                    drivingDistance
+                    drivingDistance,
+                    primaryPrecipitation: primaryStream.midpoint ? 'Loading...' : 'N/A',
+                    backupPrecipitation: backupStream.midpoint ? 'Loading...' : 'N/A'
                 });
             }
 
@@ -931,9 +988,14 @@
                     plan.primary.stream,
                     plan.backup.stream,
                     plan.straightDistance,
-                    plan.drivingDistance
+                    plan.drivingDistance,
+                    plan.primaryPrecipitation,
+                    plan.backupPrecipitation
                 ].forEach((cell, index) => {
                     const td = document.createElement('td');
+                    if (index === 5 || index === 6) {
+                        td.classList.add('precipitation');
+                    }
                     if (index === 1 || index === 2) {
                         const link = document.createElement('a');
                         link.href = `stream-details.html?stream=${encodeURIComponent(cell)}`;
@@ -950,7 +1012,7 @@
             table.style.display = 'table';
         }
 
-        function applyFilters() {
+        async function applyFilters() {
             const monthSelect = document.getElementById('month-select');
             const streamFilter = document.getElementById('stream-filter');
             const visitsFilter = document.getElementById('visits-filter');
@@ -989,7 +1051,7 @@
                     const [campLat, campLon] = selectedCampsite.split(',').map(coord => parseFloat(coord.trim()));
                     distance = haversineDistance(row.midpoint.lat, row.midpoint.lon, campLat, campLon);
                 }
-                return { ...row, distance: distance ? distance.toFixed(2) : 'N/A' };
+                return { ...row, distance: distance ? distance.toFixed(2) : 'N/A', precipitation: row.midpoint ? 'Loading...' : 'N/A' };
             }).filter(row => {
                 const stream = row.stream.toLowerCase();
                 const visits = parseFloat(row.visits);
@@ -1017,22 +1079,32 @@
                        (sectionFilterValue === 'All' || section === sectionFilterValue);
             });
 
-            filteredData.sort((a, b) => {
-                const colIndex = ['Stream', 'Visits', 'Rating', 'Section', 'Midpoint', 'Distance'].indexOf(sortColumn);
-                let valueA = a[colIndex === 5 ? 'distance' : colIndex === 4 ? (a.midpoint ? `${a.midpoint.lat.toFixed(4)}, ${a.midpoint.lon.toFixed(4)}` : 'N/A') : Object.keys(a)[colIndex]];
-                let valueB = b[colIndex === 5 ? 'distance' : colIndex === 4 ? (b.midpoint ? `${b.midpoint.lat.toFixed(4)}, ${b.midpoint.lon.toFixed(4)}` : 'N/A') : Object.keys(b)[colIndex]];
+            // Fetch precipitation data for filteredData
+            const precipitationPromises = filteredData.map(async row => {
+                if (row.midpoint) {
+                    row.precipitation = await fetchPrecipitationData(row.midpoint.lat, row.midpoint.lon);
+                }
+                return row;
+            });
 
-                if (colIndex === 1 || colIndex === 2 || colIndex === 5) {
-                    valueA = valueA === 'N/A' ? Infinity : parseFloat(valueA);
-                    valueB = valueB === 'N/A' ? Infinity : parseFloat(valueB);
+            filteredData = await Promise.all(precipitationPromises);
+
+            filteredData.sort((a, b) => {
+                const colIndex = ['Stream', 'Visits', 'Rating', 'Section', 'Midpoint', 'Distance', 'Precipitation'].indexOf(sortColumn);
+                let valueA = a[colIndex === 6 ? 'precipitation' : colIndex === 5 ? 'distance' : colIndex === 4 ? (a.midpoint ? `${a.midpoint.lat.toFixed(4)}, ${a.midpoint.lon.toFixed(4)}` : 'N/A') : Object.keys(a)[colIndex]];
+                let valueB = b[colIndex === 6 ? 'precipitation' : colIndex === 5 ? 'distance' : colIndex === 4 ? (b.midpoint ? `${b.midpoint.lat.toFixed(4)}, ${b.midpoint.lon.toFixed(4)}` : 'N/A') : Object.keys(b)[colIndex]];
+
+                if (colIndex === 1 || colIndex === 2 || colIndex === 5 || colIndex === 6) {
+                    valueA = valueA === 'N/A' || valueA === 'Loading...' || valueA === 'Error' ? Infinity : parseFloat(valueA);
+                    valueB = valueB === 'N/A' || valueB === 'Loading...' || valueB === 'Error' ? Infinity : parseFloat(valueB);
                     return sortDirection * (valueA - valueB);
                 }
                 return sortDirection * (valueA.localeCompare(valueB));
             });
 
-            const headers = selectedMonth === 'ALL' 
-                ? ['Stream', 'Visits', 'Rating', 'Section', 'Midpoint', 'Distance']
-                : ['Stream', 'Visits', 'Rating', 'Section', 'Midpoint', 'Distance'];
+            const headers = selectedMonth === 'ALL'
+                ? ['Stream', 'Visits', 'Rating', 'Section', 'Midpoint', 'Distance', 'Precipitation']
+                : ['Stream', 'Visits', 'Rating', 'Section', 'Midpoint', 'Distance', 'Precipitation'];
 
             displayData({
                 headers,
@@ -1042,12 +1114,28 @@
                     row.rating,
                     row.section,
                     row.midpoint ? `${row.midpoint.lat.toFixed(4)}, ${row.midpoint.lon.toFixed(4)}` : 'N/A',
-                    row.distance
+                    row.distance,
+                    row.precipitation
                 ])
             }, 'month');
 
             const tripPlan = generateTripPlan(filteredData, backupStreamCandidates, numDays, maxBackupDistance);
-            displayTripPlan(tripPlan);
+
+            // Fetch precipitation data for tripPlan
+            const tripPlanPromises = tripPlan.map(async plan => {
+                if (plan.primary.gps !== 'N/A') {
+                    const [lat, lon] = plan.primary.gps.split(',').map(coord => parseFloat(coord.trim()));
+                    plan.primaryPrecipitation = await fetchPrecipitationData(lat, lon);
+                }
+                if (plan.backup.gps !== 'N/A') {
+                    const [lat, lon] = plan.backup.gps.split(',').map(coord => parseFloat(coord.trim()));
+                    plan.backupPrecipitation = await fetchPrecipitationData(lat, lon);
+                }
+                return plan;
+            });
+
+            const updatedTripPlan = await Promise.all(tripPlanPromises);
+            displayTripPlan(updatedTripPlan);
         }
 
         function clearFilters() {
@@ -1094,11 +1182,22 @@
                 'Rating': '⭐',
                 'Section': '📍',
                 'Midpoint': '🗺️',
-                'Distance': '📏'
+                'Distance': '📏',
+                'Precipitation': '💧',
+                'Day': '🗓️',
+                'Primary Stream': '🌊',
+                'Backup Stream': '🌊',
+                'Straight-Line Distance (miles)': '📏',
+                'Est. Driving Distance (miles)': '🚗',
+                'Primary Precipitation (Past 3 Days)': '💧',
+                'Backup Precipitation (Past 3 Days)': '💧'
             };
 
             headers.forEach((header, index) => {
                 const th = document.createElement('th');
+                if (header.includes('Precipitation')) {
+                    th.classList.add('precipitation');
+                }
                 const contentDiv = document.createElement('div');
                 contentDiv.className = 'header-content';
 
@@ -1140,17 +1239,27 @@
                 const tr = document.createElement('tr');
                 row.forEach((cell, index) => {
                     const td = document.createElement('td');
-                    if (index === 0) {
+                    if (prefix === 'month' && index === 6) {
+                        td.classList.add('precipitation');
+                    } else if (prefix === 'trip-plan' && (index === 5 || index === 6)) {
+                        td.classList.add('precipitation');
+                    }
+                    if (prefix === 'month' && index === 0) {
                         const link = document.createElement('a');
                         link.href = `stream-details.html?stream=${encodeURIComponent(cell)}`;
                         link.textContent = cell;
                         td.appendChild(link);
-                    } else if (index === 2) {
-                        const rating = parseFloat(cell);
+                    } else if (prefix === 'trip-plan' && (index === 1 || index === 2)) {
+                        const link = document.createElement('a');
+                        link.href = `stream-details.html?stream=${encodeURIComponent(cell)}`;
+                        link.textContent = cell;
+                        td.appendChild(link);
+                    } else {
                         td.textContent = cell;
-                        if (isNaN(rating) || rating < 0 || rating > 6) {
-                            console.warn('Invalid rating value:', { cell, parsedRating: rating, row });
-                        } else {
+                    }
+                    if (prefix === 'month' && index === 2) {
+                        const rating = parseFloat(cell);
+                        if (!isNaN(rating) && rating >= 0 && rating <= 6) {
                             if (rating <= 1) {
                                 td.style.backgroundColor = '#dc2626';
                             } else if (rating <= 2.5) {
@@ -1168,16 +1277,15 @@
                             } else {
                                 td.style.backgroundColor = '#22c55e';
                             }
+                        } else {
+                            console.warn('Invalid rating value:', { cell, parsedRating: rating, row });
                         }
-                    } else {
-                        td.textContent = cell;
                     }
                     tr.appendChild(td);
                 });
                 tableBody.appendChild(tr);
             });
 
-            // Only show the table if isStreamTableVisible is true for month table
             if (prefix === 'month') {
                 table.style.display = isStreamTableVisible ? 'table' : 'none';
             } else {
@@ -1186,14 +1294,11 @@
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
-            // Check if the screen is mobile (max-width: 600px)
             const isMobile = window.matchMedia("(max-width: 600px)").matches;
             console.log('Mobile detected:', isMobile, 'Initial isStreamTableVisible:', isStreamTableVisible);
 
-            // Fetch data first
             await fetchSourceData();
 
-            // Set initial visibility after data is loaded: hidden on mobile, visible on desktop
             const streamTable = document.getElementById('month-table');
             const toggleButton = document.getElementById('toggle-stream-table');
             if (streamTable && toggleButton) {
