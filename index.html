@@ -1177,25 +1177,34 @@
                 tableBody.appendChild(tr);
             });
 
-            table.style.display = 'table';
+            // Only show the table if isStreamTableVisible is true for month table
+            if (prefix === 'month') {
+                table.style.display = isStreamTableVisible ? 'table' : 'none';
+            } else {
+                table.style.display = 'table';
+            }
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             // Check if the screen is mobile (max-width: 600px)
             const isMobile = window.matchMedia("(max-width: 600px)").matches;
+            console.log('Mobile detected:', isMobile, 'Initial isStreamTableVisible:', isStreamTableVisible);
+
+            // Fetch data first
+            await fetchSourceData();
+
+            // Set initial visibility after data is loaded: hidden on mobile, visible on desktop
             const streamTable = document.getElementById('month-table');
             const toggleButton = document.getElementById('toggle-stream-table');
-
             if (streamTable && toggleButton) {
-                // Set initial visibility: hidden on mobile, visible on desktop
                 isStreamTableVisible = !isMobile;
                 streamTable.style.display = isStreamTableVisible ? 'table' : 'none';
                 toggleButton.textContent = isStreamTableVisible ? 'Hide Stream Data' : 'Show Stream Data';
+                console.log('Post-fetch: isStreamTableVisible:', isStreamTableVisible, 'Table display:', streamTable.style.display);
             } else {
                 console.error('Stream table or toggle button not found');
             }
 
-            fetchSourceData();
             toggleButton.addEventListener('click', toggleStreamTable);
         });
     </script>
