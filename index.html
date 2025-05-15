@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analysis Dashboard</title>
+    <title>Fishing Trip Planner Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         * {
@@ -18,6 +18,26 @@
             min-height: 100vh;
             padding: 20px;
             color: #1f2937;
+        }
+
+        .back-link {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+        }
+
+        .back-link a {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1e40af;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .back-link a:hover {
+            color: #3b82f6;
+            text-decoration: underline;
         }
 
         h1 {
@@ -118,7 +138,8 @@
             width: 140px;
         }
 
-        .filter-section button {
+        .filter-section button,
+        #toggle-stream-table {
             padding: 10px 20px;
             background: linear-gradient(90deg, #1e40af, #60a5fa);
             color: white;
@@ -128,16 +149,18 @@
             font-size: 0.95rem;
             font-weight: 600;
             transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            margin-bottom: 20px;
         }
 
-        .filter-section button:hover {
+        .filter-section button:hover,
+        #toggle-stream-table:hover {
             background: linear-gradient(90deg, #1e3a8a, #3b82f6);
             transform: translateY(-3px);
             box-shadow: 0 4px 15px rgba(30, 64, 175, 0.4);
         }
 
         .month-table-container,
-        .rating-pressure-table-container {
+        .trip-plan-container {
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
         }
@@ -221,22 +244,6 @@
             text-decoration: underline;
         }
 
-        .pressure-indicator {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: white;
-        }
-
-        .pressure-significant-falling { background: #dc2626; }
-        .pressure-falling { background: #f87171; }
-        .pressure-stable { background: #eab308; }
-        .pressure-rising { background: #3b82f6; }
-        .pressure-significant-rising { background: #22c55e; }
-        .pressure-unknown { background: #6b7280; }
-
         .loading {
             text-align: center;
             font-size: 1.2rem;
@@ -260,7 +267,7 @@
             border-radius: 8px;
         }
 
-        #month-error {
+        #month-error, #trip-plan-error {
             background: #d6dcf4;
         }
 
@@ -271,39 +278,6 @@
             padding: 25px;
             background: #f3f4f6;
             border-radius: 8px;
-        }
-
-        .rating-pressure-section {
-            margin: 25px auto;
-            max-width: 1200px;
-        }
-
-        .rating-pressure-toggle {
-            background: linear-gradient(90deg, #1e40af, #60a5fa);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 600;
-            display: inline-block;
-            margin-bottom: 20px;
-            transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
-        }
-
-        .rating-pressure-toggle:hover {
-            background: linear-gradient(90deg, #1e3a8a, #3b82f6);
-            transform: translateY(-3px);
-            box-shadow: 0 4px 15px rgba(30, 64, 175, 0.4);
-        }
-
-        .rating-pressure-content {
-            display: none;
-        }
-
-        .rating-pressure-content.active {
-            display: block;
         }
 
         footer {
@@ -329,6 +303,15 @@
         @media screen and (max-width: 600px) {
             body {
                 padding: 12px;
+            }
+
+            .back-link {
+                top: 12px;
+                left: 12px;
+            }
+
+            .back-link a {
+                font-size: 0.9rem;
             }
 
             h1 {
@@ -366,9 +349,11 @@
                 width: 100%;
             }
 
-            .filter-section button {
+            .filter-section button,
+            #toggle-stream-table {
                 width: 100%;
                 padding: 12px;
+                margin-bottom: 12px;
             }
 
             th, td {
@@ -389,16 +374,10 @@
             th .header-icon {
                 font-size: 1rem;
             }
-
-            .rating-pressure-toggle {
-                display: block;
-                width: 100%;
-                text-align: center;
-            }
         }
 
         @media screen and (max-width: 360px) {
-            .month-table-container {
+            .month-table-container, .trip-plan-container {
                 max-width: 360px;
                 overflow-x: auto;
             }
@@ -426,33 +405,69 @@
                 font-size: 0.9rem;
             }
         }
-
-        @media screen and (min-width: 601px) {
-            .rating-pressure-toggle {
-                display: none;
-            }
-
-            .rating-pressure-content {
-                display: block !important;
-            }
-        }
     </style>
 </head>
 <body>
-    <h1>Monthly Analysis Dashboard</h1>
+    <div class="back-link">
+        <a href="index.html">← Back to Dashboard</a>
+    </div>
+    <h1>Fishing Trip Planner Dashboard</h1>
 
-    <div id="month" class="tab-content card">
+    <div id="trip-plan" class="tab-content card">
+        <h2>Fishing Trip Plan</h2>
         <div class="filter-section">
             <div class="filter-row">
                 <div>
-                    <label for="month-select"><span class="icon">📅</span> Month: </label>
+                    <label for="month-select"><span class="icon">📅</span> Month: </label>
                     <select id="month-select" onchange="applyFilters()">
                         <option value="ALL">ALL</option>
                     </select>
                 </div>
                 <div>
-                    <label for="stream-filter"><span class="icon">🌊</span> Stream: </label>
+                    <label for="stream-filter"><span class="icon">🌊</span> Stream: </label>
                     <input type="text" id="stream-filter" placeholder="Stream" oninput="applyFilters()">
+                </div>
+                <div>
+                    <label for="campsite-select"><span class="icon">🏕️</span> Campsite: </label>
+                    <select id="campsite-select" onchange="applyFilters()">
+                        <option value="ALL">ALL</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="radius-select"><span class="icon">📏</span> Radius (miles): </label>
+                    <select id="radius-select" onchange="applyFilters()">
+                        <option value="ALL">ALL</option>
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="30" selected>30</option>
+                        <option value="40">40</option>
+                        <option value="50">50</option>
+                        <option value="60">60</option>
+                        <option value="70">70</option>
+                        <option value="80">80</option>
+                        <option value="90">90</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="backup-distance-select"><span class="icon">🚗</span> Backup Distance (miles): </label>
+                    <select id="backup-distance-select" onchange="applyFilters()">
+                        <option value="10">10</option>
+                        <option value="20" selected>20</option>
+                        <option value="30">30</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="trip-days-select"><span class="icon">🗓️</span> Trip Days: </label>
+                    <select id="trip-days-select" onchange="applyFilters()">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3" selected>3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                    </select>
                 </div>
                 <div>
                     <button onclick="clearFilters()">Clear Filters</button>
@@ -460,15 +475,15 @@
             </div>
             <div class="filter-row">
                 <div>
-                    <label for="visits-filter"><span class="icon">👣</span> Visits: </label>
+                    <label for="visits-filter"><span class="icon">👣</span> Visits: </label>
                     <input type="number" id="visits-filter" min="0" placeholder="Visits" oninput="applyFilters()">
                 </div>
                 <div>
-                    <label for="rating-filter"><span class="icon">⭐</span> Rating: </label>
+                    <label for="rating-filter"><span class="icon">⭐</span> Rating: </label>
                     <input type="number" id="rating-filter" min="0" max="6" step="0.1" placeholder="Rating" oninput="applyFilters()">
                 </div>
                 <div>
-                    <label for="section-filter"><span class="icon">📍</span> Section: </label>
+                    <label for="section-filter"><span class="icon">📍</span> Section: </label>
                     <select id="section-filter" onchange="applyFilters()">
                         <option value="All">All</option>
                         <option value="L">L</option>
@@ -479,11 +494,31 @@
                 </div>
             </div>
         </div>
+        <div id="trip-plan-loading" class="loading">Generating Trip Plan...</div>
+        <div id="trip-plan-error" class="error"></div>
+        <div class="trip-plan-container">
+            <table id="trip-plan-table" style="display: none;">
+                <thead id="trip-plan-header">
+                    <tr>
+                        <th><div class="header-content"><span class="header-icon">🗓️</span><span>Day</span></div></th>
+                        <th><div class="header-content"><span class="header-icon">🌊</span><span>Primary Stream</span></div></th>
+                        <th><div class="header-content"><span class="header-icon">🌊</span><span>Backup Stream</span></div></th>
+                        <th><div class="header-content"><span class="header-icon">📏</span><span>Straight-Line Distance (miles)</span></div></th>
+                        <th><div class="header-content"><span class="header-icon">🚗</span><span>Est. Driving Distance (miles)</span></div></th>
+                    </tr>
+                </thead>
+                <tbody id="trip-plan-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="month" class="tab-content card">
+        <button id="toggle-stream-table">Show Stream Data</button>
         <div id="no-results" class="no-results" style="display: none;">No data matches the filters.</div>
         <div id="month-loading" class="loading">Loading Analysis...</div>
         <div id="month-error" class="error"></div>
         <div class="month-table-container">
-            <table id="month-table" style="display: none;">
+            <table id="month-table">
                 <thead id="month-header">
                     <tr id="month-header-row"></tr>
                 </thead>
@@ -492,74 +527,75 @@
         </div>
     </div>
 
-    <div class="rating-pressure-section card">
-        <h2>Rating vs. Pressure Trend Analysis</h2>
-        <button class="rating-pressure-toggle" data-toggle="rating-pressure-content" onclick="toggleSection('rating-pressure-content')">Expand</button>
-        <div id="rating-pressure-content" class="rating-pressure-content">
-            <div id="rating-pressure-loading" class="loading">Loading Rating vs. Pressure Trend...</div>
-            <div id="rating-pressure-error" class="error"></div>
-            <div class="rating-pressure-table-container">
-                <table id="rating-pressure-table" style="display: none;">
-                    <thead id="rating-pressure-header"></thead>
-                    <tbody id="rating-pressure-body"></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+    <footer><a href="./resources.html">Resource Links</a></footer>
 
     <script>
         const SHEET_ID = '1vRDZny6ZfKGXJOKIgoRo47knNJmmtDT2WTrNvOmQ0lwUiznaF1McQVgpTUa1kTMUpq5X6c3b888BGwz';
         const SOURCE_GID = '491893533';
+        const CAMPSITE_GID = '212109608';
         const SOURCE_URL = `https://docs.google.com/spreadsheets/d/e/2PACX-${SHEET_ID}/pub?gid=${SOURCE_GID}&single=true&output=csv`;
+        const CAMPSITE_URL = `https://docs.google.com/spreadsheets/d/e/2PACX-${SHEET_ID}/pub?gid=${CAMPSITE_GID}&single=true&output=csv`;
 
         let sourceData = null;
+        let campsiteData = null;
         let processedData = null;
         let allData = null;
-        let ratingPressureData = null;
         let filteredData = [];
         let sortColumn = 'Visits';
         let sortDirection = -1;
+        const MIN_RATING = 2.0; // Minimum rating for backup streams
+        const DRIVING_DISTANCE_FACTOR = 1.5; // Heuristic multiplier for driving distance
+        const MAX_DRIVING_DISTANCE = 30; // Maximum estimated driving distance for backup streams
+        let isStreamTableVisible = false;
 
-        function toggleSection(containerId) {
-            const container = document.getElementById(containerId);
-            if (!container) {
-                console.error(`Container not found: ${containerId}`);
+        function haversineDistance(lat1, lon1, lat2, lon2) {
+            const R = 3958.8; // Earth's radius in miles
+            const toRad = x => x * Math.PI / 180;
+            const dLat = toRad(lat2 - lat1);
+            const dLon = toRad(lon2 - lon1);
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        function toggleStreamTable() {
+            const streamTable = document.getElementById('month-table');
+            const toggleButton = document.getElementById('toggle-stream-table');
+            if (!streamTable || !toggleButton) {
+                console.error('Stream table or toggle button not found');
                 return;
             }
-            const button = document.querySelector(`[data-toggle="${containerId}"]`);
-            if (!button) {
-                console.error(`Button not found for container: ${containerId}`);
-                return;
-            }
-            const isExpanded = container.classList.contains('active');
-            if (isExpanded) {
-                container.classList.remove('active');
-                button.textContent = 'Expand';
-                console.log(`Collapsed: ${containerId}`);
-            } else {
-                container.classList.add('active');
-                button.textContent = 'Collapse';
-                console.log(`Expanded: ${containerId}`);
-            }
+            isStreamTableVisible = !isStreamTableVisible;
+            streamTable.style.display = isStreamTableVisible ? 'table' : 'none';
+            toggleButton.textContent = isStreamTableVisible ? 'Hide Stream Data' : 'Show Stream Data';
         }
 
         async function fetchSourceData() {
             try {
-                const response = await fetch(SOURCE_URL);
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const csvText = await response.text();
-                if (!csvText.trim()) throw new Error('Empty CSV data');
-                sourceData = parseCSV(csvText);
+                const [sourceResponse, campsiteResponse] = await Promise.all([
+                    fetch(SOURCE_URL),
+                    fetch(CAMPSITE_URL)
+                ]);
+                if (!sourceResponse.ok) throw new Error(`HTTP ${sourceResponse.status} for source data`);
+                if (!campsiteResponse.ok) throw new Error(`HTTP ${campsiteResponse.status} for campsite data`);
+                const sourceCsvText = await sourceResponse.text();
+                const campsiteCsvText = await campsiteResponse.text();
+                if (!sourceCsvText.trim()) throw new Error('Empty source CSV data');
+                if (!campsiteCsvText.trim()) throw new Error('Empty campsite CSV data');
+                sourceData = parseCSV(sourceCsvText);
+                campsiteData = parseCSV(campsiteCsvText);
                 processSourceData();
                 populateMonthDropdown();
+                populateCampsiteDropdown();
                 applyFilters();
-                displayRatingPressureData();
             } catch (error) {
                 document.getElementById('month-error').textContent = `Error: ${error.message}`;
-                document.getElementById('rating-pressure-error').textContent = `Error: ${error.message}`;
+                document.getElementById('trip-plan-error').textContent = `Error: ${error.message}`;
             } finally {
                 document.getElementById('month-loading').style.display = 'none';
-                document.getElementById('rating-pressure-loading').style.display = 'none';
+                document.getElementById('trip-plan-loading').style.display = 'none';
             }
         }
 
@@ -631,55 +667,10 @@
         }
 
         function processSourceData() {
-            if (!sourceData) return;
+            if (!sourceData || !campsiteData) return;
 
             const ratingMap = { 'F': 0, 'E': 1, 'D': 2, 'C': 3, 'B': 4, 'A': 5, 'S': 6 };
             const excludedStreams = ['Unknown', 'Central Sands', 'Minnesota', 'Southern WI'];
-            const pressureTrendIndex = 29;
-
-            function cleanPressureTrend(value, row, index) {
-                if (!value || value.trim() === '') {
-                    console.log('Pressure Trend - Unknown (Empty/Blank):', { 
-                        Raw: value, 
-                        RowData: row.slice(0, 30), 
-                        ColumnIndex: index 
-                    });
-                    return 'Unknown';
-                }
-                const cleanValue = value.replace(/['"]+/g, '').replace(/\([^)]*\)/g, '').trim().replace(/\s+/g, ' ');
-                const normalized = cleanValue.toLowerCase();
-                const trends = [
-                    { regex: /significant\s*falling/i, value: 'Significant Falling' },
-                    { regex: /significant\s*rising/i, value: 'Significant Rising' },
-                    { regex: /falling/i, value: 'Falling' },
-                    { regex: /rising/i, value: 'Rising' },
-                    { regex: /stable/i, value: 'Stable' }
-                ];
-                const matchedTrend = trends.find(trend => trend.regex.test(normalized));
-                if (!matchedTrend) {
-                    console.log('Pressure Trend - Unknown (Unmatched):', {
-                        Raw: value,
-                        Cleaned: cleanValue,
-                        Normalized: normalized,
-                        RowData: row.slice(0, 30),
-                        ColumnIndex: index,
-                        NearbyColumns: {
-                            Prev: row[index - 1] || 'N/A',
-                            Current: row[index] || 'N/A',
-                            Next: row[index + 1] || 'N/A'
-                        }
-                    });
-                    return 'Unknown';
-                } else {
-                    console.log('Pressure Trend - Matched:', {
-                        Raw: value,
-                        Cleaned: cleanValue,
-                        Normalized: normalized,
-                        Matched: matchedTrend.value
-                    });
-                    return matchedTrend.value;
-                }
-            }
 
             const validData = sourceData.rows
                 .filter(row => {
@@ -699,28 +690,25 @@
                     const section = row[15]?.trim().toUpperCase() || 'UNKNOWN';
                     const lat = parseFloat(row[12]);
                     const lon = parseFloat(row[13]);
-                    const rawPressureTrend = row[pressureTrendIndex] || '';
-                    const pressureTrend = cleanPressureTrend(rawPressureTrend, row, pressureTrendIndex);
-                    return [month, stream, rating, section, lat, lon, pressureTrend];
+                    return [month, stream, rating, section, lat, lon];
                 });
 
             console.log('Valid data rows:', validData.length);
 
             const groupedDataByMonth = {};
-            validData.forEach(([month, stream, rating, section, lat, lon, pressureTrend]) => {
+            validData.forEach(([month, stream, rating, section, lat, lon]) => {
                 const key = `${month}|${stream}`;
                 if (!groupedDataByMonth[key]) {
-                    groupedDataByMonth[key] = { month, stream, ratings: [], sections: [], spots: [], pressureTrends: [] };
+                    groupedDataByMonth[key] = { month, stream, ratings: [], sections: [], spots: [] };
                 }
                 groupedDataByMonth[key].ratings.push(ratingMap[rating]);
                 groupedDataByMonth[key].sections.push(section);
-                groupedDataByMonth[key].pressureTrends.push(pressureTrend);
                 if (!isNaN(lat) && !isNaN(lon)) {
                     groupedDataByMonth[key].spots.push({ lat, lon });
                 }
             });
 
-            processedData = Object.values(groupedDataByMonth).map(({ month, stream, ratings, sections, spots, pressureTrends }) => {
+            processedData = Object.values(groupedDataByMonth).map(({ month, stream, ratings, sections, spots }) => {
                 const visits = ratings.length;
                 const avgRating = ratings.length > 0 ? ratings.reduce((sum, r) => sum + r, 0) / ratings.length : 0;
                 const roundedAvg = Math.round(avgRating * 100) / 100;
@@ -742,29 +730,26 @@
                     }
                 }
 
-                const pressureCounts = {};
-                pressureTrends.forEach(trend => {
-                    pressureCounts[trend] = (pressureCounts[trend] || 0) + 1;
-                });
-                const dominantPressure = Object.keys(pressureCounts).reduce((a, b) => pressureCounts[a] > pressureCounts[b] ? a : b, 'Unknown');
+                const avgLat = spots.length > 0 ? spots.reduce((sum, spot) => sum + spot.lat, 0) / spots.length : null;
+                const avgLon = spots.length > 0 ? spots.reduce((sum, spot) => sum + spot.lon, 0) / spots.length : null;
+                const midpoint = avgLat && avgLon ? { lat: avgLat, lon: avgLon } : null;
 
-                return [month, stream, visits, roundedAvg, sectionResult, dominantPressure];
+                return { month, stream, visits, rating: roundedAvg, section: sectionResult, midpoint };
             });
 
             const groupedDataAll = {};
-            validData.forEach(([month, stream, rating, section, lat, lon, pressureTrend]) => {
+            validData.forEach(([month, stream, rating, section, lat, lon]) => {
                 if (!groupedDataAll[stream]) {
-                    groupedDataAll[stream] = { stream, ratings: [], sections: [], spots: [], pressureTrends: [] };
+                    groupedDataAll[stream] = { stream, ratings: [], sections: [], spots: [] };
                 }
                 groupedDataAll[stream].ratings.push(ratingMap[rating]);
                 groupedDataAll[stream].sections.push(section);
-                groupedDataAll[stream].pressureTrends.push(pressureTrend);
                 if (!isNaN(lat) && !isNaN(lon)) {
                     groupedDataAll[stream].spots.push({ lat, lon });
                 }
             });
 
-            allData = Object.values(groupedDataAll).map(({ stream, ratings, sections, spots, pressureTrends }) => {
+            allData = Object.values(groupedDataAll).map(({ stream, ratings, sections, spots }) => {
                 const visits = ratings.length;
                 const avgRating = ratings.length > 0 ? ratings.reduce((sum, r) => sum + r, 0) / ratings.length : 0;
                 const roundedAvg = Math.round(avgRating * 100) / 100;
@@ -786,33 +771,12 @@
                     }
                 }
 
-                const pressureCounts = {};
-                pressureTrends.forEach(trend => {
-                    pressureCounts[trend] = (pressureCounts[trend] || 0) + 1;
-                });
-                const dominantPressure = Object.keys(pressureCounts).reduce((a, b) => pressureCounts[a] > pressureCounts[b] ? a : b, 'Unknown');
+                const avgLat = spots.length > 0 ? spots.reduce((sum, spot) => sum + spot.lat, 0) / spots.length : null;
+                const avgLon = spots.length > 0 ? spots.reduce((sum, spot) => sum + spot.lon, 0) / spots.length : null;
+                const midpoint = avgLat && avgLon ? { lat: avgLat, lon: avgLon } : null;
 
-                return [stream, visits, roundedAvg, sectionResult, dominantPressure];
+                return { stream, visits, rating: roundedAvg, section: sectionResult, midpoint };
             });
-
-            const ratingPressureCounts = {};
-            const ratings = ['S', 'A', 'B', 'C', 'D', 'E', 'F'];
-            const pressureTrends = ['Significant Falling', 'Falling', 'Stable', 'Rising', 'Significant Rising'];
-            ratings.forEach(rating => {
-                ratingPressureCounts[rating] = {};
-                pressureTrends.forEach(trend => {
-                    ratingPressureCounts[rating][trend] = 0;
-                });
-            });
-
-            validData.forEach(([month, stream, rating, section, lat, lon, pressureTrend]) => {
-                if (ratings.includes(rating) && pressureTrends.includes(pressureTrend)) {
-                    ratingPressureCounts[rating][pressureTrend]++;
-                }
-            });
-
-            ratingPressureData = { ratings, pressureTrends, counts: ratingPressureCounts };
-            console.log('Rating vs. Pressure Trend counts:', ratingPressureCounts);
         }
 
         function populateMonthDropdown() {
@@ -830,7 +794,7 @@
                 return;
             }
 
-            const months = [...new Set(processedData.map(row => row[0]))]
+            const months = [...new Set(processedData.map(row => row.month))]
                 .sort((a, b) => monthOrder.indexOf(a) - monthOrder.indexOf(b));
 
             months.forEach(month => {
@@ -844,16 +808,163 @@
             });
         }
 
+        function populateCampsiteDropdown() {
+            if (!campsiteData) return;
+
+            const campsiteSelect = document.getElementById('campsite-select');
+            if (!campsiteSelect) {
+                console.error('Campsite select element not found');
+                return;
+            }
+
+            campsiteData.rows.forEach(row => {
+                const name = row[0]?.trim();
+                const gps = row[1]?.trim();
+                if (name && gps) {
+                    const option = document.createElement('option');
+                    option.value = gps;
+                    option.textContent = name;
+                    campsiteSelect.appendChild(option);
+                }
+            });
+        }
+
+        function generateTripPlan(filteredStreams, allStreams, numDays, maxDistance) {
+            const tripPlan = [];
+            const usedStreams = new Set();
+
+            for (let day = 1; day <= numDays; day++) {
+                // Get available primary streams not yet used with valid midpoints
+                let availablePrimaryStreams = filteredStreams.filter(stream => !usedStreams.has(stream.stream) && stream.midpoint);
+
+                if (availablePrimaryStreams.length === 0) {
+                    tripPlan.push({
+                        day,
+                        primary: { stream: 'None', gps: 'N/A' },
+                        backup: { stream: 'None', gps: 'N/A' },
+                        straightDistance: 'N/A',
+                        drivingDistance: 'N/A'
+                    });
+                    continue;
+                }
+
+                // Select primary stream with highest rating
+                availablePrimaryStreams.sort((a, b) => b.rating - a.rating);
+                const primaryStream = availablePrimaryStreams[0];
+                usedStreams.add(primaryStream.stream);
+
+                // Find backup stream: closest stream within maxDistance with rating >= MIN_RATING
+                // Use allStreams (not filtered by campsite radius) for backup selection
+                const backupCandidates = allStreams
+                    .map(stream => {
+                        if (!usedStreams.has(stream.stream) && stream.midpoint && stream.rating >= MIN_RATING) {
+                            const distance = haversineDistance(
+                                primaryStream.midpoint.lat, 
+                                primaryStream.midpoint.lon, 
+                                stream.midpoint.lat, 
+                                stream.midpoint.lon
+                            );
+                            const drivingDistance = distance * DRIVING_DISTANCE_FACTOR;
+                            if (distance <= maxDistance && drivingDistance <= MAX_DRIVING_DISTANCE) {
+                                return { ...stream, distance, drivingDistance };
+                            }
+                        }
+                        return null;
+                    })
+                    .filter(stream => stream !== null)
+                    .sort((a, b) => a.distance - b.distance); // Sort by straight-line distance
+
+                let backupStream;
+                let straightDistance = 'N/A';
+                let drivingDistance = 'N/A';
+                if (backupCandidates.length > 0) {
+                    backupStream = backupCandidates[0];
+                    usedStreams.add(backupStream.stream);
+                    straightDistance = backupStream.distance.toFixed(2);
+                    drivingDistance = backupStream.drivingDistance.toFixed(2);
+                } else {
+                    backupStream = { stream: 'None', midpoint: null, rating: 0 };
+                }
+
+                tripPlan.push({
+                    day,
+                    primary: {
+                        stream: primaryStream.stream,
+                        gps: primaryStream.midpoint ? `${primaryStream.midpoint.lat.toFixed(4)}, ${primaryStream.midpoint.lon.toFixed(4)}` : 'N/A'
+                    },
+                    backup: {
+                        stream: backupStream.stream,
+                        gps: backupStream.midpoint ? `${backupStream.midpoint.lat.toFixed(4)}, ${backupStream.midpoint.lon.toFixed(4)}` : 'N/A'
+                    },
+                    straightDistance,
+                    drivingDistance
+                });
+            }
+
+            return tripPlan;
+        }
+
+        function displayTripPlan(tripPlan) {
+            const tableBody = document.getElementById('trip-plan-body');
+            const table = document.getElementById('trip-plan-table');
+            const errorDiv = document.getElementById('trip-plan-error');
+
+            if (!tableBody || !table || !errorDiv) {
+                console.error('Trip plan table elements not found');
+                document.getElementById('trip-plan-error').textContent = 'Error: Table elements missing';
+                return;
+            }
+
+            tableBody.innerHTML = '';
+
+            if (tripPlan.length === 0 || tripPlan.every(plan => plan.primary.stream === 'None')) {
+                errorDiv.textContent = 'No streams available for the selected filters.';
+                table.style.display = 'none';
+                return;
+            }
+
+            errorDiv.textContent = '';
+            tripPlan.forEach(plan => {
+                const tr = document.createElement('tr');
+                [
+                    plan.day,
+                    plan.primary.stream,
+                    plan.backup.stream,
+                    plan.straightDistance,
+                    plan.drivingDistance
+                ].forEach((cell, index) => {
+                    const td = document.createElement('td');
+                    if (index === 1 || index === 2) {
+                        const link = document.createElement('a');
+                        link.href = `stream-details.html?stream=${encodeURIComponent(cell)}`;
+                        link.textContent = cell;
+                        td.appendChild(link);
+                    } else {
+                        td.textContent = cell;
+                    }
+                    tr.appendChild(td);
+                });
+                tableBody.appendChild(tr);
+            });
+
+            table.style.display = 'table';
+        }
+
         function applyFilters() {
             const monthSelect = document.getElementById('month-select');
             const streamFilter = document.getElementById('stream-filter');
             const visitsFilter = document.getElementById('visits-filter');
             const ratingFilter = document.getElementById('rating-filter');
             const sectionFilter = document.getElementById('section-filter');
+            const campsiteSelect = document.getElementById('campsite-select');
+            const radiusSelect = document.getElementById('radius-select');
+            const backupDistanceSelect = document.getElementById('backup-distance-select');
+            const tripDaysSelect = document.getElementById('trip-days-select');
 
-            if (!monthSelect || !streamFilter || !visitsFilter || !ratingFilter || !sectionFilter) {
+            if (!monthSelect || !streamFilter || !visitsFilter || !ratingFilter || !sectionFilter || !campsiteSelect || !radiusSelect || !backupDistanceSelect || !tripDaysSelect) {
                 console.error('One or more filter elements not found');
                 document.getElementById('month-error').textContent = 'Error: Filter elements missing';
+                document.getElementById('trip-plan-error').textContent = 'Error: Filter elements missing';
                 return;
             }
 
@@ -862,24 +973,43 @@
             const visitsFilterValue = visitsFilter.value || '';
             const ratingFilterValue = ratingFilter.value || '';
             const sectionFilterValue = sectionFilter.value || 'All';
+            const selectedCampsite = campsiteSelect.value;
+            const selectedRadius = radiusSelect.value;
+            const maxBackupDistance = parseFloat(backupDistanceSelect.value) || 20;
+            const numDays = parseInt(tripDaysSelect.value) || 3;
 
             if (!processedData || !allData) return;
 
-            let rowsToDisplay;
+            let rowsToProcess = selectedMonth === 'ALL' ? allData : processedData.filter(row => row.month === selectedMonth);
 
-            if (selectedMonth === 'ALL') {
-                rowsToDisplay = allData.map(row => row.slice(0, 4));
-            } else {
-                rowsToDisplay = processedData
-                    .filter(row => row[0] === selectedMonth)
-                    .map(row => row.slice(1, 5));
-            }
+            // Apply filters (including campsite radius) for primary streams
+            filteredData = rowsToProcess.map(row => {
+                let distance = null;
+                if (selectedCampsite !== 'ALL' && row.midpoint && selectedRadius !== 'ALL') {
+                    const [campLat, campLon] = selectedCampsite.split(',').map(coord => parseFloat(coord.trim()));
+                    distance = haversineDistance(row.midpoint.lat, row.midpoint.lon, campLat, campLon);
+                }
+                return { ...row, distance: distance ? distance.toFixed(2) : 'N/A' };
+            }).filter(row => {
+                const stream = row.stream.toLowerCase();
+                const visits = parseFloat(row.visits);
+                const rating = parseFloat(row.rating);
+                const section = row.section;
+                const distance = row.distance === 'N/A' ? null : parseFloat(row.distance);
 
-            filteredData = rowsToDisplay.filter(row => {
-                const stream = row[0].toLowerCase();
-                const visits = parseFloat(row[1]);
-                const rating = parseFloat(row[2]);
-                const section = row[3];
+                return stream.includes(streamFilterValue) &&
+                       (visitsFilterValue === '' || visits >= parseFloat(visitsFilterValue)) &&
+                       (ratingFilterValue === '' || rating >= parseFloat(ratingFilterValue)) &&
+                       (sectionFilterValue === 'All' || section === sectionFilterValue) &&
+                       (selectedCampsite === 'ALL' || selectedRadius === 'ALL' || (distance !== null && distance <= parseFloat(selectedRadius)));
+            });
+
+            // Apply filters (excluding campsite radius) for backup streams
+            const backupStreamCandidates = rowsToProcess.filter(row => {
+                const stream = row.stream.toLowerCase();
+                const visits = parseFloat(row.visits);
+                const rating = parseFloat(row.rating);
+                const section = row.section;
 
                 return stream.includes(streamFilterValue) &&
                        (visitsFilterValue === '' || visits >= parseFloat(visitsFilterValue)) &&
@@ -888,24 +1018,36 @@
             });
 
             filteredData.sort((a, b) => {
-                const colIndex = ['Stream', 'Visits', 'Rating', 'Section'].indexOf(sortColumn);
-                let valueA = a[colIndex];
-                let valueB = b[colIndex];
+                const colIndex = ['Stream', 'Visits', 'Rating', 'Section', 'Midpoint', 'Distance'].indexOf(sortColumn);
+                let valueA = a[colIndex === 5 ? 'distance' : colIndex === 4 ? (a.midpoint ? `${a.midpoint.lat.toFixed(4)}, ${a.midpoint.lon.toFixed(4)}` : 'N/A') : Object.keys(a)[colIndex]];
+                let valueB = b[colIndex === 5 ? 'distance' : colIndex === 4 ? (b.midpoint ? `${b.midpoint.lat.toFixed(4)}, ${b.midpoint.lon.toFixed(4)}` : 'N/A') : Object.keys(b)[colIndex]];
 
-                if (colIndex === 1 || colIndex === 2) {
-                    valueA = parseFloat(valueA);
-                    valueB = parseFloat(valueB);
+                if (colIndex === 1 || colIndex === 2 || colIndex === 5) {
+                    valueA = valueA === 'N/A' ? Infinity : parseFloat(valueA);
+                    valueB = valueB === 'N/A' ? Infinity : parseFloat(valueB);
                     return sortDirection * (valueA - valueB);
                 }
                 return sortDirection * (valueA.localeCompare(valueB));
             });
 
+            const headers = selectedMonth === 'ALL' 
+                ? ['Stream', 'Visits', 'Rating', 'Section', 'Midpoint', 'Distance']
+                : ['Stream', 'Visits', 'Rating', 'Section', 'Midpoint', 'Distance'];
+
             displayData({
-                headers: selectedMonth === 'ALL' 
-                    ? ['Month', 'Stream', 'Visits', 'Rating', 'Section']
-                    : ['Stream', 'Visits', 'Rating', 'Section'],
-                rows: filteredData
+                headers,
+                rows: filteredData.map(row => [
+                    row.stream,
+                    row.visits,
+                    row.rating,
+                    row.section,
+                    row.midpoint ? `${row.midpoint.lat.toFixed(4)}, ${row.midpoint.lon.toFixed(4)}` : 'N/A',
+                    row.distance
+                ])
             }, 'month');
+
+            const tripPlan = generateTripPlan(filteredData, backupStreamCandidates, numDays, maxBackupDistance);
+            displayTripPlan(tripPlan);
         }
 
         function clearFilters() {
@@ -913,11 +1055,19 @@
             const visitsFilter = document.getElementById('visits-filter');
             const ratingFilter = document.getElementById('rating-filter');
             const sectionFilter = document.getElementById('section-filter');
+            const campsiteSelect = document.getElementById('campsite-select');
+            const radiusSelect = document.getElementById('radius-select');
+            const backupDistanceSelect = document.getElementById('backup-distance-select');
+            const tripDaysSelect = document.getElementById('trip-days-select');
 
             if (streamFilter) streamFilter.value = '';
             if (visitsFilter) visitsFilter.value = '';
             if (ratingFilter) ratingFilter.value = '';
             if (sectionFilter) sectionFilter.value = 'All';
+            if (campsiteSelect) campsiteSelect.value = 'ALL';
+            if (radiusSelect) radiusSelect.value = '30';
+            if (backupDistanceSelect) backupDistanceSelect.value = '20';
+            if (tripDaysSelect) tripDaysSelect.value = '3';
 
             applyFilters();
         }
@@ -942,7 +1092,9 @@
                 'Stream': '🌊',
                 'Visits': '👣',
                 'Rating': '⭐',
-                'Section': '📍'
+                'Section': '📍',
+                'Midpoint': '🗺️',
+                'Distance': '📏'
             };
 
             headers.forEach((header, index) => {
@@ -1028,68 +1180,24 @@
             table.style.display = 'table';
         }
 
-        function displayRatingPressureData() {
-            if (!ratingPressureData) return;
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check if the screen is mobile (max-width: 600px)
+            const isMobile = window.matchMedia("(max-width: 600px)").matches;
+            const streamTable = document.getElementById('month-table');
+            const toggleButton = document.getElementById('toggle-stream-table');
 
-            const tableHeader = document.getElementById('rating-pressure-header');
-            const tableBody = document.getElementById('rating-pressure-body');
-            const table = document.getElementById('rating-pressure-table');
-
-            if (!tableHeader || !tableBody || !table) {
-                console.error('Rating pressure table elements not found');
-                document.getElementById('rating-pressure-error').textContent = 'Error: Table elements missing';
-                return;
+            if (streamTable && toggleButton) {
+                // Set initial visibility: hidden on mobile, visible on desktop
+                isStreamTableVisible = !isMobile;
+                streamTable.style.display = isStreamTableVisible ? 'table' : 'none';
+                toggleButton.textContent = isStreamTableVisible ? 'Hide Stream Data' : 'Show Stream Data';
+            } else {
+                console.error('Stream table or toggle button not found');
             }
 
-            tableHeader.innerHTML = '';
-            tableBody.innerHTML = '';
-
-            const trendMap = {
-                'SF': 'Significant Falling',
-                'F': 'Falling',
-                'S': 'Stable',
-                'R': 'Rising',
-                'SR': 'Significant Rising'
-            };
-
-            const headerRow = document.createElement('tr');
-            const headers = ['Rating', 'SF', 'F', 'S', 'R', 'SR'];
-            headers.forEach(header => {
-                const th = document.createElement('th');
-                th.textContent = header;
-                headerRow.appendChild(th);
-            });
-            tableHeader.appendChild(headerRow);
-
-            ratingPressureData.ratings.forEach(rating => {
-                const tr = document.createElement('tr');
-                const tdRating = document.createElement('td');
-                tdRating.textContent = rating;
-                tr.appendChild(tdRating);
-
-                headers.slice(1).forEach(abbrev => {
-                    const trend = trendMap[abbrev];
-                    const td = document.createElement('td');
-                    const count = ratingPressureData.counts[rating][trend] || 0;
-                    const indicator = document.createElement('span');
-                    indicator.className = `pressure-indicator pressure-${trend.toLowerCase().replace(/\s+/g, '-')}`;
-                    indicator.textContent = count;
-                    td.appendChild(indicator);
-                    tr.appendChild(td);
-                });
-
-                tableBody.appendChild(tr);
-            });
-
-            table.style.display = 'table';
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
             fetchSourceData();
+            toggleButton.addEventListener('click', toggleStreamTable);
         });
     </script>
-    <footer>
-    <a href="./resources.html">Resource Links</a>
-    <a href="./trip-planner.html">Trip Planner</a></footer>
 </body>
 </html>
