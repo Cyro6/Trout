@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #c7d2fe 0%, #e5e7eb 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #1f2937;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.8rem;
+            font-weight: 700;
+            color: #1e40af;
+            margin-bottom: 1.5rem;
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            animation: fadeIn 1s ease-in;
+        }
+
+        h2 {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #1e40af;
+            margin-bottom: 1.2rem;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: white;
+            border-radius: 14px;
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.12);
+            padding: 25px;
+            margin: 25px auto;
+            max-width: 1200px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .filter-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid #e0e7ff;
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-section label {
+            font-weight: 600;
+            color: #1f2937;
+            margin-right: 10px;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .filter-section label .icon {
+            font-size: 1.2rem;
+        }
+
+        .filter-section select,
+        .filter-section input {
+            padding: 10px;
+            border: 2px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background: white;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+        }
+
+        .filter-section select:focus,
+        .filter-section input:focus {
+            outline: none;
+            border-color: #1e40af;
+            box-shadow: 0 0 0 4px rgba(30, 64, 175, 0.25);
+            transform: scale(1.02);
+        }
+
+        .filter-section input[type="text"] {
+            width: 140px;
+        }
+
+        .filter-section input[type="number"] {
+            width: 90px;
+        }
+
+        .filter-section select {
+            width: 140px;
+        }
+
+        .filter-section button {
+            padding: 10px 20px;
+            background: linear-gradient(90deg, #1e40af, #60a5fa);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+        }
+
+        .filter-section button:hover {
+            background: linear-gradient(90deg, #1e3a8a, #3b82f6);
+            transform: translateY(-3px);
+            box-shadow: 0 4px 15px rgba(30, 64, 175, 0.4);
+        }
+
+        .month-table-container,
+        .rating-pressure-table-container {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 14px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+            transition: background-color 0.3s ease;
+        }
+
+        th {
+            background: linear-gradient(90deg, #1e40af, #60a5fa);
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.3s ease;
+        }
+
+        th:hover {
+            background: linear-gradient(90deg, #1e3a8a, #3b82f6);
+        }
+
+        th.sort-asc::after {
+            content: ' ↑';
+            font-size: 0.9rem;
+        }
+
+        th.sort-desc::after {
+            content: ' ↓';
+            font-size: 0.9rem;
+        }
+
+        th .header-content {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        th .header-icon {
+            font-size: 1.1rem;
+        }
+
+        tr {
+            transition: background 0.2s ease, transform 0.2s ease;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        tr:nth-child(even) {
+            background: #f9fafb;
+        }
+
+        tr:hover {
+            background: #dbeafe;
+            transform: scale(1.01);
+        }
+
+        td a {
+            color: #1e40af;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s ease;
+        }
+
+        td a:hover {
+            color: #3b82f6;
+            text-decoration: underline;
+        }
+
+        .pressure-indicator {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .pressure-significant-falling { background: #dc2626; }
+        .pressure-falling { background: #f87171; }
+        .pressure-stable { background: #eab308; }
+        .pressure-rising { background: #3b82f6; }
+        .pressure-significant-rising { background: #22c55e; }
+        .pressure-unknown { background: #6b7280; }
+
+        .loading {
+            text-align: center;
+            font-size: 1.2rem;
+            color: #6b7280;
+            padding: 25px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .error {
+            text-align: center;
+            color: #dc2626;
+            font-weight: 600;
+            padding: 25px;
+            background: #fee2e2;
+            border-radius: 8px;
+        }
+
+        #month-error {
+            background: #d6dcf4;
+        }
+
+        .no-results {
+            text-align: center;
+            color: #6b7280;
+            font-size: 1.2rem;
+            padding: 25px;
+            background: #f3f4f6;
+            border-radius: 8px;
+        }
+
+        .rating-pressure-section {
+            margin: 25px auto;
+            max-width: 1200px;
+        }
+
+        .rating-pressure-toggle {
+            background: linear-gradient(90deg, #1e40af, #60a5fa);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 20px;
+            transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+        }
+
+        .rating-pressure-toggle:hover {
+            background: linear-gradient(90deg, #1e3a8a, #3b82f6);
+            transform: translateY(-3px);
+            box-shadow: 0 4px 15px rgba(30, 64, 175, 0.4);
+        }
+
+        .rating-pressure-content {
+            display: none;
+        }
+
+        .rating-pressure-content.active {
+            display: block;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 3rem;
+            padding: 1.5rem;
+            background: #f8fafc;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        footer a {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1e40af;
+            transition: color 0.2s ease;
+        }
+
+        footer a:hover {
+            color: #3b82f6;
+        }
+
+        @media screen and (max-width: 600px) {
+            body {
+                padding: 12px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
+
+            .card {
+                padding: 15px;
+                margin: 15px auto;
+            }
+
+            .filter-section {
+                padding: 12px;
+            }
+
+            .filter-row {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+            }
+
+            .filter-section select,
+            .filter-section input {
+                width: 100%;
+                font-size: 0.9rem;
+            }
+
+            .filter-section input[type="text"],
+            .filter-section input[type="number"],
+            .filter-section select {
+                width: 100%;
+            }
+
+            .filter-section button {
+                width: 100%;
+                padding: 12px;
+            }
+
+            th, td {
+                padding: 8px;
+                font-size: 0.85rem;
+                text-align: left;
+                white-space: normal;
+                min-width: 80px;
+                overflow-wrap: break-word;
+            }
+
+            th .header-content {
+                flex-direction: column;
+                align-items: center;
+                gap: 4px;
+            }
+
+            th .header-icon {
+                font-size: 1rem;
+            }
+
+            .rating-pressure-toggle {
+                display: block;
+                width: 100%;
+                text-align: center;
+            }
+        }
+
+        @media screen and (max-width: 360px) {
+            .month-table-container {
+                max-width: 360px;
+                overflow-x: auto;
+            }
+
+            table {
+                width: auto;
+            }
+
+            th, td {
+                padding: 6px;
+                font-size: 0.75rem;
+                text-align: left;
+                white-space: normal;
+                min-width: 60px;
+                overflow-wrap: break-word;
+            }
+
+            th .header-content {
+                flex-direction: column;
+                align-items: center;
+                gap: 2px;
+            }
+
+            th .header-icon {
+                font-size: 0.9rem;
+            }
+        }
+
+        @media screen and (min-width: 601px) {
+            .rating-pressure-toggle {
+                display: none;
+            }
+
+            .rating-pressure-content {
+                display: block !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Monthly Analysis Dashboard</h1>
+
+    <div id="month" class="tab-content card">
+        <div class="filter-section">
+            <div class="filter-row">
+                <div>
+                    <label for="month-select"><span class="icon">📅</span> Month: </label>
+                    <select id="month-select" onchange="applyFilters()">
+                        <option value="ALL">ALL</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="stream-filter"><span class="icon">🌊</span> Stream: </label>
+                    <input type="text" id="stream-filter" placeholder="Stream" oninput="applyFilters()">
+                </div>
+                <div>
+                    <button onclick="clearFilters()">Clear Filters</button>
+                </div>
+            </div>
+            <div class="filter-row">
+                <div>
+                    <label for="visits-filter"><span class="icon">👣</span> Visits: </label>
+                    <input type="number" id="visits-filter" min="0" placeholder="Visits" oninput="applyFilters()">
+                </div>
+                <div>
+                    <label for="rating-filter"><span class="icon">⭐</span> Rating: </label>
+                    <input type="number" id="rating-filter" min="0" max="6" step="0.1" placeholder="Rating" oninput="applyFilters()">
+                </div>
+                <div>
+                    <label for="section-filter"><span class="icon">📍</span> Section: </label>
+                    <select id="section-filter" onchange="applyFilters()">
+                        <option value="All">All</option>
+                        <option value="L">L</option>
+                        <option value="M">M</option>
+                        <option value="U">U</option>
+                        <option value="MX">MX</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div id="no-results" class="no-results" style="display: none;">No data matches the filters.</div>
+        <div id="month-loading" class="loading">Loading Analysis...</div>
+        <div id="month-error" class="error"></div>
+        <div class="month-table-container">
+            <table id="month-table" style="display: none;">
+                <thead id="month-header">
+                    <tr id="month-header-row"></tr>
+                </thead>
+                <tbody id="month-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="rating-pressure-section card">
+        <h2>Rating vs. Pressure Trend Analysis</h2>
+        <button class="rating-pressure-toggle" data-toggle="rating-pressure-content" onclick="toggleSection('rating-pressure-content')">Expand</button>
+        <div id="rating-pressure-content" class="rating-pressure-content">
+            <div id="rating-pressure-loading" class="loading">Loading Rating vs. Pressure Trend...</div>
+            <div id="rating-pressure-error" class="error"></div>
+            <div class="rating-pressure-table-container">
+                <table id="rating-pressure-table" style="display: none;">
+                    <thead id="rating-pressure-header"></thead>
+                    <tbody id="rating-pressure-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SHEET_ID = '1vRDZny6ZfKGXJOKIgoRo47knNJmmtDT2WTrNvOmQ0lwUiznaF1McQVgpTUa1kTMUpq5X6c3b888BGwz';
+        const SOURCE_GID = '491893533';
+        const SOURCE_URL = `https://docs.google.com/spreadsheets/d/e/2PACX-${SHEET_ID}/pub?gid=${SOURCE_GID}&single=true&output=csv`;
+
+        let sourceData = null;
+        let processedData = null;
+        let allData = null;
+        let ratingPressureData = null;
+        let filteredData = [];
+        let sortColumn = 'Visits';
+        let sortDirection = -1;
+
+        function toggleSection(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) {
+                console.error(`Container not found: ${containerId}`);
+                return;
+            }
+            const button = document.querySelector(`[data-toggle="${containerId}"]`);
+            if (!button) {
+                console.error(`Button not found for container: ${containerId}`);
+                return;
+            }
+            const isExpanded = container.classList.contains('active');
+            if (isExpanded) {
+                container.classList.remove('active');
+                button.textContent = 'Expand';
+                console.log(`Collapsed: ${containerId}`);
+            } else {
+                container.classList.add('active');
+                button.textContent = 'Collapse';
+                console.log(`Expanded: ${containerId}`);
+            }
+        }
+
+        async function fetchSourceData() {
+            try {
+                const response = await fetch(SOURCE_URL);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const csvText = await response.text();
+                if (!csvText.trim()) throw new Error('Empty CSV data');
+                sourceData = parseCSV(csvText);
+                processSourceData();
+                populateMonthDropdown();
+                applyFilters();
+                displayRatingPressureData();
+            } catch (error) {
+                document.getElementById('month-error').textContent = `Error: ${error.message}`;
+                document.getElementById('rating-pressure-error').textContent = `Error: ${error.message}`;
+            } finally {
+                document.getElementById('month-loading').style.display = 'none';
+                document.getElementById('rating-pressure-loading').style.display = 'none';
+            }
+        }
+
+        function parseCSV(csvText) {
+            let insideQuotes = false;
+            let processedText = '';
+            for (let i = 0; i < csvText.length; i++) {
+                const char = csvText[i];
+                if (char === '"') {
+                    insideQuotes = !insideQuotes;
+                    processedText += char;
+                } else if (char === '\n' && insideQuotes) {
+                    processedText += '\\n';
+                } else {
+                    processedText += char;
+                }
+            }
+
+            const lines = processedText.split('\n').filter(line => line.trim() !== '');
+            const headers = lines[0].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(header => header.trim().replace(/^"|"$/g, ''));
+            const expectedColumns = headers.length;
+            const rows = lines.slice(1).map((line, lineIndex) => {
+                const values = [];
+                let current = '';
+                let insideQuotes = false;
+                let i = 0;
+
+                while (i < line.length) {
+                    const char = line[i];
+                    const nextChar = line[i + 1];
+
+                    if (char === '"' && nextChar === '"') {
+                        current += '"';
+                        i += 2;
+                    } else if (char === '"') {
+                        insideQuotes = !insideQuotes;
+                        i++;
+                    } else if (char === ',' && !insideQuotes) {
+                        values.push(current.trim().replace(/^"|"$/g, '').replace(/\\n/g, '\n'));
+                        current = '';
+                        i++;
+                    } else {
+                        current += char;
+                        i++;
+                    }
+                }
+                values.push(current.trim().replace(/^"|"$/g, '').replace(/\\n/g, '\n'));
+
+                const originalLength = values.length;
+                while (values.length < expectedColumns) {
+                    values.push('');
+                }
+
+                if (originalLength < expectedColumns) {
+                    console.log('CSV Parsing - Truncated Row:', {
+                        LineIndex: lineIndex + 1,
+                        RawLine: line,
+                        ParsedValues: values.slice(0, originalLength),
+                        ColumnCount: originalLength,
+                        ExpectedColumns: expectedColumns
+                    });
+                }
+
+                return values;
+            });
+
+            console.log('Parsed CSV: Headers:', headers, 'Row Count:', rows.length);
+            return { headers, rows };
+        }
+
+        function processSourceData() {
+            if (!sourceData) return;
+
+            const ratingMap = { 'F': 0, 'E': 1, 'D': 2, 'C': 3, 'B': 4, 'A': 5, 'S': 6 };
+            const excludedStreams = ['Unknown', 'Central Sands', 'Minnesota', 'Southern WI'];
+            const pressureTrendIndex = 29;
+
+            function cleanPressureTrend(value, row, index) {
+                if (!value || value.trim() === '') {
+                    console.log('Pressure Trend - Unknown (Empty/Blank):', { 
+                        Raw: value, 
+                        RowData: row.slice(0, 30), 
+                        ColumnIndex: index 
+                    });
+                    return 'Unknown';
+                }
+                const cleanValue = value.replace(/['"]+/g, '').replace(/\([^)]*\)/g, '').trim().replace(/\s+/g, ' ');
+                const normalized = cleanValue.toLowerCase();
+                const trends = [
+                    { regex: /significant\s*falling/i, value: 'Significant Falling' },
+                    { regex: /significant\s*rising/i, value: 'Significant Rising' },
+                    { regex: /falling/i, value: 'Falling' },
+                    { regex: /rising/i, value: 'Rising' },
+                    { regex: /stable/i, value: 'Stable' }
+                ];
+                const matchedTrend = trends.find(trend => trend.regex.test(normalized));
+                if (!matchedTrend) {
+                    console.log('Pressure Trend - Unknown (Unmatched):', {
+                        Raw: value,
+                        Cleaned: cleanValue,
+                        Normalized: normalized,
+                        RowData: row.slice(0, 30),
+                        ColumnIndex: index,
+                        NearbyColumns: {
+                            Prev: row[index - 1] || 'N/A',
+                            Current: row[index] || 'N/A',
+                            Next: row[index + 1] || 'N/A'
+                        }
+                    });
+                    return 'Unknown';
+                } else {
+                    console.log('Pressure Trend - Matched:', {
+                        Raw: value,
+                        Cleaned: cleanValue,
+                        Normalized: normalized,
+                        Matched: matchedTrend.value
+                    });
+                    return matchedTrend.value;
+                }
+            }
+
+            const validData = sourceData.rows
+                .filter(row => {
+                    if (row.length < 18) return false;
+                    const stream = row[2]?.trim() || '';
+                    const rating = row[17]?.toUpperCase();
+                    const validRating = /^[SABCDEF]$/.test(rating);
+                    const validStream = !excludedStreams.some(excluded => stream.includes(excluded));
+                    return validRating && validStream;
+                })
+                .map(row => {
+                    const dateRaw = row[0] || '01/01/2000';
+                    const date = new Date(dateRaw.replace(/(\d+)\/(\d+)\/(\d+)/, '$3-$1-$2'));
+                    const month = isNaN(date.getTime()) ? 'Unknown' : date.toLocaleString('default', { month: 'long' });
+                    const stream = row[2]?.trim() || '';
+                    const rating = row[17]?.toUpperCase();
+                    const section = row[15]?.trim().toUpperCase() || 'UNKNOWN';
+                    const lat = parseFloat(row[12]);
+                    const lon = parseFloat(row[13]);
+                    const rawPressureTrend = row[pressureTrendIndex] || '';
+                    const pressureTrend = cleanPressureTrend(rawPressureTrend, row, pressureTrendIndex);
+                    return [month, stream, rating, section, lat, lon, pressureTrend];
+                });
+
+            console.log('Valid data rows:', validData.length);
+
+            const groupedDataByMonth = {};
+            validData.forEach(([month, stream, rating, section, lat, lon, pressureTrend]) => {
+                const key = `${month}|${stream}`;
+                if (!groupedDataByMonth[key]) {
+                    groupedDataByMonth[key] = { month, stream, ratings: [], sections: [], spots: [], pressureTrends: [] };
+                }
+                groupedDataByMonth[key].ratings.push(ratingMap[rating]);
+                groupedDataByMonth[key].sections.push(section);
+                groupedDataByMonth[key].pressureTrends.push(pressureTrend);
+                if (!isNaN(lat) && !isNaN(lon)) {
+                    groupedDataByMonth[key].spots.push({ lat, lon });
+                }
+            });
+
+            processedData = Object.values(groupedDataByMonth).map(({ month, stream, ratings, sections, spots, pressureTrends }) => {
+                const visits = ratings.length;
+                const avgRating = ratings.length > 0 ? ratings.reduce((sum, r) => sum + r, 0) / ratings.length : 0;
+                const roundedAvg = Math.round(avgRating * 100) / 100;
+
+                const counts = { LOWER: 0, MIDDLE: 0, UPPER: 0, UNKNOWN: 0 };
+                sections.forEach(section => {
+                    counts[section] = (counts[section] || 0) + 1;
+                });
+                const maxCount = Math.max(counts.LOWER, counts.MIDDLE, counts.UPPER);
+                const tieCheck = (counts.LOWER === maxCount ? 1 : 0) +
+                                 (counts.MIDDLE === maxCount ? 1 : 0) +
+                                 (counts.UPPER === maxCount ? 1 : 0);
+                let sectionResult = 'MX';
+                if (maxCount > 0) {
+                    if (tieCheck === 1) {
+                        if (counts.LOWER === maxCount) sectionResult = 'L';
+                        else if (counts.MIDDLE === maxCount) sectionResult = 'M';
+                        else if (counts.UPPER === maxCount) sectionResult = 'U';
+                    }
+                }
+
+                const pressureCounts = {};
+                pressureTrends.forEach(trend => {
+                    pressureCounts[trend] = (pressureCounts[trend] || 0) + 1;
+                });
+                const dominantPressure = Object.keys(pressureCounts).reduce((a, b) => pressureCounts[a] > pressureCounts[b] ? a : b, 'Unknown');
+
+                return [month, stream, visits, roundedAvg, sectionResult, dominantPressure];
+            });
+
+            const groupedDataAll = {};
+            validData.forEach(([month, stream, rating, section, lat, lon, pressureTrend]) => {
+                if (!groupedDataAll[stream]) {
+                    groupedDataAll[stream] = { stream, ratings: [], sections: [], spots: [], pressureTrends: [] };
+                }
+                groupedDataAll[stream].ratings.push(ratingMap[rating]);
+                groupedDataAll[stream].sections.push(section);
+                groupedDataAll[stream].pressureTrends.push(pressureTrend);
+                if (!isNaN(lat) && !isNaN(lon)) {
+                    groupedDataAll[stream].spots.push({ lat, lon });
+                }
+            });
+
+            allData = Object.values(groupedDataAll).map(({ stream, ratings, sections, spots, pressureTrends }) => {
+                const visits = ratings.length;
+                const avgRating = ratings.length > 0 ? ratings.reduce((sum, r) => sum + r, 0) / ratings.length : 0;
+                const roundedAvg = Math.round(avgRating * 100) / 100;
+
+                const counts = { LOWER: 0, MIDDLE: 0, UPPER: 0, UNKNOWN: 0 };
+                sections.forEach(section => {
+                    counts[section] = (counts[section] || 0) + 1;
+                });
+                const maxCount = Math.max(counts.LOWER, counts.MIDDLE, counts.UPPER);
+                const tieCheck = (counts.LOWER === maxCount ? 1 : 0) +
+                                 (counts.MIDDLE === maxCount ? 1 : 0) +
+                                 (counts.UPPER === maxCount ? 1 : 0);
+                let sectionResult = 'MX';
+                if (maxCount > 0) {
+                    if (tieCheck === 1) {
+                        if (counts.LOWER === maxCount) sectionResult = 'L';
+                        else if (counts.MIDDLE === maxCount) sectionResult = 'M';
+                        else if (counts.UPPER === maxCount) sectionResult = 'U';
+                    }
+                }
+
+                const pressureCounts = {};
+                pressureTrends.forEach(trend => {
+                    pressureCounts[trend] = (pressureCounts[trend] || 0) + 1;
+                });
+                const dominantPressure = Object.keys(pressureCounts).reduce((a, b) => pressureCounts[a] > pressureCounts[b] ? a : b, 'Unknown');
+
+                return [stream, visits, roundedAvg, sectionResult, dominantPressure];
+            });
+
+            const ratingPressureCounts = {};
+            const ratings = ['S', 'A', 'B', 'C', 'D', 'E', 'F'];
+            const pressureTrends = ['Significant Falling', 'Falling', 'Stable', 'Rising', 'Significant Rising'];
+            ratings.forEach(rating => {
+                ratingPressureCounts[rating] = {};
+                pressureTrends.forEach(trend => {
+                    ratingPressureCounts[rating][trend] = 0;
+                });
+            });
+
+            validData.forEach(([month, stream, rating, section, lat, lon, pressureTrend]) => {
+                if (ratings.includes(rating) && pressureTrends.includes(pressureTrend)) {
+                    ratingPressureCounts[rating][pressureTrend]++;
+                }
+            });
+
+            ratingPressureData = { ratings, pressureTrends, counts: ratingPressureCounts };
+            console.log('Rating vs. Pressure Trend counts:', ratingPressureCounts);
+        }
+
+        function populateMonthDropdown() {
+            if (!processedData) return;
+
+            const monthOrder = [
+                'January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December', 'Unknown'
+            ];
+            const currentMonth = new Date().toLocaleString('default', { month: 'long' });
+
+            const monthSelect = document.getElementById('month-select');
+            if (!monthSelect) {
+                console.error('Month select element not found');
+                return;
+            }
+
+            const months = [...new Set(processedData.map(row => row[0]))]
+                .sort((a, b) => monthOrder.indexOf(a) - monthOrder.indexOf(b));
+
+            months.forEach(month => {
+                const option = document.createElement('option');
+                option.value = month;
+                option.textContent = month;
+                if (month === currentMonth) {
+                    option.selected = true;
+                }
+                monthSelect.appendChild(option);
+            });
+        }
+
+        function applyFilters() {
+            const monthSelect = document.getElementById('month-select');
+            const streamFilter = document.getElementById('stream-filter');
+            const visitsFilter = document.getElementById('visits-filter');
+            const ratingFilter = document.getElementById('rating-filter');
+            const sectionFilter = document.getElementById('section-filter');
+
+            if (!monthSelect || !streamFilter || !visitsFilter || !ratingFilter || !sectionFilter) {
+                console.error('One or more filter elements not found');
+                document.getElementById('month-error').textContent = 'Error: Filter elements missing';
+                return;
+            }
+
+            const selectedMonth = monthSelect.value || 'ALL';
+            const streamFilterValue = streamFilter.value ? streamFilter.value.toLowerCase() : '';
+            const visitsFilterValue = visitsFilter.value || '';
+            const ratingFilterValue = ratingFilter.value || '';
+            const sectionFilterValue = sectionFilter.value || 'All';
+
+            if (!processedData || !allData) return;
+
+            let rowsToDisplay;
+
+            if (selectedMonth === 'ALL') {
+                rowsToDisplay = allData.map(row => row.slice(0, 4));
+            } else {
+                rowsToDisplay = processedData
+                    .filter(row => row[0] === selectedMonth)
+                    .map(row => row.slice(1, 5));
+            }
+
+            filteredData = rowsToDisplay.filter(row => {
+                const stream = row[0].toLowerCase();
+                const visits = parseFloat(row[1]);
+                const rating = parseFloat(row[2]);
+                const section = row[3];
+
+                return stream.includes(streamFilterValue) &&
+                       (visitsFilterValue === '' || visits >= parseFloat(visitsFilterValue)) &&
+                       (ratingFilterValue === '' || rating >= parseFloat(ratingFilterValue)) &&
+                       (sectionFilterValue === 'All' || section === sectionFilterValue);
+            });
+
+            filteredData.sort((a, b) => {
+                const colIndex = ['Stream', 'Visits', 'Rating', 'Section'].indexOf(sortColumn);
+                let valueA = a[colIndex];
+                let valueB = b[colIndex];
+
+                if (colIndex === 1 || colIndex === 2) {
+                    valueA = parseFloat(valueA);
+                    valueB = parseFloat(valueB);
+                    return sortDirection * (valueA - valueB);
+                }
+                return sortDirection * (valueA.localeCompare(valueB));
+            });
+
+            displayData({
+                headers: selectedMonth === 'ALL' 
+                    ? ['Month', 'Stream', 'Visits', 'Rating', 'Section']
+                    : ['Stream', 'Visits', 'Rating', 'Section'],
+                rows: filteredData
+            }, 'month');
+        }
+
+        function clearFilters() {
+            const streamFilter = document.getElementById('stream-filter');
+            const visitsFilter = document.getElementById('visits-filter');
+            const ratingFilter = document.getElementById('rating-filter');
+            const sectionFilter = document.getElementById('section-filter');
+
+            if (streamFilter) streamFilter.value = '';
+            if (visitsFilter) visitsFilter.value = '';
+            if (ratingFilter) ratingFilter.value = '';
+            if (sectionFilter) sectionFilter.value = 'All';
+
+            applyFilters();
+        }
+
+        function displayData({ headers, rows }, prefix) {
+            const tableHeader = document.getElementById(`${prefix}-header-row`);
+            const tableBody = document.getElementById(`${prefix}-body`);
+            const table = document.getElementById(`${prefix}-table`);
+            const noResultsDiv = document.getElementById('no-results');
+
+            if (!tableHeader || !tableBody || !table || !noResultsDiv) {
+                console.error('Table elements not found');
+                document.getElementById(`${prefix}-error`).textContent = 'Error: Table elements missing';
+                return;
+            }
+
+            tableHeader.innerHTML = '';
+            tableBody.innerHTML = '';
+
+            const iconMap = {
+                'Month': '📅',
+                'Stream': '🌊',
+                'Visits': '👣',
+                'Rating': '⭐',
+                'Section': '📍'
+            };
+
+            headers.forEach((header, index) => {
+                const th = document.createElement('th');
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'header-content';
+
+                const iconSpan = document.createElement('span');
+                iconSpan.className = 'header-icon';
+                iconSpan.textContent = iconMap[header] || '';
+
+                const textSpan = document.createElement('span');
+                textSpan.textContent = header;
+
+                contentDiv.appendChild(iconSpan);
+                contentDiv.appendChild(textSpan);
+
+                th.appendChild(contentDiv);
+
+                th.onclick = () => {
+                    if (sortColumn === header) {
+                        sortDirection = -sortDirection;
+                    } else {
+                        sortColumn = header;
+                        sortDirection = -1;
+                    }
+                    applyFilters();
+                };
+                if (sortColumn === header) {
+                    th.classList.add(sortDirection === 1 ? 'sort-asc' : 'sort-desc');
+                }
+                tableHeader.appendChild(th);
+            });
+
+            if (rows.length === 0) {
+                noResultsDiv.style.display = 'block';
+                table.style.display = 'none';
+                return;
+            }
+
+            noResultsDiv.style.display = 'none';
+            rows.forEach(row => {
+                const tr = document.createElement('tr');
+                row.forEach((cell, index) => {
+                    const td = document.createElement('td');
+                    if (index === 0) {
+                        const link = document.createElement('a');
+                        link.href = `stream-details.html?stream=${encodeURIComponent(cell)}`;
+                        link.textContent = cell;
+                        td.appendChild(link);
+                    } else if (index === 2) {
+                        const rating = parseFloat(cell);
+                        td.textContent = cell;
+                        if (isNaN(rating) || rating < 0 || rating > 6) {
+                            console.warn('Invalid rating value:', { cell, parsedRating: rating, row });
+                        } else {
+                            if (rating <= 1) {
+                                td.style.backgroundColor = '#dc2626';
+                            } else if (rating <= 2.5) {
+                                const ratio = (rating - 1) / 1.5;
+                                const r = Math.round(220 + (234 - 220) * ratio);
+                                const g = Math.round(38 + (179 - 38) * ratio);
+                                const b = Math.round(38 + (8 - 38) * ratio);
+                                td.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+                            } else if (rating <= 4.2) {
+                                const ratio = (rating - 2.5) / 1.7;
+                                const r = Math.round(234 + (34 - 234) * ratio);
+                                const g = Math.round(179 + (197 - 179) * ratio);
+                                const b = Math.round(8 + (94 - 8) * ratio);
+                                td.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+                            } else {
+                                td.style.backgroundColor = '#22c55e';
+                            }
+                        }
+                    } else {
+                        td.textContent = cell;
+                    }
+                    tr.appendChild(td);
+                });
+                tableBody.appendChild(tr);
+            });
+
+            table.style.display = 'table';
+        }
+
+        function displayRatingPressureData() {
+            if (!ratingPressureData) return;
+
+            const tableHeader = document.getElementById('rating-pressure-header');
+            const tableBody = document.getElementById('rating-pressure-body');
+            const table = document.getElementById('rating-pressure-table');
+
+            if (!tableHeader || !tableBody || !table) {
+                console.error('Rating pressure table elements not found');
+                document.getElementById('rating-pressure-error').textContent = 'Error: Table elements missing';
+                return;
+            }
+
+            tableHeader.innerHTML = '';
+            tableBody.innerHTML = '';
+
+            const trendMap = {
+                'SF': 'Significant Falling',
+                'F': 'Falling',
+                'S': 'Stable',
+                'R': 'Rising',
+                'SR': 'Significant Rising'
+            };
+
+            const headerRow = document.createElement('tr');
+            const headers = ['Rating', 'SF', 'F', 'S', 'R', 'SR'];
+            headers.forEach(header => {
+                const th = document.createElement('th');
+                th.textContent = header;
+                headerRow.appendChild(th);
+            });
+            tableHeader.appendChild(headerRow);
+
+            ratingPressureData.ratings.forEach(rating => {
+                const tr = document.createElement('tr');
+                const tdRating = document.createElement('td');
+                tdRating.textContent = rating;
+                tr.appendChild(tdRating);
+
+                headers.slice(1).forEach(abbrev => {
+                    const trend = trendMap[abbrev];
+                    const td = document.createElement('td');
+                    const count = ratingPressureData.counts[rating][trend] || 0;
+                    const indicator = document.createElement('span');
+                    indicator.className = `pressure-indicator pressure-${trend.toLowerCase().replace(/\s+/g, '-')}`;
+                    indicator.textContent = count;
+                    td.appendChild(indicator);
+                    tr.appendChild(td);
+                });
+
+                tableBody.appendChild(tr);
+            });
+
+            table.style.display = 'table';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchSourceData();
+        });
+    </script>
+    <footer>
+    <a href="./resources.html">Resource Links</a>
+    <a href="./trip-planner.html">Trip Planner</a></footer>
+</body>
+</html>
