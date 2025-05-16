@@ -650,361 +650,6 @@ async function fetchSourceData() {
     const tripPlanError = document.getElementById('trip-plan-error');
 
     try {
-        const [sourceResponse, campsiteResponse] = await Promise.all([
-            fetch(SOURCE_URL),
-            fetch(CAMPSITE_URL)
-        ]);
-        if (!sourceResponse.ok) throw new Error(`HTTP ${sourceResponse.status} for source data`);
-        if (!campsiteResponse.ok) throw new Error(`HTTP ${campsiteResponse.status} for campsite data`);
-        const sourceCsvText = await sourceResponse.text();
-        const campsiteCsvText = await campsiteResponse.text();
-        if (!sourceCsvText.trim()) throw new Error('Empty source CSV data');
-        if (!campsiteCsvText.trim()) throw new Error('Empty campsite CSV data');
-        sourceData = parseCSV(sourceCsvText);
-        campsiteData = parseCSV(campsiteCsvText);
-        processSourceData();
-        populateMonthDropdown();
-        populateCampsiteDropdown();
-        applyFilters();
-        monthError.textContent = '';
-        monthError.style.display = 'none';
-        tripPlanError.textContent = '';
-        tripPlanError.style.display = 'none';
-    } catch (error) {
-        monthError.textContent = `Error: ${error.message}`;
-        monthError.style.display = 'block';
-        tripPlanError.textContent = `Error: ${error.message}`;
-        tripPlanError.style.display = 'block';
-    } finally {
-        document.getElementById('month-loading').style.display = 'none';
-        document.getElementById('trip-plan-loading').style.display = 'none';
-    }
-}
-
-function parseCSV(csvText) {
-    let insideQuotes = false;
-    let processedText = '';
-    for (let i = 0; i < csvText.length; i++) {
-        const char = csvText[i];
-        if (char === '"') {
-            insideQuotes = !insideQuotes;
-            processedText += char;
-        } else if (char === '\n' && insideQuotes) {
-            processedText += '\\n';
-        } else {
-            processedText += char;
-        }
-    }
-
-    const lines = processedText.split('\n').filter(line => line.trim() !== '');
-    const headers = lines[0].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(header => header.trim().replace(/^"|"$/g, ''));
-    const expectedColumns = headers.length;
-    const rows = lines.slice(1).map((line, lineIndex) => {
-        const values = [];
-        let current = '';
-        let insideQuotes = false;
-        let i = 0;
-
-        while (i < line.length) {
-            const char = line[i];
-            const nextChar = line[i + 1];
-
-            if (char === '"' && nextChar === '"') {
-                current += '"';
-                i += 2;
-            } else if (char === '"') {
-                insideQuotes = !insideQuotes;
-                i++;
-            } else if (char === ',' && !insideQuotes) {
-                values.push(current.trim().replace(/^"|"$/g, '').replace(/\\n/g, '\n'));
-                current = '';
-                i++;
-            } else {
-                current += char;
-                i++;
-            }
-        }
-        values.push(current.trim().replace(/^"|"$/g, '').replace(/\\n/g, '\n'));
-
-        const originalLength = values.length;
-        while (values.length < expectedColumns) {
-            values.push('');
-        }
-
-        if (originalLength < expectedColumns) {
-            console.log('CSV Parsing - Truncated Row:', {
-                LineIndex: lineIndex + 1,
-                RawLine: line,
-                ParsedValues: values.slice(0, originalLength),
-                ColumnCount: originalLength,
-                ExpectedColumns: expectedColumns
-            });
-        }
-
-        return values;
-    });
-
-    console.log('Parsed CSV: Headers:', headers, 'Row Count:', rows.length);
-    return { headers, rows };
-}
-
-function processSourceData() {
-    if (!sourceData || !campsiteData) return;
-
-    const ratingMap = { 'F': 0, 'E': 1, 'D': 2, 'C': 3, 'B': 4, 'A': 5, 'S': 6 };
-    const excludedStreams = ['Unknown', 'Central Sands', 'Minnesota', 'Southern WI'];
-
-    const validData = sourceData.rows
-        .filter(row => {
-            if (row.length < 18) return false;
-            const stream = row[2]?.trim() || '';
-            const rating = row[17]?.toUpperCase();
-            const validRating = /^[SABCDEF]$/.test(rating);
-            const validStream = !excludedStreams.some(excluded => stream.includes(excluded));
-            return validRating && validStream;
-        })
-        .map(row => {
-            const dateRaw = row[0] || '01/01/2000';
-            const date = new Date(dateRaw.replace(/(\d+)\/(\d+)\/(\d+)/, '$3-$1-$2'));
-            const month = isNaN(date.getTime()) ? 'Unknown' : date.toLocaleString('default', { month: 'long' });
-            const stream = row[2]?.trim() || '';
-            const rating = row[17]?.toUpperCase();
-            const section = row[15]?.trim().toUpperCase() || 'UNKNOWN';
-            const lat = parseFloat(row[12]);
-            const lon = parseFloat(row[13]);
-            return [month, stream, rating, section, lat, lon];
-        });
-
-    console.log('Valid data rows:', validData.length);
-
-    const groupedDataByMonth = {};
-    validData.forEach(([month, stream, rating, section, lat, lon]) => {
-        const key = `${month}|${stream}`;
-        if (!groupedDataByMonth[key]) {
-            groupedDataByMonth[key] = { month, stream, ratings: [], sections: [], spots: [] };
-        }
-        groupedDataByMonth[key].ratings.push(ratingMap[rating]);
-        groupedDataByMonth[key].sections.push(section);
-        if (!isNaN(lat) && !isNaN(lon)) {
-            groupedDataByMonth[key].spots.push({ lat, lon });
-        }
-    });
-
-    processedData = Object.values(groupedDataByMonth).map(({ month, stream, ratings, sections, spots }) => {
-        const visits = ratings.length;
-        const avgRating = ratings.length > 0 ? ratings.reduce((sum, r) => sum + r, 0) / ratings.length : 0;
-        const roundedAvg = Math.round(avgRating * 100) / 100;
-
-        const counts = { LOWER: 0, MIDDLE: 0, UPPER: 0, UNKNOWN: 0 };
-        sections.forEach(section => {
-            counts[section] = (counts[section] || 0) + 1;
-        });
-        const maxCount = Math.max(counts.LOWER, counts.MIDDLE, counts.UPPER);
-        const tieCheck = (counts.LOWER === maxCount ? 1 : 0) +
-                         (counts.MIDDLE === maxCount ? 1 : 0) +
-                         (counts.UPPER === maxCount ? 1 : 0);
-        let sectionResult = 'MX';
-        if (maxCount > 0) {
-            if (tieCheck === 1) {
-                if (counts.LOWER === maxCount) sectionResult = 'L';
-                else if (counts.MIDDLE === maxCount) sectionResult = 'M';
-                else if (counts.UPPER === maxCount) sectionResult = 'U';
-            }
-        }
-
-        const avgLat = spots.length > 0 ? spots.reduce((sum, spot) => sum + spot.lat, 0) / spots.length : null;
-        const avgLon = spots.length > 0 ? spots.reduce((sum, spot) => sum + spot.lon, 0) / spots.length : null;
-        const midpoint = avgLat && avgLon ? { lat: avgLat, lon: avgLon } : null;
-
-        return { month, stream, visits, rating: roundedAvg, section: sectionResult, midpoint };
-    });
-
-    const groupedDataAll = {};
-    validData.forEach(([month, stream, rating, section, lat, lon]) => {
-        if (!groupedDataAll[stream]) {
-            groupedDataAll[stream] = { stream, ratings: [], sections: [], spots: [] };
-        }
-        groupedDataAll[stream].ratings.push(ratingMap[rating]);
-        groupedDataAll[stream].sections.push(section);
-        if (!isNaN(lat) && !isNaN(lon)) {
-            groupedDataAll[stream].spots.push({ lat, lon });
-        }
-    });
-
-    allData = Object.values(groupedDataAll).map(({ stream, ratings, sections, spots }) => {
-        const visits = ratings.length;
-        const avgRating = ratings.length > 0 ? ratings.reduce((sum, r) => sum + r, 0) / ratings.length : 0;
-        const roundedAvg = Math.round(avgRating * 100) / 100;
-
-        const counts = { LOWER: 0, MIDDLE: 0, UPPER: 0, UNKNOWN: 0 };
-        sections.forEach(section => {
-            counts[section] = (counts[section] || 0) + 1;
-        });
-        const maxCount = Math.max(counts.LOWER, counts.MIDDLE, counts.UPPER);
-        const tieCheck = (counts.LOWER === maxCount ? 1 : 0) +
-                         (counts.MIDDLE === maxCount ? 1 : 0) +
-                         (counts.UPPER === maxCount ? 1 : 0);
-        let sectionResult = 'MX';
-        if (maxCount > 0) {
-            if (tieCheck === 1) {
-                if (counts.LOWER === maxCount) sectionResult = 'L';
-                else if (counts.MIDDLE === maxCount) sectionResult = 'M';
-                else if (counts.UPPER === maxCount) sectionResult = 'U';
-            }
-        }
-
-        const avgLat = spots.length > 0 ? spots.reduce((sum, spot) => sum + spot.lat, 0) / spots.length : null;
-        const avgLon = spots.length > 0 ? spots.reduce((sum, spot) => sum + spot.lon, 0) / spots.length : null;
-        const midpoint = avgLat && avgLon ? { lat: avgLat, lon: avgLon } : null;
-
-        return { stream, visits, rating: roundedAvg, section: sectionResult, midpoint };
-    });
-}
-
-function populateMonthDropdown() {
-    if (!processedData) return;
-
-    const monthOrder = [
-        'January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December', 'Unknown'
-    ];
-    const currentMonth = new Date().toLocaleString('default', { month: 'long' });
-
-    const monthSelect = document.getElementById('month-select');
-    if (!monthSelect) {
-        console.error('Month select element not found');
-        return;
-    }
-
-    const months = [...new Set(processedData.map(row => row.month))]
-        .sort((a, b) => monthOrder.indexOf(a) - monthOrder.indexOf(b));
-
-    months.forEach(month => {
-        const option = document.createElement('option');
-        option.value = month;
-        option.textContent = month;
-        if (month === currentMonth) {
-            option.selected = true;
-        }
-        monthSelect.appendChild(option);
-    });
-}
-
-function populateCampsiteDropdown() {
-    if (!campsiteData) return;
-
-    const campsiteSelect = document.getElementById('campsite-select');
-    if (!campsiteSelect) {
-        console.error('Campsite select element not found');
-        return;
-    }
-
-    campsiteData.rows.forEach(row => {
-        const name = row[0]?.trim();
-        const gps = row[1]?.trim();
-        if (name && gps) {
-            const option = document.createElement('option');
-            option.value = gps;
-            option.textContent = name;
-            campsiteSelect.appendChild(option);
-        }
-    });
-}
-
-function generateTripPlan(filtered _
-
-System: You are Grok 3 built by xAI.
-
-The issue with sorting in your Fishing Trip Planner Dashboard arises from the `applyFilters` function, where the sorting logic incorrectly maps column headers to data properties and mishandles value extraction. The `Object.keys(a)[colIndex]` approach doesn't align with the data structure, and the comparison logic for strings (e.g  (e.g., `stream` vs. "Stream", `rating` vs. "Rating"). I'll provide an updated JavaScript code that fixes the sorting logic while preserving the rest of your application's functionality.
-
-**Key Changes:**
-1. Replaced the faulty `Object.keys` mapping with a direct property lookup using a column-to-property map.
-2. Improved value extraction to handle numeric and string comparisons correctly (e.g., `parseFloat` for ratings, `localeCompare` for streams).
-3. Ensured `sortColumn` maps to the correct data properties (`stream`, `rating`, etc.).
-4. Fixed precipitation sorting to handle "N/A" and "Error" cases.
-5. Kept all other functionality (filtering, trip planning, etc.) unchanged.
-
-Below is the updated JavaScript code, replacing the `<script>` content in your HTML. The HTML and CSS remain unchanged.
-
-<xaiArtifact artifact_id="663a40bf-1644-4f86-85d6-97bb7b7e7bb0" artifact_version_id="3efe34e2-5fcf-4397-a84c-59f312ce8ac5" title="script.js" contentType="text/javascript">
-const SHEET_ID = '1vRDZny6ZfKGXJOKIgoRo47knNJmmtDT2WTrNvOmQ0lwUiznaF1McQVgpTUa1kTMUpq5X6c3b888BGwz';
-const SOURCE_GID = '491893533';
-const CAMPSITE_GID = '212109608';
-const SOURCE_URL = `https://docs.google.com/spreadsheets/d/e/2PACX-${SHEET_ID}/pub?gid=${SOURCE_GID}&single=true&output=csv`;
-const CAMPSITE_URL = `https://docs.google.com/spreadsheets/d/e/2PACX-${SHEET_ID}/pub?gid=${CAMPSITE_GID}&single=true&output=csv`;
-
-let sourceData = null;
-let campsiteData = null;
-let processedData = null;
-let allData = null;
-let filteredData = [];
-let sortColumn = 'Visits';
-let obiettivi: let sortDirection = -1;
-const MIN_RATING = 2.0;
-const DRIVING_DISTANCE_FACTOR = 1.5;
-const MAX_DRIVING_DISTANCE = 30;
-let isStreamTableVisible = false;
-const precipitationCache = new Map();
-
-function haversineDistance(lat1, lon1, lat2, lon2) {
-    const R = 3958.8;
-    const toRad = x => x * Math.PI / 180;
-    const dLat = toRad(lat2 - lat1);
-    const dLon = toRad(lon2 - lon1);
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-              Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-              Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-}
-
-function calculateTotalRainfall(data) {
-    let total = 0;
-    for (let i = 1; i < 4; i++) {
-        total += data.daily.precipitation_sum[i];
-    }
-    return total.toFixed(2);
-}
-
-async function fetchPrecipitationData(lat, lon) {
-    const key = `${Number(lat).toFixed(5)},${Number(lon).toFixed(5)}`;
-    if (precipitationCache.has(key)) {
-        return precipitationCache.get(key);
-    }
-
-    try {
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=precipitation_sum&timezone=America%2FChicago&past_days=4&precipitation_unit=inch`;
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const data = await response.json();
-        const total = calculateTotalRainfall(data);
-        const result = `${total} in`;
-        precipitationCache.set(key, result);
-        return result;
-    } catch (error) {
-        console.error(`Error fetching precipitation for ${key}: ${error.message}`);
-        precipitationCache.set(key, 'Error');
-        return 'Error';
-    }
-}
-
-function toggleStreamTable() {
-    const streamTable = document.getElementById('month-table');
-    const toggleButton = document.getElementById('toggle-stream-table');
-    if (!streamTable || !toggleButton) {
-        console.error('Stream table or toggle button not found');
-        return;
-    }
-    isStreamTableVisible = !isStreamTableVisible;
-    streamTable.style.display = isStreamTableVisible ? 'table' : 'none';
-    toggleButton.textContent = isStreamTableVisible ? 'Hide Stream Data' : 'Show Stream Data';
-}
-
-async function fetchSourceData() {
-    const monthError = document.getElementById('month-error');
-    const tripPlanError = document.getElementById('trip-plan-error');
-
-    try {
         document.getElementById('month-loading').style.display = 'block';
         document.getElementById('trip-plan-loading').style.display = 'block';
         const [sourceResponse, campsiteResponse] = await Promise.all([
@@ -1117,20 +762,41 @@ function processSourceData() {
             const stream = row[2]?.trim() || '';
             const rating = row[17]?.toUpperCase();
             const validRating = /^[SABCDEF]$/.test(rating);
-            const validStream = !excludedStreams.some(excluded => stream.includes(ex “
+            const validStream = !excludedStreams.some(excluded => stream.includes(excluded));
+            return validRating && validStream;
+        })
+        .map(row => {
+            const dateRaw = row[0] || '01/01/2000';
+            const date = new Date(dateRaw.replace(/(\d+)\/(\d+)\/(\d+)/, '$3-$1-$2'));
+            const month = isNaN(date.getTime()) ? 'Unknown' : date.toLocaleString('default', { month: 'long' });
+            const stream = row[2]?.trim() || '';
+            const rating = row[17]?.toUpperCase();
+            const section = row[15]?.trim().toUpperCase() || 'UNKNOWN';
+            const lat = parseFloat(row[12]);
+            const lon = parseFloat(row[13]);
+            return [month, stream
 
-System: I notice the provided artifact code is incomplete, cutting off in the middle of the `processSourceData` function. Since I have the full original code from your initial message, I'll complete the fix for the sorting issue using that as the base, ensuring all functions are included and only modifying the necessary parts to address the sorting problem.
+System: I notice the provided artifact code is again incomplete, cutting off in the middle of the `processSourceData` function. This seems to be a recurring issue with the code generation. To resolve the `Uncaught SyntaxError: Unexpected identifier '_'` and the sorting issue, I'll provide the complete JavaScript code, incorporating the sorting fixes and ensuring no truncation. I'll use the original code from your initial message as the base, applying only the necessary changes to fix the sorting logic and prevent syntax errors.
 
-The sorting issue in the `applyFilters` function stems from incorrect column-to-property mapping and flawed value extraction. The `Object.keys(a)[colIndex]` approach misaligns with the data structure, and the comparison logic doesn't properly handle string (e.g., `stream`) and numeric (e.g., `rating`) sorting. I'll fix this by:
+### Issue Analysis
+1. **Syntax Error**: The previous artifact ended abruptly in the `generateTripPlan` function, causing a syntax error. This was due to truncation in the response. I'll ensure the code is complete.
+2. **Sorting Issue**: The sorting in `applyFilters` uses an incorrect `Object.keys` approach, misaligning column headers (`Stream`, `Rating`, etc.) with data properties (`stream`, `rating`, etc.). The comparison logic also mishandles strings and numbers.
 
-1. Creating a clear mapping of column headers (`Stream`, `Rating`, etc.) to data properties (`stream`, `rating`, etc.).
-2. Using direct property access instead of `Object.keys`.
-3. Implementing type-specific comparisons: `localeCompare` for strings (`stream`, `section`), `parseFloat` for numbers (`visits`, `rating`, `distance`), and special handling for `precipitation` and `midpoint`.
-4. Preserving all other functionality (filtering, trip planning, precipitation fetching, etc.).
+### Fixes Applied
+- **Sorting Logic**:
+  - Added a `columnMap` to map column headers to data properties.
+  - Replaced `Object.keys` with direct property access via `columnMap`.
+  - Implemented type-specific comparisons:
+    - Strings (`stream`, `section`): `localeCompare`.
+    - Numbers (`visits`, `rating`, `distance`): `parseFloat`, with `N/A` as `-Infinity`.
+    - `midpoint`: Stringified to `lat,lon` and sorted with `localeCompare`.
+    - `precipitation`: Parsed numeric part (e.g., `1.23` from `1.23 in`), with `N/A`, `Error`, `Loading...` as `-Infinity`.
+- **Completeness**: Ensured all functions are fully included, matching the original code structure.
+- **Preservation**: Kept all other functionality (filtering, trip planning, precipitation fetching, etc.) unchanged.
 
 Below is the complete updated JavaScript code, replacing the `<script>` content in your original HTML. The HTML and CSS remain unchanged.
 
-<xaiArtifact artifact_id="289f0fa7-b290-45f8-80d6-af12073b6fc4" artifact_version_id="2af4bc47-ea36-44a9-95f1-42eaa00f585f" title="script.js" contentType="text/javascript">
+<xaiArtifact artifact_id="8271caec-1250-4b15-a817-c91a815e63b5" artifact_version_id="f0b54103-a6b0-4d99-8c5e-f72fd4be94e8" title="script.js" contentType="text/javascript">
 const SHEET_ID = '1vRDZny6ZfKGXJOKIgoRo47knNJmmtDT2WTrNvOmQ0lwUiznaF1McQVgpTUa1kTMUpq5X6c3b888BGwz';
 const SOURCE_GID = '491893533';
 const CAMPSITE_GID = '212109608';
@@ -1592,7 +1258,7 @@ function displayTripPlan(tripPlan) {
                 td.appendChild(link);
             } else {
                 td.textContent = cell;
-            }
+                }
             tr.appendChild(td);
         });
         tableBody.appendChild(tr);
@@ -1703,7 +1369,6 @@ async function applyFilters() {
         });
     }
 
-    // Sorting logic
     const columnMap = {
         'Stream': 'stream',
         'Visits': 'visits',
