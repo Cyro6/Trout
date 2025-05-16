@@ -23,7 +23,7 @@
         .back-link {
             position: absolute;
             top: 20px;
-            left:  SELF: 20px;
+            left: 20px;
             z-index: 10;
         }
 
@@ -205,12 +205,13 @@
 
         th .header-content {
             display: flex;
+            justify-content: center;
             align-items: center;
             gap: 6px;
         }
 
         th .header-icon {
-            font-size: 1.1rem;
+            font-size: 1.2rem;
         }
 
         tr {
@@ -241,7 +242,7 @@
 
         td a:hover {
             color: #3b82f6;
-            text-decoration: underline;
+            text-decoration: none;
         }
 
         .loading {
@@ -263,12 +264,12 @@
             color: #dc2626;
             font-weight: 600;
             padding: 25px;
-            background: #fee2e2;
+            background: #d6dcf4;
             border-radius: 8px;
         }
 
         #month-error, #trip-plan-error {
-            background: #d6dcf4;
+            display: none; /* Hide by default */
         }
 
         .no-results {
@@ -304,6 +305,21 @@
         th.precipitation, td.precipitation {
             text-align: center;
             min-width: 120px;
+        }
+
+        /* Styles for midpoint column */
+        th.midpoint, td.midpoint {
+            text-align: center;
+            width: 80px;
+        }
+
+        td.midpoint a {
+            font-size: 1.2rem;
+            display: inline-block;
+        }
+
+        td.midpoint a:hover {
+            color: #3b82f6;
         }
 
         @media screen and (max-width: 600px) {
@@ -376,12 +392,9 @@
                 text-align: center;
             }
 
-            th.precipitation .header-content span:last-child {
-                display: none;
-            }
-
-            th.precipitation .header-content::after {
-                content: 'Precip. (3d)';
+            th.midpoint, td.midpoint {
+                width: 60px;
+                text-align: center;
             }
 
             th .header-content {
@@ -391,7 +404,7 @@
             }
 
             th .header-icon {
-                font-size: 1rem;
+                font-size: 1.1rem;
             }
         }
 
@@ -418,6 +431,10 @@
                 min-width: 80px;
             }
 
+            th.midpoint, td.midpoint {
+                width: 50px;
+            }
+
             th .header-content {
                 flex-direction: column;
                 align-items: center;
@@ -425,7 +442,7 @@
             }
 
             th .header-icon {
-                font-size: 0.9rem;
+                font-size: 1.0rem;
             }
         }
     </style>
@@ -523,11 +540,13 @@
             <table id="trip-plan-table" style="display: none;">
                 <thead id="trip-plan-header">
                     <tr>
-                        <th><div class="header-content"><span class="header-icon">🗓️</span><span>Day</span></div></th>
-                        <th><div class="header-content"><span class="header-icon">🌊</span><span>Primary Stream</span></div></th>
-                        <th><div class="header-content"><span class="header-icon">🌊</span><span>Backup Stream</span></div></th>
-                        <th><div class="header-content"><span class="header-icon">📏</span><span>Straight-Line Distance (miles)</span></div></th>
-                        <th><div class="header-content"><span class="header-icon">🚗</span><span>Est. Driving Distance (miles)</span></div></th>
+                        <th title="Day"><div class="header-content"><span class="header-icon">🗓️</span></div></th>
+                        <th title="Primary Stream"><div class="header-content"><span class="header-icon">🌊</span></div></th>
+                        <th class="precipitation" title="Primary Precipitation (Past 3 Days)"><div class="header-content"><span class="header-icon">💧</span></div></th>
+                        <th title="Backup Stream"><div class="header-content"><span class="header-icon">🌊</span></div></th>
+                        <th class="precipitation" title="Backup Precipitation (Past 3 Days)"><div class="header-content"><span class="header-icon">💧</span></div></th>
+                        <th title="Straight-Line Distance (miles)"><div class="header-content"><span class="header-icon">📏</span></div></th>
+                        <th title="Est. Driving Distance (miles)"><div class="header-content"><span class="header-icon">🚗</span></div></th>
                     </tr>
                 </thead>
                 <tbody id="trip-plan-body"></tbody>
@@ -627,6 +646,9 @@
         }
 
         async function fetchSourceData() {
+            const monthError = document.getElementById('month-error');
+            const tripPlanError = document.getElementById('trip-plan-error');
+
             try {
                 const [sourceResponse, campsiteResponse] = await Promise.all([
                     fetch(SOURCE_URL),
@@ -644,9 +666,15 @@
                 populateMonthDropdown();
                 populateCampsiteDropdown();
                 applyFilters();
+                monthError.textContent = '';
+                monthError.style.display = 'none';
+                tripPlanError.textContent = '';
+                tripPlanError.style.display = 'none';
             } catch (error) {
-                document.getElementById('month-error').textContent = `Error: ${error.message}`;
-                document.getElementById('trip-plan-error').textContent = `Error: ${error.message}`;
+                monthError.textContent = `Error: ${error.message}`;
+                monthError.style.display = 'block';
+                tripPlanError.textContent = `Error: ${error.message}`;
+                tripPlanError.style.display = 'block';
             } finally {
                 document.getElementById('month-loading').style.display = 'none';
                 document.getElementById('trip-plan-loading').style.display = 'none';
@@ -888,28 +916,25 @@
             const usedStreams = new Set();
 
             for (let day = 1; day <= numDays; day++) {
-                // Get available primary streams not yet used with valid midpoints
                 let availablePrimaryStreams = filteredStreams.filter(stream => !usedStreams.has(stream.stream) && stream.midpoint);
 
                 if (availablePrimaryStreams.length === 0) {
                     tripPlan.push({
                         day,
                         primary: { stream: 'None', gps: 'N/A' },
-                        backup: { stream: 'None', gps: 'N/A' },
-                        straightDistance: 'N/A',
-                        drivingDistance: 'N/A',
                         primaryPrecipitation: 'N/A',
-                        backupPrecipitation: 'N/A'
+                        backup: { stream: 'None', gps: 'N/A' },
+                        backupPrecipitation: 'N/A',
+                        straightDistance: 'N/A',
+                        drivingDistance: 'N/A'
                     });
                     continue;
                 }
 
-                // Select primary stream with highest rating
                 availablePrimaryStreams.sort((a, b) => b.rating - a.rating);
                 const primaryStream = availablePrimaryStreams[0];
                 usedStreams.add(primaryStream.stream);
 
-                // Find backup stream: closest stream within maxDistance with rating >= MIN_RATING
                 const backupCandidates = allStreams
                     .map(stream => {
                         if (!usedStreams.has(stream.stream) && stream.midpoint && stream.rating >= MIN_RATING) {
@@ -947,14 +972,14 @@
                         stream: primaryStream.stream,
                         gps: primaryStream.midpoint ? `${primaryStream.midpoint.lat.toFixed(4)}, ${primaryStream.midpoint.lon.toFixed(4)}` : 'N/A'
                     },
+                    primaryPrecipitation: primaryStream.midpoint ? 'Loading...' : 'N/A',
                     backup: {
                         stream: backupStream.stream,
                         gps: backupStream.midpoint ? `${backupStream.midpoint.lat.toFixed(4)}, ${backupStream.midpoint.lon.toFixed(4)}` : 'N/A'
                     },
+                    backupPrecipitation: backupStream.midpoint ? 'Loading...' : 'N/A',
                     straightDistance,
-                    drivingDistance,
-                    primaryPrecipitation: primaryStream.midpoint ? 'Loading...' : 'N/A',
-                    backupPrecipitation: backupStream.midpoint ? 'Loading...' : 'N/A'
+                    drivingDistance
                 });
             }
 
@@ -968,7 +993,8 @@
 
             if (!tableBody || !table || !errorDiv) {
                 console.error('Trip plan table elements not found');
-                document.getElementById('trip-plan-error').textContent = 'Error: Table elements missing';
+                errorDiv.textContent = 'Error: Table elements missing';
+                errorDiv.style.display = 'block';
                 return;
             }
 
@@ -976,27 +1002,29 @@
 
             if (tripPlan.length === 0 || tripPlan.every(plan => plan.primary.stream === 'None')) {
                 errorDiv.textContent = 'No streams available for the selected filters.';
+                errorDiv.style.display = 'block';
                 table.style.display = 'none';
                 return;
             }
 
             errorDiv.textContent = '';
+            errorDiv.style.display = 'none';
             tripPlan.forEach(plan => {
                 const tr = document.createElement('tr');
                 [
                     plan.day,
                     plan.primary.stream,
-                    plan.backup.stream,
-                    plan.straightDistance,
-                    plan.drivingDistance,
                     plan.primaryPrecipitation,
-                    plan.backupPrecipitation
+                    plan.backup.stream,
+                    plan.backupPrecipitation,
+                    plan.straightDistance,
+                    plan.drivingDistance
                 ].forEach((cell, index) => {
                     const td = document.createElement('td');
-                    if (index === 5 || index === 6) {
+                    if (index === 2 || index === 4) {
                         td.classList.add('precipitation');
                     }
-                    if (index === 1 || index === 2) {
+                    if (index === 1 || index === 3) {
                         const link = document.createElement('a');
                         link.href = `stream-details.html?stream=${encodeURIComponent(cell)}`;
                         link.textContent = cell;
@@ -1022,13 +1050,22 @@
             const radiusSelect = document.getElementById('radius-select');
             const backupDistanceSelect = document.getElementById('backup-distance-select');
             const tripDaysSelect = document.getElementById('trip-days-select');
+            const monthError = document.getElementById('month-error');
+            const tripPlanError = document.getElementById('trip-plan-error');
 
             if (!monthSelect || !streamFilter || !visitsFilter || !ratingFilter || !sectionFilter || !campsiteSelect || !radiusSelect || !backupDistanceSelect || !tripDaysSelect) {
                 console.error('One or more filter elements not found');
-                document.getElementById('month-error').textContent = 'Error: Filter elements missing';
-                document.getElementById('trip-plan-error').textContent = 'Error: Filter elements missing';
+                monthError.textContent = 'Error: Filter elements missing';
+                monthError.style.display = 'block';
+                tripPlanError.textContent = 'Error: Filter elements missing';
+                tripPlanError.style.display = 'block';
                 return;
             }
+
+            monthError.textContent = '';
+            monthError.style.display = 'none';
+            tripPlanError.textContent = '';
+            tripPlanError.style.display = 'none';
 
             const selectedMonth = monthSelect.value || 'ALL';
             const streamFilterValue = streamFilter.value ? streamFilter.value.toLowerCase() : '';
@@ -1044,7 +1081,6 @@
 
             let rowsToProcess = selectedMonth === 'ALL' ? allData : processedData.filter(row => row.month === selectedMonth);
 
-            // Apply filters (including campsite radius) for primary streams
             filteredData = rowsToProcess.map(row => {
                 let distance = null;
                 if (selectedCampsite !== 'ALL' && row.midpoint && selectedRadius !== 'ALL') {
@@ -1066,7 +1102,6 @@
                        (selectedCampsite === 'ALL' || selectedRadius === 'ALL' || (distance !== null && distance <= parseFloat(selectedRadius)));
             });
 
-            // Apply filters (excluding campsite radius) for backup streams
             const backupStreamCandidates = rowsToProcess.filter(row => {
                 const stream = row.stream.toLowerCase();
                 const visits = parseFloat(row.visits);
@@ -1079,15 +1114,33 @@
                        (sectionFilterValue === 'All' || section === sectionFilterValue);
             });
 
-            // Fetch precipitation data for filteredData
             const precipitationPromises = filteredData.map(async row => {
                 if (row.midpoint) {
-                    row.precipitation = await fetchPrecipitationData(row.midpoint.lat, row.midpoint.lon);
+                    try {
+                        const precip = await fetchPrecipitationData(row.midpoint.lat, row.midpoint.lon);
+                        row.precipitation = precip;
+                    } catch (error) {
+                        console.error(`Failed to fetch precipitation for ${row.stream}: ${error.message}`);
+                        row.precipitation = 'Error';
+                    }
                 }
                 return row;
             });
 
-            filteredData = await Promise.all(precipitationPromises);
+            try {
+                filteredData = await Promise.all(precipitationPromises);
+                console.log('Filtered data with precipitation:', filteredData.map(row => ({
+                    stream: row.stream,
+                    precipitation: row.precipitation
+                })));
+            } catch (error) {
+                console.error('Error resolving precipitation promises:', error);
+                filteredData.forEach(row => {
+                    if (row.precipitation === 'Loading...') {
+                        row.precipitation = 'Error';
+                    }
+                });
+            }
 
             filteredData.sort((a, b) => {
                 const colIndex = ['Stream', 'Visits', 'Rating', 'Section', 'Midpoint', 'Distance', 'Precipitation'].indexOf(sortColumn);
@@ -1095,8 +1148,8 @@
                 let valueB = b[colIndex === 6 ? 'precipitation' : colIndex === 5 ? 'distance' : colIndex === 4 ? (b.midpoint ? `${b.midpoint.lat.toFixed(4)}, ${b.midpoint.lon.toFixed(4)}` : 'N/A') : Object.keys(b)[colIndex]];
 
                 if (colIndex === 1 || colIndex === 2 || colIndex === 5 || colIndex === 6) {
-                    valueA = valueA === 'N/A' || valueA === 'Loading...' || valueA === 'Error' ? Infinity : parseFloat(valueA);
-                    valueB = valueB === 'N/A' || valueB === 'Loading...' || valueB === 'Error' ? Infinity : parseFloat(valueB);
+                    valueA = valueA === 'N/A' || valueA === 'Loading...' || valueA === 'Error' ? -Infinity : parseFloat(valueA);
+                    valueB = valueB === 'N/A' || valueB === 'Loading...' || valueB === 'Error' ? -Infinity : parseFloat(valueB);
                     return sortDirection * (valueA - valueB);
                 }
                 return sortDirection * (valueA.localeCompare(valueB));
@@ -1106,22 +1159,22 @@
                 ? ['Stream', 'Visits', 'Rating', 'Section', 'Midpoint', 'Distance', 'Precipitation']
                 : ['Stream', 'Visits', 'Rating', 'Section', 'Midpoint', 'Distance', 'Precipitation'];
 
-            displayData({
-                headers,
-                rows: filteredData.map(row => [
-                    row.stream,
-                    row.visits,
-                    row.rating,
-                    row.section,
-                    row.midpoint ? `${row.midpoint.lat.toFixed(4)}, ${row.midpoint.lon.toFixed(4)}` : 'N/A',
-                    row.distance,
-                    row.precipitation
-                ])
-            }, 'month');
+            const rows = filteredData.map(row => [
+                row.stream,
+                row.visits,
+                row.rating,
+                row.section,
+                row.midpoint ? `${row.midpoint.lat.toFixed(4)}, ${row.midpoint.lon.toFixed(4)}` : 'N/A',
+                row.distance,
+                row.precipitation || 'N/A'
+            ]);
+
+            console.log('Rows for displayData:', rows);
+
+            displayData({ headers, rows }, 'month');
 
             const tripPlan = generateTripPlan(filteredData, backupStreamCandidates, numDays, maxBackupDistance);
 
-            // Fetch precipitation data for tripPlan
             const tripPlanPromises = tripPlan.map(async plan => {
                 if (plan.primary.gps !== 'N/A') {
                     const [lat, lon] = plan.primary.gps.split(',').map(coord => parseFloat(coord.trim()));
@@ -1169,6 +1222,7 @@
             if (!tableHeader || !tableBody || !table || !noResultsDiv) {
                 console.error('Table elements not found');
                 document.getElementById(`${prefix}-error`).textContent = 'Error: Table elements missing';
+                document.getElementById(`${prefix}-error`).style.display = 'block';
                 return;
             }
 
@@ -1186,17 +1240,20 @@
                 'Precipitation': '💧',
                 'Day': '🗓️',
                 'Primary Stream': '🌊',
-                'Backup Stream': '🌊',
-                'Straight-Line Distance (miles)': '📏',
-                'Est. Driving Distance (miles)': '🚗',
                 'Primary Precipitation (Past 3 Days)': '💧',
-                'Backup Precipitation (Past 3 Days)': '💧'
+                'Backup Stream': '🌊',
+                'Backup Precipitation (Past 3 Days)': '💧',
+                'Straight-Line Distance (miles)': '📏',
+                'Est. Driving Distance (miles)': '🚗'
             };
 
             headers.forEach((header, index) => {
                 const th = document.createElement('th');
-                if (header.includes('Precipitation')) {
+                th.setAttribute('title', header); // Accessibility tooltip
+                if (header === 'Precipitation') {
                     th.classList.add('precipitation');
+                } else if (header === 'Midpoint') {
+                    th.classList.add('midpoint');
                 }
                 const contentDiv = document.createElement('div');
                 contentDiv.className = 'header-content';
@@ -1205,12 +1262,7 @@
                 iconSpan.className = 'header-icon';
                 iconSpan.textContent = iconMap[header] || '';
 
-                const textSpan = document.createElement('span');
-                textSpan.textContent = header;
-
                 contentDiv.appendChild(iconSpan);
-                contentDiv.appendChild(textSpan);
-
                 th.appendChild(contentDiv);
 
                 th.onclick = () => {
@@ -1241,15 +1293,20 @@
                     const td = document.createElement('td');
                     if (prefix === 'month' && index === 6) {
                         td.classList.add('precipitation');
-                    } else if (prefix === 'trip-plan' && (index === 5 || index === 6)) {
-                        td.classList.add('precipitation');
-                    }
-                    if (prefix === 'month' && index === 0) {
-                        const link = document.createElement('a');
-                        link.href = `stream-details.html?stream=${encodeURIComponent(cell)}`;
-                        link.textContent = cell;
-                        td.appendChild(link);
-                    } else if (prefix === 'trip-plan' && (index === 1 || index === 2)) {
+                        td.textContent = cell;
+                    } else if (prefix === 'month' && index === 4) {
+                        td.classList.add('midpoint');
+                        if (cell !== 'N/A') {
+                            const [lat, lon] = cell.split(',').map(coord => parseFloat(coord.trim()));
+                            const link = document.createElement('a');
+                            link.href = `https://www.google.com/maps?q=${lat},${lon}`;
+                            link.target = '_blank';
+                            link.textContent = '🗺️';
+                            td.appendChild(link);
+                        } else {
+                            td.textContent = '-';
+                        }
+                    } else if (prefix === 'month' && index === 0) {
                         const link = document.createElement('a');
                         link.href = `stream-details.html?stream=${encodeURIComponent(cell)}`;
                         link.textContent = cell;
