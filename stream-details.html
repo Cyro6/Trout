@@ -4,54 +4,184 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stream Details</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg-primary: #D9ECEC;
+            --bg-secondary: #e5e7eb;
+            --card-bg: white;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --header-bg: #008080;
+            --header-hover-bg: #00A0A0;
+            --button-bg: #008080;
+            --button-hover-bg: #00A0A0;
+            --link-color: #008080;
+            --link-hover-color: #00A0A0;
+            --error-bg: #d6dcf4;
+            --table-even-row-bg: #f9fafb;
+            --table-hover-bg: #dbeafe;
+            --footer-bg: #f8fafc;
+            --shadow-color: rgba(0, 0, 0, 0.12);
+            --shadow-hover-color: rgba(0, 0, 0, 0.2);
+        }
+
+        .dark-theme {
+            --bg-primary: #1f2937;
+            --bg-secondary: #374151;
+            --card-bg: #2d3748;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --header-bg: #3a3c5a;
+            --header-hover-bg: #45476b;
+            --button-bg: linear-gradient(90deg, #4b5563, #6b7280);
+            --button-hover-bg: linear-gradient(90deg, #374151, #4b5563);
+            --link-color: #60a5fa;
+            --link-hover-color: #93c5fd;
+            --error-bg: #4b5563;
+            --table-even-row-bg: #374151;
+            --table-hover-bg: #4b5563;
+            --footer-bg: #2d3748;
+            --shadow-color: rgba(0, 0, 0, 0.5);
+            --shadow-hover-color: rgba(0, 0, 0, 0.7);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f4f4f9;
-            font-size: 16px;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary), var(--bg-secondary));
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text-primary);
+            transition: background 0.3s ease, color 0.3s ease;
         }
-        h1, h2 {
-            color: #333;
+
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 10;
         }
+
+        .theme-toggle button {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-primary);
+            transition: color 0.2s ease, transform 0.2s ease;
+        }
+
+        .theme-toggle button:hover {
+            transform: scale(1.1);
+            color: var(--link-hover-color);
+        }
+
         .back-link {
-            margin-bottom: 20px;
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
         }
-        a {
-            color: #4CAF50;
+
+        .back-link a {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--link-color);
             text-decoration: none;
+            transition: color 0.2s ease;
         }
-        a:hover {
+
+        .back-link a:hover {
+            color: var(--link-hover-color);
             text-decoration: underline;
         }
+
+        h1 {
+            text-align: center;
+            font-size: 2.8rem;
+            font-weight: 700;
+            color: var(--link-color);
+            margin-bottom: 1.5rem;
+            text-shadow: 0 2px 6px var(--shadow-color);
+            animation: fadeIn 1s ease-in;
+        }
+
+        h2 {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--link-color);
+            margin-bottom: 1.2rem;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 14px;
+            box-shadow: 0 6px 25px var(--shadow-color);
+            padding: 25px;
+            margin: 25px auto;
+            max-width: 1200px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 40px var(--shadow-hover-color);
+        }
+
         .stats, .month-stats, .top-outings, .stream-info, .widnr-map-section, .weather-section, .spots-section {
-            margin: 20px 0;
-            padding: 15px;
-            background-color: #fff;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            box-sizing: border-box;
+            background: var(--card-bg);
+            border-radius: 14px;
+            box-shadow: 0 6px 25px var(--shadow-color);
+            padding: 25px;
+            margin: 25px 0;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
         }
+
+        .stats:hover, .month-stats:hover, .top-outings:hover, .stream-info:hover, .widnr-map-section:hover, .weather-section:hover, .spots-section:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 40px var(--shadow-hover-color);
+        }
+
         .stream-info p, .weather-section p, .stats p {
-            margin: 5px 0;
+            margin: 10px 0;
+            font-size: 1rem;
+            color: var(--text-primary);
         }
-        .widnr-map-section .toggle-button, .past-weather-toggle, 
+
+        .widnr-map-section .toggle-button, .past-weather-toggle,
         .stream-info-toggle, .month-stats-toggle, .top-outings-toggle,
         .stats-toggle, .weather-toggle, .spots-toggle {
-            background-color: #4CAF50;
+            padding: 10px 20px;
+            background: var(--button-bg);
             color: white;
             border: none;
-            padding: 8px 15px;
-            border-radius: 3px;
+            border-radius: 8px;
             cursor: pointer;
-            display: inline-block;
-            margin-bottom: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            margin-bottom: 20px;
         }
-        .widnr-map-section .toggle-button:hover, .past-weather-toggle:hover, 
+
+        .widnr-map-section .toggle-button:hover, .past-weather-toggle:hover,
         .stream-info-toggle:hover, .month-stats-toggle:hover, .top-outings-toggle:hover,
         .stats-toggle:hover, .weather-toggle:hover, .spots-toggle:hover {
-            background-color: #45a049;
+            background: var(--button-hover-bg);
+            transform: translateY(-3px);
+            box-shadow: 0 4px 15px var(--shadow-hover-color);
         }
+
         .widnr-map-section .iframe-container {
             position: relative;
             padding-bottom: 56.25%;
@@ -59,9 +189,11 @@
             overflow: hidden;
             display: none;
         }
+
         .widnr-map-section .iframe-container.active {
             display: block;
         }
+
         .widnr-map-section .iframe-container iframe {
             position: absolute;
             top: 0;
@@ -70,159 +202,273 @@
             height: 100%;
             border: 0;
         }
+
         .widnr-map-section .iframe-fallback {
             margin-top: 10px;
-            color: #555;
+            color: var(--text-secondary);
             display: none;
         }
+
         .widnr-map-section .iframe-fallback.active {
             display: block;
         }
+
+        .spots-table-container, .month-outing-table-container, .top-outings-table-container, .weather-table-container {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
         .spots-table, .top-outings-table, .month-outing-table, .weather-table {
             width: 100%;
-            margin: 20px 0;
             border-collapse: collapse;
-            background-color: #fff;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            background: var(--card-bg);
+            border-radius: 10px;
+            overflow: hidden;
         }
-        .spots-table th, .spots-table td, .top-outings-table th, .top-outings-table td, 
+
+        .spots-table th, .spots-table td, .top-outings-table th, .top-outings-table td,
         .month-outing-table th, .month-outing-table td, .weather-table th, .weather-table td {
-            padding: 12px;
+            padding: 14px;
             text-align: left;
-            border: 1px solid #ddd;
+            border-bottom: 1px solid var(--text-secondary);
+            transition: background-color 0.3s ease;
         }
+
         .spots-table th, .top-outings-table th, .month-outing-table th, .weather-table th {
-            background-color: #4CAF50;
+            background: var(--header-bg);
             color: white;
+            font-weight: 700;
             cursor: pointer;
+            position: relative;
+            transition: background 0.3s ease;
         }
-        .spots-table th:hover, .top-outings-table th:hover, .month-outing-table th:hover {
-            background-color: #45a049;
+
+        .spots-table th:hover, .top-outings-table th:hover, .month-outing-table th:hover, .weather-table th:hover {
+            background: var(--header-hover-bg);
         }
-        .spots-table th.sort-asc::after, .top-outings-table th.sort-asc::after, .month-outing-table th.sort-asc::after {
+
+        .spots-table th.sort-asc::after, .top-outings-table th.sort-asc::after, .month-outing-table th.sort-asc::after,
+        .weather-table th.sort-asc::after {
             content: ' ↑';
+            font-size: 0.9rem;
         }
-        .spots-table th.sort-desc::after, .top-outings-table th.sort-desc::after, .month-outing-table th.sort-desc::after {
+
+        .spots-table th.sort-desc::after, .top-outings-table th.sort-desc::after, .month-outing-table th.sort-desc::after,
+        .weather-table th.sort-desc::after {
             content: ' ↓';
+            font-size: 0.9rem;
         }
-        .spots-table tr:nth-child(even), .top-outings-table tr:nth-child(even), 
+
+        .spots-table tr, .top-outings-table tr, .month-outing-table tr, .weather-table tr {
+            transition: background 0.2s ease, transform 0.2s ease;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .spots-table tr:nth-child(even), .top-outings-table tr:nth-child(even),
         .month-outing-table tr:nth-child(even), .weather-table tr:nth-child(even) {
-            background-color: #f9f9f9;
+            background: var(--table-even-row-bg);
         }
-        .spots-table tr:hover, .top-outings-table tr:hover, .month-outing-table tr:hover, 
-        .weather-table tr:hover {
-            background-color: #f1f1f1;
+
+        .spots-table tr:hover, .top-outings-table tr:hover,
+        .month-outing-table tr:hover, .weather-table tr:hover {
+            background: var(--table-hover-bg);
+            transform: scale(1.01);
         }
+
+        .spots-table td a, .top-outings-table td a, .month-outing-table td a, .weather-table td a {
+            color: var(--link-color);
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s ease;
+        }
+
+        .spots-table td a:hover, .top-outings-table td a:hover, .month-outing-table td a:hover, .weather-table td a:hover {
+            color: var(--link-hover-color);
+            text-decoration: none;
+        }
+
         .loading, .weather-loading {
             text-align: center;
-            font-size: 1.2em;
-            color: #555;
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            padding: 25px;
+            animation: pulse 1.5s infinite;
         }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
         .error, .weather-error {
             text-align: center;
-            color: red;
+            color: #dc2626;
+            font-weight: 600;
+            padding: 25px;
+            background: var(--error-bg);
+            border-radius: 8px;
         }
-        .filter-section {
-            margin: 20px 0;
-            padding: 10px;
-            background-color: #fff;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            flex-wrap: wrap;
-            box-sizing: border-box;
-        }
-        .filter-section label {
-            font-weight: bold;
-            margin-right: 5px;
-        }
-        .filter-section select, .filter-section input {
-            padding: 5px;
-            border: 1px solid #ddd;
-            border-radius: 3px;
-        }
-        .filter-section button {
-            padding: 5px 10px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-        }
-        .filter-section button:hover {
-            background-color: #45a049;
-        }
+
         .no-results {
             text-align: center;
-            color: #555;
-            margin: 20px 0;
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            padding: 25px;
+            background: var(--footer-bg);
+            border-radius: 8px;
         }
+
+        .filter-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background: var(--footer-bg);
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid var(--text-secondary);
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-section label {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-right: 10px;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .filter-section label .icon {
+            font-size: 1.2rem;
+        }
+
+        .filter-section select, .filter-section input {
+            padding: 10px;
+            border: 2px solid var(--text-secondary);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background: var(--card-bg);
+            color: var(--text-primary);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+        }
+
+        .filter-section select:focus, .filter-section input:focus {
+            outline: none;
+            border-color: var(--link-color);
+            box-shadow: 0 0 0 4px rgba(30, 64, 175, 0.25);
+            transform: scale(1.02);
+        }
+
+        .filter-section input[type="number"] {
+            width: 90px;
+        }
+
+        .filter-section select {
+            width: 140px;
+        }
+
+        .filter-section button {
+            padding: 10px 20px;
+            background: var(--button-bg);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+        }
+
+        .filter-section button:hover {
+            background: var(--button-hover-bg);
+            transform: translateY(-3px);
+            box-shadow: 0 4px 15px var(--shadow-hover-color);
+        }
+
+        .weather-section .current-weather, .weather-section .total-rainfall {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: var(--footer-bg);
+            border-radius: 10px;
+            border: 1px solid var(--text-secondary);
+        }
+
+        .weather-section .weather-location {
+            margin: 10px 0;
+        }
+
+        .past-weather-container {
+            display: none;
+        }
+
+        .past-weather-container.active {
+            display: block;
+        }
+
         .month-stats .stats-row {
             display: block;
             overflow: hidden;
         }
+
         .month-stats .stats-row p {
-            margin: 0 0 10px 0;
-        }
-        .weather-section .current-weather, .weather-section .total-rainfall {
-            margin-bottom: 20px;
-            padding: 10px;
-            background-color: #e0f7fa;
-            border-radius: 5px;
-        }
-        .weather-section .current-weather p {
-            margin: 5px 0;
-        }
-        .weather-section .weather-location {
             margin: 10px 0;
-        }
-        .past-weather-container {
-            display: none;
-        }
-        .past-weather-container.active {
-            display: block;
         }
 
         /* Widescreen Layout */
         @media screen and (min-width: 1200px) {
             .stream-details {
-                display: flex !important;
-                flex-wrap: nowrap !important;
+                display: flex;
+                flex-wrap: nowrap;
                 gap: 2%;
             }
+
             .stream-details .left-column {
-                flex: 0 0 40% !important;
-                width: 40% !important;
+                flex: 0 0 40%;
+                width: 40%;
                 box-sizing: border-box;
             }
+
             .stream-details .right-column {
-                flex: 0 0 58% !important;
-                width: 58% !important;
+                flex: 0 0 58%;
+                width: 58%;
                 box-sizing: border-box;
-                display: block;
+                display: flex;
                 flex-wrap: wrap;
                 gap: 20px;
             }
+
             .info-stats-container {
                 display: flex;
                 gap: 20px;
             }
+
             .stream-info, .stats {
                 flex: 1;
                 min-width: 200px;
             }
+
             .weather-section, .widnr-map-section {
                 width: 100%;
             }
+
             .spots-section, .month-stats, .top-outings {
                 flex: 1;
                 min-width: 300px;
             }
-            .spots-table, .month-outing-table, .top-outings-table {
-                width: 100%;
-            }
+
             .filter-section {
                 width: 100%;
             }
@@ -236,6 +482,7 @@
                 width: 100%;
                 float: none;
             }
+
             .info-stats-container {
                 display: block;
             }
@@ -243,160 +490,186 @@
 
         @media screen and (max-width: 600px) {
             body {
-                margin: 10px;
-                font-size: 14px;
+                padding: 12px;
             }
+
+            .back-link, .theme-toggle {
+                top: 12px;
+                left: 12px;
+            }
+
+            .theme-toggle {
+                left: auto;
+                right: 12px;
+            }
+
+            .back-link a, .theme-toggle button {
+                font-size: 0.9rem;
+            }
+
             h1 {
-                font-size: 1.5em;
+                font-size: 2rem;
             }
+
             h2 {
-                font-size: 1.2em;
+                font-size: 1.5rem;
             }
-            .stats, .month-stats, .top-outings, .stream-info, .widnr-map-section, .weather-section, .spots-section {
-                padding: 8px;
-                margin: 10px 0;
+
+            .card, .stats, .month-stats, .top-outings, .stream-info, .widnr-map-section, .weather-section, .spots-section {
+                padding: 15px;
+                margin: 15px 0;
             }
+
+            .filter-section {
+                padding: 12px;
+            }
+
+            .filter-row {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+            }
+
+            .filter-section select,
+            .filter-section input {
+                width: 100%;
+                font-size: 0.9rem;
+            }
+
+            .filter-section input[type="number"],
+            .filter-section select {
+                width: 100%;
+            }
+
+            .filter-section button {
+                width: 100%;
+                padding: 12px;
+                margin-bottom: 12px;
+            }
+
             .widnr-map-section .iframe-container {
                 padding-bottom: 75%;
             }
-            .filter-section {
-                flex-direction: column;
-                flex-wrap: wrap;
-                gap: 5px;
-                padding: 8px;
-                align-items: flex-start;
-                margin: 10px 0;
-            }
-            .filter-section .filter-row {
-                display: flex;
-                gap: 5px;
-                flex-wrap: nowrap;
-                width: auto;
-            }
-            .filter-section .filter-row.button-row {
-                width: 100%;
-                justify-content: flex-start;
-            }
-            .filter-section div {
-                display: flex;
-                align-items: center;
-            }
-            .filter-section label {
-                font-size: 12px;
-                margin-right: 4px;
-            }
-            .filter-section select {
-                width: 70px;
-                font-size: 12px;
-                padding: 4px;
-            }
-            .filter-section input {
-                width: 55px;
-                font-size: 12px;
-                padding: 4px;
-            }
-            .filter-section button {
-                font-size: 12px;
-                padding: 4px 8px;
-                width: auto;
-            }
+
             .spots-table, .top-outings-table, .month-outing-table, .weather-table {
-                box-shadow: none;
-                margin: 10px 0;
+                font-size: 0.85rem;
             }
-            .spots-table {
-                display: table !important;
-                width: 100%;
-                table-layout: fixed;
-                font-size: 12px;
+
+            .spots-table th, .spots-table td, .top-outings-table th, .top-outings-table td,
+            .month-outing-table th, .month-outing-table td, .weather-table th, .weather-table td {
+                padding: 8px;
+                text-align: left;
+                white-space: normal;
+                min-width: 80px;
+                overflow-wrap: break-word;
             }
-            .spots-table thead, .spots-table tbody, .spots-table tr {
-                display: table !important;
-                width: 100%;
-                table-layout: fixed;
-            }
-            .spots-table th, .spots-table td {
-                display: table-cell !important;
-                padding: 6px;
-                text-align: center;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-            }
-            .spots-table th:nth-child(1), .spots-table td:nth-child(1) {
-                width: 15%;
-            }
-            .spots-table th:nth-child(2), .spots-table td:nth-child(2) {
-                width: 15%;
-            }
-            .spots-table th:nth-child(3), .spots-table td:nth-child(3) {
-                width: 20%;
-            }
-            .spots-table th:nth-child(4), .spots-table td:nth-child(4) {
-                width: 20%;
-            }
-            .spots-table th:nth-child(5), .spots-table td:nth-child(5) {
-                width: 30%;
-            }
+
             .top-outings-table thead, .month-outing-table thead, .weather-table thead {
                 display: none;
             }
+
             .top-outings-table tr, .month-outing-table tr, .weather-table tr {
                 display: block;
                 margin-bottom: 10px;
-                border: 1px solid #ddd;
-                border-radius: 5px;
+                border: 1px solid var(--text-secondary);
+                border-radius: 10px;
             }
+
             .top-outings-table td, .month-outing-table td, .weather-table td {
                 display: block;
                 text-align: right;
                 padding: 8px;
                 border: none;
-                border-bottom: 1px solid #eee;
+                border-bottom: 1px solid var(--text-secondary);
                 position: relative;
             }
+
             .top-outings-table td::before, .month-outing-table td::before, .weather-table td::before {
                 content: attr(data-label);
                 position: absolute;
                 left: 8px;
                 width: 45%;
                 text-align: left;
-                font-weight: bold;
-                color: #333;
+                font-weight: 600;
+                color: var(--text-primary);
             }
+
             .top-outings-table td:last-child, .month-outing-table td:last-child, .weather-table td:last-child {
                 border-bottom: none;
             }
-            .top-outings-table tr:hover, .month-outing-table tr:hover, .weather-table tr:hover {
-                background-color: #fff;
-            }
+
             .stream-info .stream-info-content,
             .stats .stats-content,
             .weather-section .weather-content,
             .month-stats .month-stats-content,
             .top-outings .top-outings-content,
             .spots-section .spots-content {
-                display: none !important;
+                display: none;
             }
+
             .stream-info .stream-info-content.active,
             .stats .stats-content.active,
             .weather-section .weather-content.active,
             .month-stats .month-stats-content.active,
             .top-outings .top-outings-content.active,
             .spots-section .spots-content.active {
-                display: block !important;
+                display: block;
             }
+
             .stream-info-toggle,
             .stats-toggle,
             .weather-toggle,
             .month-stats-toggle,
             .top-outings-toggle,
             .spots-toggle {
-                display: block !important;
+                display: block;
             }
+
             .spots-table-container {
                 overflow-x: auto;
                 -webkit-overflow-scrolling: touch;
+            }
+
+            .spots-table {
+                display: table;
+                width: 100%;
+                table-layout: fixed;
+                font-size: 0.85rem;
+            }
+
+            .spots-table thead, .spots-table tbody, .spots-table tr {
+                display: table;
+                width: 100%;
+                table-layout: fixed;
+            }
+
+            .spots-table th, .spots-table td {
+                display: table-cell;
+                padding: 6px;
+                text-align: center;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .spots-table th:nth-child(1), .spots-table td:nth-child(1) {
+                width: 15%;
+            }
+
+            .spots-table th:nth-child(2), .spots-table td:nth-child(2) {
+                width: 15%;
+            }
+
+            .spots-table th:nth-child(3), .spots-table td:nth-child(3) {
+                width: 20%;
+            }
+
+            .spots-table th:nth-child(4), .spots-table td:nth-child(4) {
+                width: 20%;
+            }
+
+            .spots-table th:nth-child(5), .spots-table td:nth-child(5) {
+                width: 30%;
             }
         }
 
@@ -407,37 +680,63 @@
             .month-stats .month-stats-content,
             .top-outings .top-outings-content,
             .spots-section .spots-content {
-                display: block !important;
+                display: block;
             }
+
             .stream-info-toggle,
             .stats-toggle,
             .weather-toggle,
             .month-stats-toggle,
             .top-outings-toggle,
             .spots-toggle {
-                display: none !important;
+                display: none;
             }
+
             .spots-table {
-                font-size: 16px;
+                font-size: 1rem;
             }
-            .filter-section select {
+
+            .filter-section select, .filter-section input {
                 width: auto;
             }
-            .filter-section input {
-                width: auto;
-            }
+
             .filter-section .filter-row {
                 display: flex;
-                gap: 15px;
+                gap: 20px;
                 flex-wrap: wrap;
             }
+
             .filter-section .filter-row.button-row {
                 display: none;
+            }
+        }
+
+        @media screen and (max-width: 360px) {
+            .spots-table-container, .month-outing-table-container, .top-outings-table-container, .weather-table-container {
+                max-width: 360px;
+                overflow-x: auto;
+            }
+
+            .spots-table, .top-outings-table, .month-outing-table, .weather-table {
+                width: auto;
+            }
+
+            .spots-table th, .spots-table td, .top-outings-table th, .top-outings-table td,
+            .month-outing-table th, .month-outing-table td, .weather-table th, .weather-table td {
+                padding: 6px;
+                font-size: 0.75rem;
+                text-align: left;
+                white-space: normal;
+                min-width: 60px;
+                overflow-wrap: break-word;
             }
         }
     </style>
 </head>
 <body>
+    <div class="theme-toggle">
+        <button id="theme-toggle-btn" title="Toggle Theme">☀️</button>
+    </div>
     <div class="back-link">
         <a href="index.html">← Back to Dashboard</a>
     </div>
@@ -448,7 +747,7 @@
     <div id="stream-details" class="stream-details" style="display: none;">
         <div class="left-column">
             <div class="info-stats-container">
-                <div class="stream-info">
+                <div class="stream-info card">
                     <h2>Stream Information</h2>
                     <button class="stream-info-toggle" data-toggle="stream-info-content" onclick="toggleSection('stream-info-content')">Expand</button>
                     <div class="stream-info-content" id="stream-info-content">
@@ -460,7 +759,7 @@
                         <p id="stream-widnr-link-container"><strong>WIDNR Map:</strong> <span id="stream-widnr-link"></span> | <span id="stream-widnr-external-link"></span></p>
                     </div>
                 </div>
-                <div class="stats">
+                <div class="stats card">
                     <h2>Overall Statistics</h2>
                     <button class="stats-toggle" data-toggle="stats-content" onclick="toggleSection('stats-content')">Collapse</button>
                     <div class="stats-content" id="stats-content">
@@ -470,7 +769,7 @@
                     </div>
                 </div>
             </div>
-            <div class="weather-section">
+            <div class="weather-section card">
                 <h2 id="weather-title">Weather</h2>
                 <button class="weather-toggle" data-toggle="weather-content" onclick="toggleSection('weather-content')">Collapse</button>
                 <div class="weather-content" id="weather-content">
@@ -482,7 +781,27 @@
                     <button class="past-weather-toggle" data-toggle="past-weather-container" onclick="toggleSection('past-weather-container')">Show Past Weather</button>
                     <div class="past-weather-container" id="past-weather-container">
                         <h3>Past 3 Days Weather</h3>
-                        <table class="weather-table" id="past-weather-table">
+                        <div class="weather-table-container">
+                            <table class="weather-table" id="past-weather-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Min Temp (°F)</th>
+                                        <th>Max Temp (°F)</th>
+                                        <th>Precipitation (in)</th>
+                                        <th>Max Surface Pressure (hPa)</th>
+                                        <th>Wind Direction</th>
+                                        <th>Pressure Trend</th>
+                                        <th>Weather</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="past-weather-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <h3>Forecast (Today and Next 4 Days)</h3>
+                    <div class="weather-table-container">
+                        <table class="weather-table" id="forecast-table">
                             <thead>
                                 <tr>
                                     <th>Date</th>
@@ -495,44 +814,28 @@
                                     <th>Weather</th>
                                 </tr>
                             </thead>
-                            <tbody id="past-weather-body"></tbody>
+                            <tbody id="forecast-body"></tbody>
                         </table>
                     </div>
-                    <h3>Forecast (Today and Next 4 Days)</h3>
-                    <table class="weather-table" id="forecast-table">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Min Temp (°F)</th>
-                                <th>Max Temp (°F)</th>
-                                <th>Precipitation (in)</th>
-                                <th>Max Surface Pressure (hPa)</th>
-                                <th>Wind Direction</th>
-                                <th>Pressure Trend</th>
-                                <th>Weather</th>
-                            </tr>
-                        </thead>
-                        <tbody id="forecast-body"></tbody>
-                    </table>
                 </div>
-            </div>
-            <div class="widnr-map-section" id="widnr-map-section">
-                <h2>WIDNR Map</h2>
-                <button class="toggle-button" onclick="toggleMap()">Expand Map</button>
-                <div id="stream-widnr-iframe" class="iframe-container"></div>
-                <div id="stream-widnr-fallback" class="iframe-fallback"></div>
+                <div class="widnr-map-section card" id="widnr-map-section">
+                    <h2>WIDNR Map</h2>
+                    <button class="toggle-button" onclick="toggleMap()">Expand Map</button>
+                    <div id="stream-widnr-iframe" class="iframe-container"></div>
+                    <div id="stream-widnr-fallback" class="iframe-fallback"></div>
+                </div>
             </div>
         </div>
 
         <div class="right-column">
-            <div class="spots-section">
+            <div class="spots-section card">
                 <h2>Fishing Spots (Upstream to Downstream)</h2>
                 <button class="spots-toggle" data-toggle="spots-content" onclick="toggleSection('spots-content')">Collapse</button>
                 <div class="spots-content" id="spots-content">
                     <div class="filter-section">
                         <div class="filter-row">
                             <div>
-                                <label for="section-filter">Section:</label>
+                                <label for="section-filter"><span class="icon">📍</span> Section:</label>
                                 <select id="section-filter" onchange="applyFilters()">
                                     <option value="All">All</option>
                                     <option value="L">L</option>
@@ -542,16 +845,16 @@
                                 </select>
                             </div>
                             <div>
-                                <label for="visits-filter">Visits:</label>
+                                <label for="visits-filter"><span class="icon">👣</span> Visits:</label>
                                 <input type="number" id="visits-filter" min="0" value="" placeholder="Min Visits" oninput="applyFilters()">
                             </div>
                             <div>
-                                <label for="rating-filter">AR:</label>
+                                <label for="rating-filter"><span class="icon">⭐</span> AR:</label>
                                 <input type="number" id="rating-filter" min="0" max="6" step="0.1" value="" placeholder="Min AR" oninput="applyFilters()">
                             </div>
-                        </div>
-                        <div class="filter-row button-row">
-                            <button onclick="clearFilters()">Clear Filters</button>
+                            <div class="filter-row button-row">
+                                <button onclick="clearFilters()">Clear Filters</button>
+                            </div>
                         </div>
                     </div>
                     <div id="no-results" class="no-results" style="display: none;">No spots match the filters.</div>
@@ -571,13 +874,35 @@
                     </div>
                 </div>
             </div>
-            <div class="month-stats">
+            <div class="month-stats card">
                 <h2 id="month-stats-title">Current Month Statistics</h2>
                 <button class="month-stats-toggle" data-toggle="month-stats-content" onclick="toggleSection('month-stats-content')">Expand</button>
                 <div class="month-stats-content" id="month-stats-content">
                     <div class="stats-row">
                         <p><strong>Typically Fished Section:</strong> <span id="current-month-section"></span></p>
-                        <table class="month-outing-table" id="month-outing-table">
+                        <div class="month-outing-table-container">
+                            <table class="month-outing-table" id="month-outing-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Rating</th>
+                                        <th>Location</th>
+                                        <th>Section</th>
+                                        <th>YouTube Link</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="month-outing-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="top-outings card">
+                <h2>Top 5 Highest Rated Outings</h2>
+                <button class="top-outings-toggle" data-toggle="top-outings-content" onclick="toggleSection('top-outings-content')">Expand</button>
+                <div class="top-outings-content" id="top-outings-content">
+                    <div class="top-outings-table-container">
+                        <table class="top-outings-table" id="top-outings-table">
                             <thead>
                                 <tr>
                                     <th>Date</th>
@@ -587,27 +912,9 @@
                                     <th>YouTube Link</th>
                                 </tr>
                             </thead>
-                            <tbody id="month-outing-body"></tbody>
+                            <tbody id="top-outings-body"></tbody>
                         </table>
                     </div>
-                </div>
-            </div>
-            <div class="top-outings">
-                <h2>Top 5 Highest Rated Outings</h2>
-                <button class="top-outings-toggle" data-toggle="top-outings-content" onclick="toggleSection('top-outings-content')">Expand</button>
-                <div class="top-outings-content" id="top-outings-content">
-                    <table class="top-outings-table" id="top-outings-table">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Rating</th>
-                                <th>Location</th>
-                                <th>Section</th>
-                                <th>YouTube Link</th>
-                            </tr>
-                        </thead>
-                        <tbody id="top-outings-body"></tbody>
-                    </table>
                 </div>
             </div>
         </div>
@@ -665,8 +972,17 @@
             99: "Thunderstorm with heavy hail"
         };
 
+        function toggleTheme() {
+            const body = document.body;
+            const themeButton = document.getElementById('theme-toggle-btn');
+            body.classList.toggle('dark-theme');
+            const isDark = body.classList.contains('dark-theme');
+            themeButton.textContent = isDark ? '☀️' : '🌙';
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        }
+
         function degreesToCardinal(degrees) {
-            const directions = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", 
+            const directions = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
                                "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
             const index = Math.round(degrees / 22.5) % 16;
             return directions[index];
@@ -773,26 +1089,15 @@
         }
 
         function toggleSection(containerId) {
-            console.log(`Toggling section: ${containerId}`);
             const container = document.getElementById(containerId);
-            if (!container) {
-                console.error(`Container not found: ${containerId}`);
-                return;
-            }
             const button = document.querySelector(`[data-toggle="${containerId}"]`);
-            if (!button) {
-                console.error(`Button not found for container: ${containerId}`);
-                return;
-            }
             const isExpanded = container.classList.contains('active');
             if (isExpanded) {
                 container.classList.remove('active');
                 button.textContent = button.classList.contains('past-weather-toggle') ? 'Show Past Weather' : 'Expand';
-                console.log(`Collapsed: ${containerId}`);
             } else {
                 container.classList.add('active');
                 button.textContent = button.classList.contains('past-weather-toggle') ? 'Hide Past Weather' : 'Collapse';
-                console.log(`Expanded: ${containerId}`);
             }
         }
 
@@ -814,11 +1119,20 @@
         }
 
         async function init() {
-            console.log('Initializing Stream Details Page');
+            const savedTheme = localStorage.getItem('theme');
+            const themeButton = document.getElementById('theme-toggle-btn');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-theme');
+                themeButton.textContent = '☀️';
+            } else {
+                themeButton.textContent = '🌙';
+            }
+
+            themeButton.addEventListener('click', toggleTheme);
+
             if (!streamName) {
                 document.getElementById('error').textContent = 'Error: No stream specified.';
                 document.getElementById('loading').style.display = 'none';
-                console.error('No stream name provided in URL');
                 return;
             }
 
@@ -842,7 +1156,6 @@
                 sourceData = parseCSV(csvText);
             } catch (error) {
                 document.getElementById('error').textContent = `Error fetching spots data: ${error.message}`;
-                console.error(`Fetch data error: ${error.message}`);
             }
         }
 
@@ -855,28 +1168,52 @@
                 streamInfoData = parseCSV(csvText);
             } catch (error) {
                 document.getElementById('error').textContent = `Error fetching stream info: ${error.message}`;
-                console.error(`Fetch stream info error: ${error.message}`);
             }
         }
 
         function parseCSV(csvText) {
-            const lines = csvText.split('\n').filter(line => line.trim() !== '');
-            const headers = lines[0].split(',').map(header => header.trim());
+            let insideQuotes = false;
+            let processedText = '';
+            for (let i = 0; i < csvText.length; i++) {
+                const char = csvText[i];
+                if (char === '"') {
+                    insideQuotes = !insideQuotes;
+                    processedText += char;
+                } else if (char === '\n' && insideQuotes) {
+                    processedText += '\\n';
+                } else {
+                    processedText += char;
+                }
+            }
+
+            const lines = processedText.split('\n').filter(line => line.trim() !== '');
+            const headers = lines[0].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(header => header.trim().replace(/^"|"$/g, ''));
             const rows = lines.slice(1).map(line => {
                 const values = [];
                 let current = '';
                 let insideQuotes = false;
-                for (let char of line) {
-                    if (char === '"') {
+                let i = 0;
+
+                while (i < line.length) {
+                    const char = line[i];
+                    const nextChar = line[i + 1];
+
+                    if (char === '"' && nextChar === '"') {
+                        current += '"';
+                        i += 2;
+                    } else if (char === '"') {
                         insideQuotes = !insideQuotes;
+                        i++;
                     } else if (char === ',' && !insideQuotes) {
-                        values.push(current.trim());
+                        values.push(current.trim().replace(/^"|"$/g, '').replace(/\\n/g, '\n'));
                         current = '';
+                        i++;
                     } else {
                         current += char;
+                        i++;
                     }
                 }
-                values.push(current.trim());
+                values.push(current.trim().replace(/^"|"$/g, '').replace(/\\n/g, '\n'));
                 return values;
             });
             return { headers, rows };
@@ -960,8 +1297,8 @@
                 noResultsDiv.style.display = 'none';
                 filteredSpotsData.forEach(spot => {
                     const tr = document.createElement('tr');
-                    const sectionAbbr = spot.section === 'LOWER' ? 'L' : 
-                                        spot.section === 'MIDDLE' ? 'M' : 
+                    const sectionAbbr = spot.section === 'LOWER' ? 'L' :
+                                        spot.section === 'MIDDLE' ? 'M' :
                                         spot.section === 'UPPER' ? 'U' : 'UNK';
                     tr.innerHTML = `
                         <td data-label="Spot">${spot.index}</td>
@@ -1104,7 +1441,7 @@
                 else if (currentMonthSectionCounts.UPPER === currentMonthMaxCount) currentMonthSection = 'Upper';
             }
 
-            const bestCurrentMonthOuting = currentMonthData.length > 0 
+            const bestCurrentMonthOuting = currentMonthData.length > 0
                 ? currentMonthData.reduce((best, current) => {
                       if (best.rating > current.rating) return best;
                       if (best.rating < current.rating) return current;
