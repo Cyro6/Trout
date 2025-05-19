@@ -1196,76 +1196,77 @@
             filteredSpotsData = [...spotsData];
             sortFilteredSpots();
         }
+function sortSpotsTable(colIndex) {
+    if (sortSpotsColumn === colIndex) {
+        sortSpotsDirection = -sortSpotsDirection;
+    } else {
+        sortSpotsColumn = colIndex;
+        sortSpotsDirection = 1;
+    }
 
-        function sortSpotsTable(colIndex) {
-            if (sortSpotsColumn === colIndex) {
-                sortSpotsDirection = -sortSpotsDirection;
-            } else {
-                sortSpotsColumn = colIndex;
-                sortSpotsDirection = 1;
-            }
-
-            const headers = document.querySelectorAll('.spots-table th');
-            headers.forEach((th, index) => {
-                th.classList.remove('sort-asc', 'sort-desc');
-                if (index === colIndex) {
-                    th.classList.add(sortSpotsDirection === 1 ? 'sort-asc' : 'sort-desc');
-                }
-            });
-
-            sortFilteredSpots();
+    const headers = document.querySelectorAll('.spots-table th');
+    headers.forEach((th, index) => {
+        th.classList.remove('sort-asc', 'sort-desc');
+        if (index === colIndex) {
+            th.classList.add(sortSpotsDirection === 1 ? 'sort-asc' : 'sort-desc');
         }
+    });
 
-        function sortFilteredSpots() {
-            filteredSpotsData.sort((a, b) => {
-                let valueA, valueB;
-                if (sortSpotsColumn === 0) {
-                    valueA = a.index;
-                    valueB = b.index;
-                    return sortSpotsDirection * (valueA - valueB);
-                } else if (sortSpotsColumn === 1) {
-                    valueA = sectionOrder[a.section] || 5;
-                    valueB = sectionOrder[b.section] || 5;
-                    return sortSpotsDirection * (valueA - valueB);
-                } else if (sortSpotsColumn === 2) {
-                    valueA = a.visits;
-                    valueB = b.visits;
-                    return sortSpotsDirection * (valueA - valueB);
-                } else if (sortSpotsColumn === 3) {
-                    valueA = a.avgRating !== 'N/A' ? a.avgRating : -1;
-                    valueB = b.avgRating !== 'N/A' ? b.avgRating : -1;
-                    return sortSpotsDirection * (valueA - valueB);
-                }
-                return 0;
-            });
+    sortFilteredSpots();
+}
 
-            filteredSpotsData.forEach((spot, idx) => {
-                spot.index = idx + 1;
-            });
-
-            const spotsBody = document.getElementById('spots-body');
-            const noResultsDiv = document.getElementById('no-results');
-            spotsBody.innerHTML = '';
-            if (filteredSpotsData.length === 0) {
-                noResultsDiv.style.display = 'block';
-            } else {
-                noResultsDiv.style.display = 'none';
-                filteredSpotsData.forEach(spot => {
-                    const tr = document.createElement('tr');
-                    const sectionAbbr = spot.section === 'LOWER' ? 'L' : 
-                                        spot.section === 'MIDDLE' ? 'M' : 
-                                        spot.section === 'UPPER' ? 'U' : 'UNK';
-                    tr.innerHTML = `
-                        <td data-label="Spot">${spot.index}</td>
-                        <td data-label="Section">${sectionAbbr}</td>
-                        <td data-label="Visits">${spot.visits}</td>
-                        <td data-label="AR">${spot.avgRating}</td>
-                        <td data-label="GML"><a href="https://www.google.com/maps?q=${spot.lat},${spot.lon}" target="_blank">🗺️</a></td>
-                    `;
-                    spotsBody.appendChild(tr);
-                });
-            }
+function sortFilteredSpots() {
+    filteredSpotsData.sort((a, b) => {
+        let valueA, valueB;
+        if (sortSpotsColumn === 0) {
+            valueA = a.index;
+            valueB = b.index;
+            return sortSpotsDirection * (valueA - valueB);
+        } else if (sortSpotsColumn === 1) {
+            valueA = sectionOrder[a.section] || 5;
+            valueB = sectionOrder[b.section] || 5;
+            return sortSpotsDirection * (valueA - valueB);
+        } else if (sortSpotsColumn === 2) {
+            valueA = a.visits;
+            valueB = b.visits;
+            return sortSpotsDirection * (valueA - valueB);
+        } else if (sortSpotsColumn === 3) {
+            valueA = a.avgRating !== 'N/A' ? a.avgRating : -1;
+            valueB = b.avgRating !== 'N/A' ? b.avgRating : -1;
+            return sortSpotsDirection * (valueA - valueB);
         }
+        return 0;
+    });
+
+    // Reassign indices based on sorted order
+    filteredSpotsData.forEach((spot, idx) => {
+        spot.index = idx + 1;
+    });
+
+    const spotsBody = document.getElementById('spots-body');
+    const noResultsDiv = document.getElementById('no-results');
+    spotsBody.innerHTML = '';
+    if (filteredSpotsData.length === 0) {
+        noResultsDiv.style.display = 'block';
+    } else {
+        noResultsDiv.style.display = 'none';
+        filteredSpotsData.forEach(spot => {
+            const tr = document.createElement('tr');
+            const sectionAbbr = spot.section === 'LOWER' ? 'L' : 
+                                spot.section === 'MIDDLE' ? 'M' : 
+                                spot.section === 'UPPER' ? 'U' : 'UNK';
+            tr.innerHTML = `
+                <td data-label="Spot">${spot.index}</td>
+                <td data-label="Section">${sectionAbbr}</td>
+                <td data-label="Visits">${spot.visits}</td>
+                <td data-label="AR">${spot.avgRating}</td>
+                <td data-label="GML"><a href="https://www.google.com/maps?q=${spot.lat},${spot.lon}" target="_blank">🗺️</a></td>
+            `;
+            spotsBody.appendChild(tr);
+        });
+    }
+}
+
 
         function displayStreamDetails() {
             const ratingMap = { 'E': 0, 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5, 'S+': 6 };
