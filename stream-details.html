@@ -6,732 +6,736 @@
     <title>Stream Details</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg-primary: #D9ECEC;
-            --bg-secondary: #e5e7eb;
-            --card-bg: white;
-            --text-primary: #1f2937;
-            --text-secondary: #6b7280;
-            --header-bg: #008080;
-            --header-hover-bg: #00A0A0;
-            --button-bg: #008080;
-            --button-hover-bg: #00A0A0;
-            --link-color: #008080;
-            --link-hover-color: #00A0A0;
-            --error-bg: #d6dcf4;
-            --table-even-row-bg: #f9fafb;
-            --table-hover-bg: #dbeafe;
-            --footer-bg: #f8fafc;
-            --shadow-color: rgba(0, 0, 0, 0.12);
-            --shadow-hover-color: rgba(0, 0, 0, 0.2);
-        }
-
-        .dark-theme {
-            --bg-primary: #1f2937;
-            --bg-secondary: #374151;
-            --card-bg: #2d3748;
-            --text-primary: #e5e7eb;
-            --text-secondary: #9ca3af;
-            --header-bg: #3a3c5a;
-            --header-hover-bg: #45476b;
-            --button-bg: linear-gradient(90deg, #4b5563, #6b7280);
-            --button-hover-bg: linear-gradient(90deg, #374151, #4b5563);
-            --link-color: #60a5fa;
-            --link-hover-color: #93c5fd;
-            --error-bg: #4b5563;
-            --table-even-row-bg: #374151;
-            --table-hover-bg: #4b5563;
-            --footer-bg: #2d3748;
-            --shadow-color: rgba(0, 0, 0, 0.5);
-            --shadow-hover-color: rgba(0, 0, 0, 0.7);
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, var(--bg-primary), var(--bg-secondary));
-            min-height: 100vh;
-            padding: 20px;
-            color: var(--text-primary);
-            transition: background 0.3s ease, color 0.3s ease;
-        }
-
-        .theme-toggle {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            z-index: 10;
-        }
-
-        .theme-toggle button {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: var(--text-primary);
-            transition: color 0.2s ease, transform 0.2s ease;
-        }
-
-        .theme-toggle button:hover {
-            transform: scale(1.1);
-            color: var(--link-hover-color);
-        }
-
-        .back-link {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 10;
-        }
-
-        .back-link a {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--link-color);
-            text-decoration: none;
-            transition: color 0.2s ease;
-        }
-
-        .back-link a:hover {
-            color: var(--link-hover-color);
-            text-decoration: underline;
-        }
-
-        h1 {
-            text-align: center;
-            font-size: 2.8rem;
-            font-weight: 700;
-            color: var(--link-color);
-            margin-bottom: 1.5rem;
-            text-shadow: 0 2px 6px var(--shadow-color);
-            animation: fadeIn 1s ease-in;
-        }
-
-        h2 {
-            font-size: 2rem;
-            font-weight: 600;
-            color: var(--link-color);
-            margin-bottom: 1.2rem;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .card {
-            background: var(--card-bg);
-            border-radius: 14px;
-            box-shadow: 0 6px 25px var(--shadow-color);
-            padding: 25px;
-            margin: 25px auto;
-            max-width: 1200px;
-            transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 12px 40px var(--shadow-hover-color);
-        }
-
-        .stats, .month-stats, .top-outings, .stream-info, .widnr-map-section, .weather-section, .spots-section {
-            background: var(--card-bg);
-            border-radius: 14px;
-            box-shadow: 0 6px 25px var(--shadow-color);
-            padding: 25px;
-            margin: 25px 0;
-            transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
-        }
-
-        .stats:hover, .month-stats:hover, .top-outings:hover, .stream-info:hover, .widnr-map-section:hover, .weather-section:hover, .spots-section:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 12px 40px var(--shadow-hover-color);
-        }
-
-        .stream-info p, .weather-section p, .stats p {
-            margin: 10px 0;
-            font-size: 1rem;
-            color: var(--text-primary);
-        }
-
-        .widnr-map-section .toggle-button, .past-weather-toggle,
-        .stream-info-toggle, .month-stats-toggle, .top-outings-toggle,
-        .stats-toggle, .weather-toggle, .spots-toggle {
-            padding: 10px 20px;
-            background: var(--button-bg);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.95rem;
-            font-weight: 600;
-            transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
-            margin-bottom: 20px;
-        }
-
-        .widnr-map-section .toggle-button:hover, .past-weather-toggle:hover,
-        .stream-info-toggle:hover, .month-stats-toggle:hover, .top-outings-toggle:hover,
-        .stats-toggle:hover, .weather-toggle:hover, .spots-toggle:hover {
-            background: var(--button-hover-bg);
-            transform: translateY(-3px);
-            box-shadow: 0 4px 15px var(--shadow-hover-color);
-        }
-
-        .widnr-map-section .iframe-container {
-            position: relative;
-            padding-bottom: 56.25%;
-            height: 0;
-            overflow: hidden;
-            display: none;
-        }
-
-        .widnr-map-section .iframe-container.active {
-            display: block;
-        }
-
-        .widnr-map-section .iframe-container iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border: 0;
-        }
-
-        .widnr-map-section .iframe-fallback {
-            margin-top: 10px;
-            color: var(--text-secondary);
-            display: none;
-        }
-
-        .widnr-map-section .iframe-fallback.active {
-            display: block;
-        }
-
-        .spots-table-container, .month-outing-table-container, .top-outings-table-container, .weather-table-container {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .spots-table, .top-outings-table, .month-outing-table, .weather-table {
-            width: 100%;
-            border-collapse: collapse;
-            background: var(--card-bg);
-            border-radius: 10px;
-            overflow: hidden;
-        }
-
-        .spots-table th, .spots-table td, .top-outings-table th, .top-outings-table td,
-        .month-outing-table th, .month-outing-table td, .weather-table th, .weather-table td {
-            padding: 14px;
-            text-align: center;
-            border-bottom: 1px solid var(--text-secondary);
-            transition: background-color 0.3s ease;
-        }
-
-        .spots-table th, .top-outings-table th, .month-outing-table th, .weather-table th {
-            background: var(--header-bg);
-            color: white;
-            font-weight: 700;
-            cursor: pointer;
-            position: relative;
-            transition: background 0.3s ease;
-            font-size: 1.2rem; /* Larger font for icons */
-        }
-
-        .spots-table th:hover, .top-outings-table th:hover, .month-outing-table th:hover, .weather-table th:hover {
-            background: var(--header-hover-bg);
-        }
-
-        .spots-table th.sort-asc::after, .top-outings-table th.sort-asc::after, .month-outing-table th.sort-asc::after,
-        .weather-table th.sort-asc::after {
-            content: ' ↑';
-            font-size: 0.9rem;
-        }
-
-        .spots-table th.sort-desc::after, .top-outings-table th.sort-desc::after, .month-outing-table th.sort-desc::after,
-        .weather-table th.sort-desc::after {
-            content: ' ↓';
-            font-size: 0.9rem;
-        }
-
-        .spots-table tr, .top-outings-table tr, .month-outing-table tr, .weather-table tr {
-            transition: background 0.2s ease, transform 0.2s ease;
-            animation: slideIn 0.3s ease;
-        }
-
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateX(-20px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        .spots-table tr:nth-child(even), .top-outings-table tr:nth-child(even),
-        .month-outing-table tr:nth-child(even), .weather-table tr:nth-child(even) {
-            background: var(--table-even-row-bg);
-        }
-
-        .spots-table tr:hover, .top-outings-table tr:hover,
-        .month-outing-table tr:hover, .weather-table tr:hover {
-            background: var(--table-hover-bg);
-            transform: scale(1.01);
-        }
-
-        .spots-table td a, .top-outings-table td a, .month-outing-table td a, .weather-table td a {
-            color: var(--link-color);
-            text-decoration: none;
-            font-weight: 600;
-            transition: color 0.2s ease;
-        }
-
-        .spots-table td a:hover, .top-outings-table td a:hover, .month-outing-table td a:hover, .weather-table td a:hover {
-            color: var(--link-hover-color);
-            text-decoration: none;
-        }
-
-        .loading, .weather-loading {
-            text-align: center;
-            font-size: 1.2rem;
-            color: var(--text-secondary);
-            padding: 25px;
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
-
-        .error, .weather-error {
-            text-align: center;
-            color: #dc2626;
-            font-weight: 600;
-            padding: 25px;
-            background: var(--error-bg);
-            border-radius: 8px;
-        }
-
-        .no-results {
-            text-align: center;
-            color: var(--text-secondary);
-            font-size: 1.2rem;
-            padding: 25px;
-            background: var(--footer-bg);
-            border-radius: 8px;
-        }
-
-        .filter-section {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            background: var(--footer-bg);
-            border-radius: 10px;
-            padding: 20px;
-            border: 1px solid var(--text-secondary);
-        }
-
-        .filter-row {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .filter-section label {
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-right: 10px;
-            font-size: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .filter-section label .icon {
-            font-size: 1.2rem;
-        }
-
-        .filter-section select, .filter-section input {
-            padding: 10px;
-            border: 2px solid var(--text-secondary);
-            border-radius: 8px;
-            font-size: 0.95rem;
-            background: var(--card-bg);
-            color: var(--text-primary);
-            transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
-        }
-
-        .filter-section select:focus, .filter-section input:focus {
-            outline: none;
-            border-color: var(--link-color);
-            box-shadow: 0 0 0 4px rgba(30, 64, 175, 0.25);
-            transform: scale(1.02);
-        }
-
-        .filter-section input[type="number"] {
-            width: 90px;
-        }
-
-        .filter-section select {
-            width: 140px;
-        }
-
-        .filter-section button {
-            padding: 10px 20px;
-            background: var(--button-bg);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.95rem;
-            font-weight: 600;
-            transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
-        }
-
-        .filter-section button:hover {
-            background: var(--button-hover-bg);
-            transform: translateY(-3px);
-            box-shadow: 0 4px 15px var(--shadow-hover-color);
-        }
-
-        .weather-section .current-weather, .weather-section .total-rainfall {
-            margin-bottom: 20px;
-            padding: 15px;
-            background: var(--footer-bg);
-            border-radius: 10px;
-            border: 1px solid var(--text-secondary);
-        }
-
-        .weather-section .weather-location {
-            margin: 10px 0;
-        }
-
-        .past-weather-container {
-            display: none;
-        }
-
-        .past-weather-container.active {
-            display: block;
-        }
-
-        .month-stats .stats-row {
-            display: block;
-            overflow: hidden;
-        }
-
-        .month-stats .stats-row p {
-            margin: 10px 0;
-        }
-
-        /* Widescreen Layout */
-        @media screen and (min-width: 1200px) {
-            .stream-details {
-                display: flex;
-                flex-wrap: nowrap;
-                gap: 2%;
-            }
-
-            .stream-details .left-column {
-                flex: 0 0 40%;
-                width: 40%;
-                box-sizing: border-box;
-            }
-
-            .stream-details .right-column {
-                flex: 0 0 58%;
-                width: 58%;
-                box-sizing: border-box;
-                display: flex;
-                flex-wrap: wrap;
-                gap: 20px;
-            }
-
-            .info-stats-container {
-                display: flex;
-                gap: 20px;
-            }
-
-            .stream-info, .stats {
-                flex: 1;
-                min-width: 200px;
-            }
-
-            .weather-section, .widnr-map-section {
-                width: 100%;
-            }
-
-            .spots-section, .month-stats, .top-outings {
-                flex: 1;
-                min-width: 300px;
-            }
-
-            .filter-section {
-                width: 100%;
-            }
-        }
-
-        /* Mobile and Narrow Screens */
-        @media screen and (max-width: 1199px) {
-            .left-column, .right-column,
-            .stream-info, .stats, .weather-section, .widnr-map-section,
-            .spots-section, .month-stats, .top-outings {
-                width: 100%;
-                float: none;
-            }
-
-            .info-stats-container {
-                display: block;
-            }
-        }
-
-        @media screen and (max-width: 600px) {
-            body {
-                padding: 12px;
-            }
-
-            .back-link, .theme-toggle {
-                top: 12px;
-                left: 12px;
-            }
-
-            .theme-toggle {
-                left: auto;
-                right: 12px;
-            }
-
-            .back-link a, .theme-toggle button {
-                font-size: 0.9rem;
-            }
-
-            h1 {
-                font-size: 2rem;
-            }
-
-            h2 {
-                font-size: 1.5rem;
-            }
-
-            .card, .stats, .month-stats, .top-outings, .stream-info, .widnr-map-section, .weather-section, .spots-section {
-                padding: 15px;
-                margin: 15px 0;
-            }
-
-            .filter-section {
-                padding: 12px;
-            }
-
-            .filter-row {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 12px;
-            }
-
-            .filter-section select,
-            .filter-section input {
-                width: 100%;
-                font-size: 0.9rem;
-            }
-
-            .filter-section input[type="number"],
-            .filter-section select {
-                width: 100%;
-            }
-
-            .filter-section button {
-                width: 100%;
-                padding: 12px;
-                margin-bottom: 12px;
-            }
-
-            .widnr-map-section .iframe-container {
-                padding-bottom: 75%;
-            }
-
-            .spots-table, .top-outings-table, .month-outing-table, .weather-table {
-                font-size: 0.85rem;
-            }
-
-            .spots-table th, .spots-table td, .top-outings-table th, .top-outings-table td,
-            .month-outing-table th, .month-outing-table td, .weather-table th, .weather-table td {
-                padding: 8px;
-                text-align: left;
-                white-space: normal;
-                min-width: 80px;
-                overflow-wrap: break-word;
-            }
-
-            .top-outings-table thead, .month-outing-table thead, .weather-table thead {
-                display: none;
-            }
-
-            .top-outings-table tr, .month-outing-table tr, .weather-table tr {
-                display: block;
-                margin-bottom: 10px;
-                border: 1px solid var(--text-secondary);
-                border-radius: 10px;
-            }
-
-            .top-outings-table td, .month-outing-table td, .weather-table td {
-                display: block;
-                text-align: right;
-                padding: 8px;
-                border: none;
-                border-bottom: 1px solid var(--text-secondary);
-                position: relative;
-            }
-
-            .top-outings-table td::before, .month-outing-table td::before, .weather-table td::before {
-                content: attr(data-label);
-                position: absolute;
-                left: 8px;
-                width: 45%;
-                text-align: left;
-                font-weight: 600;
-                color: var(--text-primary);
-            }
-
-            .top-outings-table td:last-child, .month-outing-table td:last-child, .weather-table td:last-child {
-                border-bottom: none;
-            }
-
-            .stream-info .stream-info-content,
-            .stats .stats-content,
-            .weather-section .weather-content,
-            .month-stats .month-stats-content,
-            .top-outings .top-outings-content,
-            .spots-section .spots-content {
-                display: none;
-            }
-
-            .stream-info .stream-info-content.active,
-            .stats .stats-content.active,
-            .weather-section .weather-content.active,
-            .month-stats .month-stats-content.active,
-            .top-outings .top-outings-content.active,
-            .spots-section .spots-content.active {
-                display: block;
-            }
-
-            .stream-info-toggle,
-            .stats-toggle,
-            .weather-toggle,
-            .month-stats-toggle,
-            .top-outings-toggle,
-            .spots-toggle {
-                display: block;
-            }
-
-            .spots-table-container {
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-            }
-
-            .spots-table {
-                display: table;
-                width: 100%;
-                table-layout: fixed;
-                font-size: 0.85rem;
-            }
-
-            .spots-table thead, .spots-table tbody, .spots-table tr {
-                display: table;
-                width: 100%;
-                table-layout: fixed;
-            }
-
-            .spots-table th, .spots-table td {
-                display: table-cell;
-                padding: 6px;
-                text-align: center;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-            }
-
-            .spots-table th:nth-child(1), .spots-table td:nth-child(1) {
-                width: 15%;
-            }
-
-            .spots-table th:nth-child(2), .spots-table td:nth-child(2) {
-                width: 15%;
-            }
-
-            .spots-table th:nth-child(3), .spots-table td:nth-child(3) {
-                width: 20%;
-            }
-
-            .spots-table th:nth-child(4), .spots-table td:nth-child(4) {
-                width: 20%;
-            }
-
-            .spots-table th:nth-child(5), .spots-table td:nth-child(5) {
-                width: 30%;
-            }
-        }
-
-        @media screen and (min-width: 601px) {
-            .stream-info .stream-info-content,
-            .stats .stats-content,
-            .weather-section .weather-content,
-            .month-stats .month-stats-content,
-            .top-outings .top-outings-content,
-            .spots-section .spots-content {
-                display: block;
-            }
-
-            .stream-info-toggle,
-            .stats-toggle,
-            .weather-toggle,
-            .month-stats-toggle,
-            .top-outings-toggle,
-            .spots-toggle {
-                display: none;
-            }
-
-            .spots-table {
-                font-size: 1rem;
-            }
-
-            .filter-section select, .filter-section input {
-                width: auto;
-            }
-
-            .filter-section .filter-row {
-                display: flex;
-                gap: 20px;
-                flex-wrap: wrap;
-            }
-
-            .filter-section .filter-row.button-row {
-                display: none;
-            }
-        }
-
-        @media screen and (max-width: 360px) {
-            .spots-table-container, .month-outing-table-container, .top-outings-table-container, .weather-table-container {
-                max-width: 360px;
-                overflow-x: auto;
-            }
-
-            .spots-table, .top-outings-table, .month-outing-table, .weather-table {
-                width: auto;
-            }
-
-            .spots-table th, .spots-table td, .top-outings-table th, .top-outings-table td,
-            .month-outing-table th, .month-outing-table td, .weather-table th, .weather-table td {
-                padding: 6px;
-                font-size: 0.75rem;
-                text-align: left;
-                white-space: normal;
-                min-width: 60px;
-                overflow-wrap: break-word;
-            }
-        }
+       :root {
+    --bg-primary: #D9ECEC;
+    --bg-secondary: #e5e7eb;
+    --card-bg: white;
+    --text-primary: #1f2937;
+    --text-secondary: #6b7280;
+    --header-bg: #008080;
+    --header-hover-bg: #00A0A0;
+    --button-bg: #008080;
+    --button-hover-bg: #00A0A0;
+    --link-color: #008080;
+    --link-hover-color: #00A0A0;
+    --error-bg: #d6dcf4;
+    --table-even-row-bg: #f9fafb;
+    --table-hover-bg: #dbeafe;
+    --footer-bg: #f8fafc;
+    --shadow-color: rgba(0, 0, 0, 0.12);
+    --shadow-hover-color: rgba(0, 0, 0, 0.2);
+}
+
+.dark-theme {
+    --bg-primary: #1f2937;
+    --bg-secondary: #374151;
+    --card-bg: #2d3748;
+    --text-primary: #e5e7eb;
+    --text-secondary: #9ca3af;
+    --header-bg: #3a3c5a;
+    --header-hover-bg: #45476b;
+    --button-bg: linear-gradient(90deg, #4b5563, #6b7280);
+    --button-hover-bg: linear-gradient(90deg, #374151, #4b5563);
+    --link-color: #60a5fa;
+    --link-hover-color: #93c5fd;
+    --error-bg: #4b5563;
+    --table-even-row-bg: #374151;
+    --table-hover-bg: #4b5563;
+    --footer-bg: #2d3748;
+    --shadow-color: rgba(0, 0, 0, 0.5);
+    --shadow-hover-color: rgba(0, 0, 0, 0.7);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, var(--bg-primary), var(--bg-secondary));
+    min-height: 100vh;
+    padding: 20px;
+    color: var(--text-primary);
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+.theme-toggle {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 10;
+}
+
+.theme-toggle button {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-primary);
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.theme-toggle button:hover {
+    transform: scale(1.1);
+    color: var(--link-hover-color);
+}
+
+.back-link {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 10;
+}
+
+.back-link a {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--link-color);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.back-link a:hover {
+    color: var(--link-hover-color);
+    text-decoration: underline;
+}
+
+h1 {
+    text-align: center;
+    font-size: 2.8rem;
+    font-weight: 700;
+    color: var(--link-color);
+    margin-bottom: 1.5rem;
+    text-shadow: 0 2px 6px var(--shadow-color);
+    animation: fadeIn 1s ease-in;
+}
+
+h2 {
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--link-color);
+    margin-bottom: 1.2rem;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.card {
+    background: var(--card-bg);
+    border-radius: 14px;
+    box-shadow: 0 6px 25px var(--shadow-color);
+    padding: 25px;
+    margin: 25px auto;
+    max-width: 1200px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 40px var(--shadow-hover-color);
+}
+
+.stats, .month-stats, .top-outings, .stream-info, .widnr-map-section, .weather-section, .spots-section {
+    background: var(--card-bg);
+    border-radius: 14px;
+    box-shadow: 0 6px 25px var(--shadow-color);
+    padding: 25px;
+    margin: 25px 0;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+}
+
+.stats:hover, .month-stats:hover, .top-outings:hover, .stream-info:hover, .widnr-map-section:hover, .weather-section:hover, .spots-section:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 40px var(--shadow-hover-color);
+}
+
+.stream-info p, .weather-section p, .stats p {
+    margin: 10px 0;
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+.widnr-map-section .toggle-button, .past-weather-toggle,
+.stream-info-toggle, .month-stats-toggle, .top-outings-toggle,
+.stats-toggle, .weather-toggle, .spots-toggle {
+    padding: 10px 20px;
+    background: var(--button-bg);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+    margin-bottom: 20px;
+}
+
+.widnr-map-section .toggle-button:hover, .past-weather-toggle:hover,
+.stream-info-toggle:hover, .month-stats-toggle:hover, .top-outings-toggle:hover,
+.stats-toggle:hover, .weather-toggle:hover, .spots-toggle:hover {
+    background: var(--button-hover-bg);
+    transform: translateY(-3px);
+    box-shadow: 0 4px 15px var(--shadow-hover-color);
+}
+
+.widnr-map-section .iframe-container {
+    position: relative;
+    padding-bottom: 56.25%;
+    height: 0;
+    overflow: hidden;
+    display: none;
+}
+
+.widnr-map-section .iframe-container.active {
+    display: block;
+}
+
+.widnr-map-section .iframe-container iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+.widnr-map-section .iframe-fallback {
+    margin-top: 10px;
+    color: var(--text-secondary);
+    display: none;
+}
+
+.widnr-map-section .iframe-fallback.active {
+    display: block;
+}
+
+.spots-table-container, .month-outing-table-container, .top-outings-table-container, .weather-table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.spots-table, .top-outings-table, .month-outing-table, .weather-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--card-bg);
+    border-radius: 10px;
+    overflow: hidden;
+    max-width: 100%;
+}
+
+.spots-table th, .spots-table td, .top-outings-table th, .top-outings-table td,
+.month-outing-table th, .month-outing-table td, .weather-table th, .weather-table td {
+    padding: 14px;
+    text-align: center;
+    border-bottom: 1px solid var(--text-secondary);
+    transition: background-color 0.3s ease;
+}
+
+.spots-table th, .top-outings-table th, .month-outing-table th, .weather-table th {
+    background: var(--header-bg);
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.3s ease;
+    font-size: 1.2rem;
+}
+
+.spots-table th:hover, .top-outings-table th:hover, .month-outing-table th:hover, .weather-table th:hover {
+    background: var(--header-hover-bg);
+}
+
+.spots-table th.sort-asc::after, .top-outings-table th.sort-asc::after, .month-outing-table th.sort-asc::after,
+.weather-table th.sort-asc::after {
+    content: ' ↑';
+    font-size: 0.9rem;
+}
+
+.spots-table th.sort-desc::after, .top-outings-table th.sort-desc::after, .month-outing-table th.sort-desc::after,
+.weather-table th.sort-desc::after {
+    content: ' ↓';
+    font-size: 0.9rem;
+}
+
+.spots-table tr, .top-outings-table tr, .month-outing-table tr, .weather-table tr {
+    transition: background 0.2s ease, transform 0.2s ease;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.spots-table tr:nth-child(even), .top-outings-table tr:nth-child(even),
+.month-outing-table tr:nth-child(even), .weather-table tr:nth-child(even) {
+    background: var(--table-even-row-bg);
+}
+
+.spots-table tr:hover, .top-outings-table tr:hover,
+.month-outing-table tr:hover, .weather-table tr:hover {
+    background: var(--table-hover-bg);
+    transform: scale(1.01);
+}
+
+.spots-table td a, .top-outings-table td a, .month-outing-table td a, .weather-table td a {
+    color: var(--link-color);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s ease;
+}
+
+.spots-table td a:hover, .top-outings-table td a:hover, .month-outing-table td a:hover, .weather-table td a:hover {
+    color: var(--link-hover-color);
+    text-decoration: none;
+}
+
+.loading, .weather-loading {
+    text-align: center;
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+    padding: 25px;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.error, .weather-error {
+    text-align: center;
+    color: #dc2626;
+    font-weight: 600;
+    padding: 25px;
+    background: var(--error-bg);
+    border-radius: 8px;
+}
+
+.no-results {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+    padding: 25px;
+    background: var(--footer-bg);
+    border-radius: 8px;
+}
+
+.filter-section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    background: var(--footer-bg);
+    border-radius: 10px;
+    padding: 20px;
+    border: 1px solid var(--text-secondary);
+}
+
+.filter-row {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.filter-section label {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-right: 10px;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.filter-section label .icon {
+    font-size: 1.2rem;
+}
+
+.filter-section select, .filter-section input {
+    padding: 10px;
+    border: 2px solid var(--text-secondary);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    background: var(--card-bg);
+    color: var(--text-primary);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+}
+
+.filter-section select:focus, .filter-section input:focus {
+    outline: none;
+    border-color: var(--link-color);
+    box-shadow: 0 0 0 4px rgba(30, 64, 175, 0.25);
+    transform: scale(1.02);
+}
+
+.filter-section input[type="number"] {
+    width: 90px;
+}
+
+.filter-section select {
+    width: 140px;
+}
+
+.filter-section button {
+    padding: 10px 20px;
+    background: var(--button-bg);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+.filter-section button:hover {
+    background: var(--button-hover-bg);
+    transform: translateY(-3px);
+    box-shadow: 0 4px 15px var(--shadow-hover-color);
+}
+
+.weather-section .current-weather, .weather-section .total-rainfall {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: var(--footer-bg);
+    border-radius: 10px;
+    border: 1px solid var(--text-secondary);
+}
+
+.weather-section .weather-location {
+    margin: 10px 0;
+}
+
+.past-weather-container {
+    display: none;
+}
+
+.past-weather-container.active {
+    display: block;
+}
+
+.month-stats .stats-row {
+    display: block;
+    overflow: hidden;
+}
+
+.month-stats .stats-row p {
+    margin: 10px 0;
+}
+
+/* Widescreen Layout */
+@media screen and (min-width: 1200px) {
+    .stream-details {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 2%;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .stream-details .left-column {
+        flex: 0 0 40%;
+        min-width: 400px;
+        box-sizing: border-box;
+    }
+
+    .stream-details .right-column {
+        flex: 0 0 58%;
+        min-width: 600px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .info-stats-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .stream-info, .stats {
+        flex: 1;
+        min-width: 200px;
+    }
+
+    .weather-section, .widnr-map-section {
+        width: 100%;
+    }
+
+    .spots-section, .month-stats, .top-outings {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .filter-section {
+        width: 100%;
+    }
+}
+
+/* Mobile and Narrow Screens */
+@media screen and (max-width: 1199px) {
+    .left-column, .right-column,
+    .stream-info, .stats, .weather-section, .widnr-map-section,
+    .spots-section, .month-stats, .top-outings {
+        width: 100%;
+        float: none;
+    }
+
+    .info-stats-container {
+        display: block;
+    }
+}
+
+@media screen and (max-width: 600px) {
+    body {
+        padding: 12px;
+    }
+
+    .back-link, .theme-toggle {
+        top: 12px;
+        left: 12px;
+    }
+
+    .theme-toggle {
+        left: auto;
+        right: 12px;
+    }
+
+    .back-link a, .theme-toggle button {
+        font-size: 0.9rem;
+    }
+
+    h1 {
+        font-size: 2rem;
+    }
+
+    h2 {
+        font-size: 1.5rem;
+    }
+
+    .card, .stats, .month-stats, .top-outings, .stream-info, .widnr-map-section, .weather-section, .spots-section {
+        padding: 15px;
+        margin: 15px 0;
+    }
+
+    .filter-section {
+        padding: 12px;
+    }
+
+    .filter-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .filter-section select,
+    .filter-section input {
+        width: 100%;
+        font-size: 0.9rem;
+    }
+
+    .filter-section input[type="number"],
+    .filter-section select {
+        width: 100%;
+    }
+
+    .filter-section button {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 12px;
+    }
+
+    .widnr-map-section .iframe-container {
+        padding-bottom: 75%;
+    }
+
+    .spots-table, .top-outings-table, .month-outing-table, .weather-table {
+        font-size: 0.85rem;
+    }
+
+    .spots-table th, .spots-table td, .top-outings-table th, .top-outings-table td,
+    .month-outing-table th, .month-outing-table td, .weather-table th, .weather-table td {
+        padding: 8px;
+        text-align: left;
+        white-space: normal;
+        min-width: 80px;
+        overflow-wrap: break-word;
+    }
+
+    .top-outings-table thead, .month-outing-table thead, .weather-table thead {
+        display: none;
+    }
+
+    .top-outings-table tr, .month-outing-table tr, .weather-table tr {
+        display: block;
+        margin-bottom: 10px;
+        border: 1px solid var(--text-secondary);
+        border-radius: 10px;
+    }
+
+    .top-outings-table td, .month-outing-table td, .weather-table td {
+        display: block;
+        text-align: right;
+        padding: 8px;
+        border: none;
+        border-bottom: 1px solid var(--text-secondary);
+        position: relative;
+    }
+
+    .top-outings-table td::before, .month-outing-table td::before, .weather-table td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 8px;
+        width: 45%;
+        text-align: left;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .top-outings-table td:last-child, .month-outing-table td:last-child, .weather-table td:last-child {
+        border-bottom: none;
+    }
+
+    .stream-info .stream-info-content,
+    .stats .stats-content,
+    .weather-section .weather-content,
+    .month-stats .month-stats-content,
+    .top-outings .top-outings-content,
+    .spots-section .spots-content {
+        display: none;
+    }
+
+    .stream-info .stream-info-content.active,
+    .stats .stats-content.active,
+    .weather-section .weather-content.active,
+    .month-stats .month-stats-content.active,
+    .top-outings .top-outings-content.active,
+    .spots-section .spots-content.active {
+        display: block;
+    }
+
+    .stream-info-toggle,
+    .stats-toggle,
+    .weather-toggle,
+    .month-stats-toggle,
+    .top-outings-toggle,
+    .spots-toggle {
+        display: block;
+    }
+
+    .spots-table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .spots-table {
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+        font-size: 0.85rem;
+    }
+
+    .spots-table thead, .spots-table tbody, .spots-table tr {
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+    }
+
+    .spots-table th, .spots-table td {
+        display: table-cell;
+        padding: 6px;
+        text-align: center;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .spots-table th:nth-child(1), .spots-table td:nth-child(1) {
+        width: 15%;
+    }
+
+    .spots-table th:nth-child(2), .spots-table td:nth-child(2) {
+        width: 15%;
+    }
+
+    .spots-table th:nth-child(3), .spots-table td:nth-child(3) {
+        width: 20%;
+    }
+
+    .spots-table th:nth-child(4), .spots-table td:nth-child(4) {
+        width: 20%;
+    }
+
+    .spots-table th:nth-child(5), .spots-table td:nth-child(5) {
+        width: 30%;
+    }
+}
+
+@media screen and (min-width: 601px) {
+    .stream-info .stream-info-content,
+    .stats .stats-content,
+    .weather-section .weather-content,
+    .month-stats .month-stats-content,
+    .top-outings .top-outings-content,
+    .spots-section .spots-content {
+        display: block;
+    }
+
+    .stream-info-toggle,
+    .stats-toggle,
+    .weather-toggle,
+    .month-stats-toggle,
+    .top-outings-toggle,
+    .spots-toggle {
+        display: none;
+    }
+
+    .spots-table {
+        font-size: 1rem;
+    }
+
+    .filter-section select, .filter-section input {
+        width: auto;
+    }
+
+    .filter-section .filter-row {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .filter-section .filter-row.button-row {
+        display: none;
+    }
+}
+
+@media screen and (max-width: 360px) {
+    .spots-table-container, .month-outing-table-container, .top-outings-table-container, .weather-table-container {
+        max-width: 360px;
+        overflow-x: auto;
+    }
+
+    .spots-table, .top-outings-table, .month-outing-table, .weather-table {
+        width: auto;
+    }
+
+    .spots-table th, .spots-table td, .top-outings-table th, .top-outings-table td,
+    .month-outing-table th, .month-outing-table td, .weather-table th, .weather-table td {
+        padding: 6px;
+        font-size: 0.75rem;
+        text-align: left;
+        white-space: normal;
+        min-width: 60px;
+        overflow-wrap: break-word;
+    }
+}
     </style>
 </head>
 <body>
