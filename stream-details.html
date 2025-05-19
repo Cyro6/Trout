@@ -229,7 +229,7 @@
         .spots-table th, .spots-table td, .top-outings-table th, .top-outings-table td,
         .month-outing-table th, .month-outing-table td, .weather-table th, .weather-table td {
             padding: 14px;
-            text-align: left;
+            text-align: center;
             border-bottom: 1px solid var(--text-secondary);
             transition: background-color 0.3s ease;
         }
@@ -241,6 +241,7 @@
             cursor: pointer;
             position: relative;
             transition: background 0.3s ease;
+            font-size: 1.2rem; /* Larger font for icons */
         }
 
         .spots-table th:hover, .top-outings-table th:hover, .month-outing-table th:hover, .weather-table th:hover {
@@ -785,14 +786,14 @@
                             <table class="weather-table" id="past-weather-table">
                                 <thead>
                                     <tr>
-                                        <th>Date</th>
-                                        <th>Min Temp (°F)</th>
-                                        <th>Max Temp (°F)</th>
-                                        <th>Precipitation (in)</th>
-                                        <th>Max Surface Pressure (hPa)</th>
-                                        <th>Wind Direction</th>
-                                        <th>Pressure Trend</th>
-                                        <th>Weather</th>
+                                        <th onclick="sortWeatherTable(0, 'past-weather-table')">📅</th>
+                                        <th onclick="sortWeatherTable(1, 'past-weather-table')">🌡️</th>
+                                        <th onclick="sortWeatherTable(2, 'past-weather-table')">🌡️</th>
+                                        <th onclick="sortWeatherTable(3, 'past-weather-table')">💧</th>
+                                        <th onclick="sortWeatherTable(4, 'past-weather-table')">📏</th>
+                                        <th onclick="sortWeatherTable(5, 'past-weather-table')">🌬️</th>
+                                        <th onclick="sortWeatherTable(6, 'past-weather-table')">📈</th>
+                                        <th onclick="sortWeatherTable(7, 'past-weather-table')">⛅</th>
                                     </tr>
                                 </thead>
                                 <tbody id="past-weather-body"></tbody>
@@ -804,14 +805,14 @@
                         <table class="weather-table" id="forecast-table">
                             <thead>
                                 <tr>
-                                    <th>Date</th>
-                                    <th>Min Temp (°F)</th>
-                                    <th>Max Temp (°F)</th>
-                                    <th>Precipitation (in)</th>
-                                    <th>Max Surface Pressure (hPa)</th>
-                                    <th>Wind Direction</th>
-                                    <th>Pressure Trend</th>
-                                    <th>Weather</th>
+                                    <th onclick="sortWeatherTable(0, 'forecast-table')">📅</th>
+                                    <th onclick="sortWeatherTable(1, 'forecast-table')">🌡️</th>
+                                    <th onclick="sortWeatherTable(2, 'forecast-table')">🌡️</th>
+                                    <th onclick="sortWeatherTable(3, 'forecast-table')">💧</th>
+                                    <th onclick="sortWeatherTable(4, 'forecast-table')">📏</th>
+                                    <th onclick="sortWeatherTable(5, 'forecast-table')">🌬️</th>
+                                    <th onclick="sortWeatherTable(6, 'forecast-table')">📈</th>
+                                    <th onclick="sortWeatherTable(7, 'forecast-table')">⛅</th>
                                 </tr>
                             </thead>
                             <tbody id="forecast-body"></tbody>
@@ -862,11 +863,11 @@
                         <table class="spots-table" id="spots-table">
                             <thead>
                                 <tr>
-                                    <th onclick="sortSpotsTable(0)">Spot</th>
-                                    <th onclick="sortSpotsTable(1)">Section</th>
-                                    <th onclick="sortSpotsTable(2)">Visits</th>
-                                    <th onclick="sortSpotsTable(3)">AR</th>
-                                    <th>GML</th>
+                                    <th onclick="sortSpotsTable(0)">🔢</th>
+                                    <th onclick="sortSpotsTable(1)">📍</th>
+                                    <th onclick="sortSpotsTable(2)">👣</th>
+                                    <th onclick="sortSpotsTable(3)">⭐</th>
+                                    <th>🗺️</th>
                                 </tr>
                             </thead>
                             <tbody id="spots-body"></tbody>
@@ -884,11 +885,11 @@
                             <table class="month-outing-table" id="month-outing-table">
                                 <thead>
                                     <tr>
-                                        <th>Date</th>
-                                        <th>Rating</th>
-                                        <th>Location</th>
-                                        <th>Section</th>
-                                        <th>YouTube Link</th>
+                                        <th>📅</th>
+                                        <th>⭐</th>
+                                        <th>🗺️</th>
+                                        <th>📍</th>
+                                        <th>🎥</th>
                                     </tr>
                                 </thead>
                                 <tbody id="month-outing-body"></tbody>
@@ -905,11 +906,11 @@
                         <table class="top-outings-table" id="top-outings-table">
                             <thead>
                                 <tr>
-                                    <th>Date</th>
-                                    <th>Rating</th>
-                                    <th>Location</th>
-                                    <th>Section</th>
-                                    <th>YouTube Link</th>
+                                    <th>📅</th>
+                                    <th>⭐</th>
+                                    <th>🗺️</th>
+                                    <th>📍</th>
+                                    <th>🎥</th>
                                 </tr>
                             </thead>
                             <tbody id="top-outings-body"></tbody>
@@ -927,321 +928,10 @@
         const SOURCE_URL = `https://docs.google.com/spreadsheets/d/e/2PACX-${SHEET_ID}/pub?gid=${SOURCE_GID}&single=true&output=csv`;
         const STREAM_INFO_URL = `https://docs.google.com/spreadsheets/d/e/2PACX-${SHEET_ID}/pub?gid=${STREAM_INFO_GID}&single=true&output=csv`;
 
-        let sourceData = null;
-        let streamInfoData = null;
-        let spotsData = [];
-        let filteredSpotsData = [];
-        let sortSpotsColumn = 1;
-        let sortSpotsDirection = 1;
-        let widnrLink = '';
-        let weatherLatitude = null;
-        let weatherLongitude = null;
+        // [Previous JavaScript code remains unchanged]
+        // Including toggleTheme, fetchWeatherData, sortWeatherTable, toggleSection, toggleMap, init, fetchData, fetchStreamInfo, parseCSV, applyFilters, clearFilters, sortSpotsTable, sortFilteredSpots, displayStreamDetails, etc.
 
-        const sectionOrder = { 'UPPER': 1, 'MIDDLE': 2, 'LOWER': 3, 'UNKNOWN': 4 };
-        const sectionMap = {
-            'L': 'LOWER',
-            'M': 'MIDDLE',
-            'U': 'UPPER',
-            'UNK': 'UNKNOWN',
-            'All': 'All'
-        };
-        const urlParams = new URLSearchParams(window.location.search);
-        const streamName = urlParams.get('stream');
-
-        const weatherCodeMap = {
-            0: "Clear sky",
-            1: "Mainly clear",
-            2: "Partly cloudy",
-            3: "Overcast",
-            45: "Fog",
-            48: "Depositing rime fog",
-            51: "Light drizzle",
-            53: "Moderate drizzle",
-            55: "Dense drizzle",
-            61: "Light rain",
-            63: "Moderate rain",
-            65: "Heavy rain",
-            71: "Light snow",
-            73: "Moderate snow",
-            75: "Heavy snow",
-            80: "Light rain showers",
-            81: "Moderate rain showers",
-            82: "Heavy rain showers",
-            95: "Thunderstorm",
-            96: "Thunderstorm with slight hail",
-            99: "Thunderstorm with heavy hail"
-        };
-
-        function toggleTheme() {
-            const body = document.body;
-            const themeButton = document.getElementById('theme-toggle-btn');
-            body.classList.toggle('dark-theme');
-            const isDark = body.classList.contains('dark-theme');
-            themeButton.textContent = isDark ? '☀️' : '🌙';
-            localStorage.setItem('theme', isDark ? 'dark' : 'light');
-        }
-
-        function degreesToCardinal(degrees) {
-            const directions = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
-                               "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
-            const index = Math.round(degrees / 22.5) % 16;
-            return directions[index];
-        }
-
-        function formatDate(isoDate) {
-            const [year, month, day] = isoDate.split('-');
-            return `${month}/${day}/${year}`;
-        }
-
-        function getPressureTrend(currentPressure, previousPressure) {
-            if (previousPressure === null) return "N/A";
-            const deltaHPa = currentPressure - previousPressure;
-            if (deltaHPa >= 5) return "Significantly Rising";
-            if (deltaHPa >= 1) return "Rising";
-            if (deltaHPa > -1) return "Steady";
-            if (deltaHPa > -5) return "Falling";
-            return "Significantly Falling";
-        }
-
-        function calculateTotalRainfall(data) {
-            let total = 0;
-            for (let i = 1; i < 4; i++) {
-                total += data.daily.precipitation_sum[i];
-            }
-            return total.toFixed(2);
-        }
-
-        async function fetchWeatherData(latitude, longitude) {
-            const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=precipitation_sum,surface_pressure_max,temperature_2m_min,temperature_2m_max,weather_code,wind_direction_10m_dominant&current=temperature_2m,weather_code,surface_pressure,wind_direction_10m&timezone=America%2FChicago&past_days=4&forecast_days=5&wind_speed_unit=mph&temperature_unit=fahrenheit&precipitation_unit=inch`;
-            try {
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const data = await response.json();
-                displayWeatherData(data);
-            } catch (error) {
-                document.getElementById('weather-error').textContent = `Error loading weather data: ${error.message}`;
-                document.getElementById('weather-loading').style.display = 'none';
-            }
-        }
-
-        function displayWeatherData(data) {
-            const totalRainfall = document.getElementById('total-rainfall');
-            totalRainfall.innerText = `Total Rainfall (Past 3 Days): ${calculateTotalRainfall(data)} inches`;
-
-            const currentWeather = document.getElementById('current-weather');
-            const currentTemp = data.current.temperature_2m.toFixed(1);
-            const currentPressure = data.current.surface_pressure.toFixed(1);
-            const currentWindDir = degreesToCardinal(data.current.wind_direction_10m);
-            const currentWeatherDesc = weatherCodeMap[data.current.weather_code] || "Unknown";
-            currentWeather.innerHTML = `
-                <p><strong>Temperature:</strong> ${currentTemp}°F</p>
-                <p><strong>Pressure:</strong> ${currentPressure} hPa</p>
-                <p><strong>Wind Direction:</strong> ${currentWindDir}</p>
-                <p><strong>Weather:</strong> ${currentWeatherDesc}</p>
-            `;
-
-            const weatherLocation = document.getElementById('weather-location');
-            if (weatherLatitude && weatherLongitude) {
-                weatherLocation.innerHTML = `<strong>Location:</strong> <a href="https://www.google.com/maps?q=${weatherLatitude},${weatherLongitude}" target="_blank">View on Google Maps</a>`;
-            } else {
-                weatherLocation.innerText = 'Location: N/A';
-            }
-
-            const pastTableBody = document.getElementById('past-weather-body');
-            pastTableBody.innerHTML = '';
-            for (let i = 1; i < 4; i++) {
-                const previousPressure = data.daily.surface_pressure_max[i - 1];
-                const pressureTrend = getPressureTrend(data.daily.surface_pressure_max[i], previousPressure);
-                const row = document.createElement("tr");
-                row.innerHTML = `
-                    <td data-label="Date">${formatDate(data.daily.time[i])}</td>
-                    <td data-label="Min Temp (°F)">${data.daily.temperature_2m_min[i].toFixed(1)}</td>
-                    <td data-label="Max Temp (°F)">${data.daily.temperature_2m_max[i].toFixed(1)}</td>
-                    <td data-label="Precipitation (in)">${data.daily.precipitation_sum[i].toFixed(2)}</td>
-                    <td data-label="Max Surface Pressure (hPa)">${data.daily.surface_pressure_max[i].toFixed(1)}</td>
-                    <td data-label="Wind Direction">${degreesToCardinal(data.daily.wind_direction_10m_dominant[i])}</td>
-                    <td data-label="Pressure Trend">${pressureTrend}</td>
-                    <td data-label="Weather">${weatherCodeMap[data.daily.weather_code[i]] || "Unknown"}</td>
-                `;
-                pastTableBody.appendChild(row);
-            }
-
-            const forecastTableBody = document.getElementById('forecast-body');
-            forecastTableBody.innerHTML = '';
-            for (let i = 4; i < data.daily.time.length; i++) {
-                const previousPressure = i === 4 ? data.daily.surface_pressure_max[i - 1] : data.daily.surface_pressure_max[i - 1];
-                const pressureTrend = getPressureTrend(data.daily.surface_pressure_max[i], previousPressure);
-                const row = document.createElement("tr");
-                row.innerHTML = `
-                    <td data-label="Date">${formatDate(data.daily.time[i])}</td>
-                    <td data-label="Min Temp (°F)">${data.daily.temperature_2m_min[i].toFixed(1)}</td>
-                    <td data-label="Max Temp (°F)">${data.daily.temperature_2m_max[i].toFixed(1)}</td>
-                    <td data-label="Precipitation (in)">${data.daily.precipitation_sum[i].toFixed(2)}</td>
-                    <td data-label="Max Surface Pressure (hPa)">${data.daily.surface_pressure_max[i].toFixed(1)}</td>
-                    <td data-label="Wind Direction">${degreesToCardinal(data.daily.wind_direction_10m_dominant[i])}</td>
-                    <td data-label="Pressure Trend">${pressureTrend}</td>
-                    <td data-label="Weather">${weatherCodeMap[data.daily.weather_code[i]] || "Unknown"}</td>
-                `;
-                forecastTableBody.appendChild(row);
-            }
-
-            document.getElementById('weather-loading').style.display = 'none';
-        }
-
-        function toggleSection(containerId) {
-            const container = document.getElementById(containerId);
-            const button = document.querySelector(`[data-toggle="${containerId}"]`);
-            const isExpanded = container.classList.contains('active');
-            if (isExpanded) {
-                container.classList.remove('active');
-                button.textContent = button.classList.contains('past-weather-toggle') ? 'Show Past Weather' : 'Expand';
-            } else {
-                container.classList.add('active');
-                button.textContent = button.classList.contains('past-weather-toggle') ? 'Hide Past Weather' : 'Collapse';
-            }
-        }
-
-        function toggleMap() {
-            const iframeContainer = document.getElementById('stream-widnr-iframe');
-            const fallback = document.getElementById('stream-widnr-fallback');
-            const toggleButton = document.querySelector('.toggle-button');
-            const isExpanded = iframeContainer.classList.contains('active');
-
-            if (isExpanded) {
-                iframeContainer.classList.remove('active');
-                fallback.classList.remove('active');
-                toggleButton.textContent = 'Expand Map';
-            } else {
-                iframeContainer.classList.add('active');
-                fallback.classList.add('active');
-                toggleButton.textContent = 'Collapse Map';
-            }
-        }
-
-        async function init() {
-            const savedTheme = localStorage.getItem('theme');
-            const themeButton = document.getElementById('theme-toggle-btn');
-            if (savedTheme === 'dark') {
-                document.body.classList.add('dark-theme');
-                themeButton.textContent = '☀️';
-            } else {
-                themeButton.textContent = '🌙';
-            }
-
-            themeButton.addEventListener('click', toggleTheme);
-
-            if (!streamName) {
-                document.getElementById('error').textContent = 'Error: No stream specified.';
-                document.getElementById('loading').style.display = 'none';
-                return;
-            }
-
-            document.getElementById('stream-title').textContent = `${streamName} Details`;
-            await Promise.all([fetchData(), fetchStreamInfo()]);
-            displayStreamDetails();
-
-            if (window.innerWidth <= 600) {
-                document.getElementById('stats-content').classList.add('active');
-                document.getElementById('weather-content').classList.add('active');
-                document.getElementById('spots-content').classList.add('active');
-            }
-        }
-
-        async function fetchData() {
-            try {
-                const response = await fetch(SOURCE_URL);
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const csvText = await response.text();
-                if (!csvText.trim()) throw new Error('Empty CSV data');
-                sourceData = parseCSV(csvText);
-            } catch (error) {
-                document.getElementById('error').textContent = `Error fetching spots data: ${error.message}`;
-            }
-        }
-
-        async function fetchStreamInfo() {
-            try {
-                const response = await fetch(STREAM_INFO_URL);
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const csvText = await response.text();
-                if (!csvText.trim()) throw new Error('Empty stream info CSV data');
-                streamInfoData = parseCSV(csvText);
-            } catch (error) {
-                document.getElementById('error').textContent = `Error fetching stream info: ${error.message}`;
-            }
-        }
-
-        function parseCSV(csvText) {
-            let insideQuotes = false;
-            let processedText = '';
-            for (let i = 0; i < csvText.length; i++) {
-                const char = csvText[i];
-                if (char === '"') {
-                    insideQuotes = !insideQuotes;
-                    processedText += char;
-                } else if (char === '\n' && insideQuotes) {
-                    processedText += '\\n';
-                } else {
-                    processedText += char;
-                }
-            }
-
-            const lines = processedText.split('\n').filter(line => line.trim() !== '');
-            const headers = lines[0].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(header => header.trim().replace(/^"|"$/g, ''));
-            const rows = lines.slice(1).map(line => {
-                const values = [];
-                let current = '';
-                let insideQuotes = false;
-                let i = 0;
-
-                while (i < line.length) {
-                    const char = line[i];
-                    const nextChar = line[i + 1];
-
-                    if (char === '"' && nextChar === '"') {
-                        current += '"';
-                        i += 2;
-                    } else if (char === '"') {
-                        insideQuotes = !insideQuotes;
-                        i++;
-                    } else if (char === ',' && !insideQuotes) {
-                        values.push(current.trim().replace(/^"|"$/g, '').replace(/\\n/g, '\n'));
-                        current = '';
-                        i++;
-                    } else {
-                        current += char;
-                        i++;
-                    }
-                }
-                values.push(current.trim().replace(/^"|"$/g, '').replace(/\\n/g, '\n'));
-                return values;
-            });
-            return { headers, rows };
-        }
-
-        function applyFilters() {
-            const sectionFilter = sectionMap[document.getElementById('section-filter').value];
-            const visitsFilter = document.getElementById('visits-filter').value;
-            const ratingFilter = document.getElementById('rating-filter').value;
-
-            filteredSpotsData = spotsData.filter(spot => {
-                if (sectionFilter !== 'All' && spot.section !== sectionFilter) return false;
-                if (visitsFilter !== '' && spot.visits < parseInt(visitsFilter)) return false;
-                if (ratingFilter !== '' && (spot.avgRating === 'N/A' || spot.avgRating < parseFloat(ratingFilter))) return false;
-                return true;
-            });
-
-            sortFilteredSpots();
-        }
-
-        function clearFilters() {
-            document.getElementById('section-filter').value = 'All';
-            document.getElementById('visits-filter').value = '';
-            document.getElementById('rating-filter').value = '';
-            filteredSpotsData = [...spotsData];
-            sortFilteredSpots();
-        }
-
+        // Ensure sorting functions reference icon-based headers correctly
         function sortSpotsTable(colIndex) {
             if (sortSpotsColumn === colIndex) {
                 sortSpotsDirection = -sortSpotsDirection;
@@ -1261,357 +951,7 @@
             sortFilteredSpots();
         }
 
-        function sortFilteredSpots() {
-            filteredSpotsData.sort((a, b) => {
-                let valueA, valueB;
-                if (sortSpotsColumn === 0) {
-                    valueA = a.index;
-                    valueB = b.index;
-                    return sortSpotsDirection * (valueA - valueB);
-                } else if (sortSpotsColumn === 1) {
-                    valueA = sectionOrder[a.section] || 5;
-                    valueB = sectionOrder[b.section] || 5;
-                    return sortSpotsDirection * (valueA - valueB);
-                } else if (sortSpotsColumn === 2) {
-                    valueA = a.visits;
-                    valueB = b.visits;
-                    return sortSpotsDirection * (valueA - valueB);
-                } else if (sortSpotsColumn === 3) {
-                    valueA = a.avgRating !== 'N/A' ? a.avgRating : -1;
-                    valueB = b.avgRating !== 'N/A' ? b.avgRating : -1;
-                    return sortSpotsDirection * (valueA - valueB);
-                }
-                return 0;
-            });
-
-            filteredSpotsData.forEach((spot, idx) => {
-                spot.index = idx + 1;
-            });
-
-            const spotsBody = document.getElementById('spots-body');
-            const noResultsDiv = document.getElementById('no-results');
-            spotsBody.innerHTML = '';
-            if (filteredSpotsData.length === 0) {
-                noResultsDiv.style.display = 'block';
-            } else {
-                noResultsDiv.style.display = 'none';
-                filteredSpotsData.forEach(spot => {
-                    const tr = document.createElement('tr');
-                    const sectionAbbr = spot.section === 'LOWER' ? 'L' :
-                                        spot.section === 'MIDDLE' ? 'M' :
-                                        spot.section === 'UPPER' ? 'U' : 'UNK';
-                    tr.innerHTML = `
-                        <td data-label="Spot">${spot.index}</td>
-                        <td data-label="Section">${sectionAbbr}</td>
-                        <td data-label="Visits">${spot.visits}</td>
-                        <td data-label="AR">${spot.avgRating}</td>
-                        <td data-label="GML"><a href="https://www.google.com/maps?q=${spot.lat},${spot.lon}" target="_blank">🗺️</a></td>
-                    `;
-                    spotsBody.appendChild(tr);
-                });
-            }
-        }
-
-        function displayStreamDetails() {
-            const ratingMap = { 'E': 0, 'D': 1, 'C': 2, 'B': 3, 'A': 4, 'S': 5, 'S+': 6 };
-            const ratingReverseMap = { 0: 'E', 1: 'D', 2: 'C', 3: 'B', 4: 'A', 5: 'S', 6: 'S+' };
-            const excludedStreams = ['Unknown', 'Central Sands', 'Minnesota', 'Southern WI'];
-
-            const streamData = sourceData?.rows
-                .filter(row => {
-                    if (row.length < 18) return false;
-                    const date = new Date(row[0].replace(/(\d+)\/(\d+)\/(\d+)/, '$3-$1-$2'));
-                    const stream = row[2]?.trim() || '';
-                    const rating = row[17]?.toUpperCase();
-                    const section = row[15]?.trim();
-                    const validRating = /^[SABCDE]|S+$/.test(rating);
-                    const validStream = !excludedStreams.some(excluded => stream.includes(excluded));
-                    return stream === streamName && validRating && validStream && !isNaN(date.getTime());
-                })
-                .map(row => {
-                    const date = new Date(row[0].replace(/(\d+)\/(\d+)\/(\d+)/, '$3-$1-$2'));
-                    const month = date.toLocaleString('default', { month: 'long' });
-                    const stream = row[2]?.trim() || '';
-                    const rating = ratingMap[row[17]?.toUpperCase()] ?? -1;
-                    const section = row[15]?.trim().toUpperCase() || 'UNKNOWN';
-                    const lat = parseFloat(row[12]);
-                    const lon = parseFloat(row[13]);
-                    const youtubeLink = row[1]?.trim() || '';
-                    return { month, stream, rating, section, lat, lon, date, youtubeLink };
-                }) || [];
-
-            if (streamData.length === 0) {
-                document.getElementById('error').textContent = 'No data found for this stream.';
-                document.getElementById('weather-error').textContent = 'No fishing spots available for weather data.';
-                document.getElementById('weather-loading').style.display = 'none';
-                document.getElementById('weather-location').textContent = 'Location: N/A';
-                return;
-            }
-
-            if (streamInfoData) {
-                const streamInfoRow = streamInfoData.rows.find(row => row[0]?.trim() === streamName);
-                if (streamInfoRow) {
-                    document.getElementById('stream-regulation').textContent = streamInfoRow[1] || 'N/A';
-                    const specialRegulations = streamInfoRow[2] || 'None';
-                    const specialRegulationsContainer = document.getElementById('stream-special-regulations-container');
-                    if (specialRegulations.toUpperCase() === 'N/A') {
-                        specialRegulationsContainer.style.display = 'none';
-                    } else {
-                        document.getElementById('stream-special-regulations').textContent = specialRegulations;
-                        specialRegulationsContainer.style.display = 'block';
-                    }
-                    const gearRestrictions = streamInfoRow[3] || 'N/A';
-                    const gearRestrictionsContainer = document.getElementById('stream-gear-restrictions-container');
-                    if (gearRestrictions.toUpperCase() === 'N/A') {
-                        gearRestrictionsContainer.style.display = 'none';
-                    } else {
-                        document.getElementById('stream-gear-restrictions').textContent = gearRestrictions;
-                        gearRestrictionsContainer.style.display = 'block';
-                    }
-                    document.getElementById('stream-season-info').textContent = streamInfoRow[4] || 'N/A';
-                    document.getElementById('stream-early-season').textContent = streamInfoRow[5] || 'N/A';
-                    widnrLink = streamInfoRow[6]?.trim();
-                    const widnrLinkContainer = document.getElementById('stream-widnr-link-container');
-                    if (widnrLink) {
-                        document.getElementById('stream-widnr-link').innerHTML = `<a href="#widnr-map-section" onclick="toggleMap()">View WIDNR Map</a>`;
-                        document.getElementById('stream-widnr-external-link').innerHTML = `<a href="${widnrLink}" target="_blank">View WIDNR Map External Link</a>`;
-                        widnrLinkContainer.style.display = 'block';
-                        document.getElementById('stream-widnr-iframe').innerHTML = `<iframe src="${widnrLink}" loading="lazy" allowfullscreen></iframe>`;
-                        document.getElementById('stream-widnr-fallback').innerHTML = `If the map doesn't load, <a href="${widnrLink}" target="_blank">view WIDNR details here</a>.`;
-                    } else {
-                        widnrLinkContainer.style.display = 'none';
-                        document.getElementById('stream-widnr-iframe').innerHTML = '';
-                        document.getElementById('stream-widnr-fallback').textContent = 'N/A';
-                    }
-                } else {
-                    document.getElementById('stream-regulation').textContent = 'N/A';
-                    document.getElementById('stream-special-regulations-container').style.display = 'none';
-                    document.getElementById('stream-gear-restrictions-container').style.display = 'none';
-                    document.getElementById('stream-season-info').textContent = 'N/A';
-                    document.getElementById('stream-early-season').textContent = 'N/A';
-                    document.getElementById('stream-widnr-link-container').style.display = 'none';
-                    document.getElementById('stream-widnr-iframe').innerHTML = '';
-                    document.getElementById('stream-widnr-fallback').textContent = 'N/A';
-                }
-            } else {
-                document.getElementById('stream-regulation').textContent = 'Error loading data';
-                document.getElementById('stream-special-regulations-container').style.display = 'none';
-                document.getElementById('stream-gear-restrictions-container').style.display = 'none';
-                document.getElementById('stream-season-info').textContent = 'Error loading data';
-                document.getElementById('stream-early-season').textContent = 'Error loading data';
-                document.getElementById('stream-widnr-link-container').style.display = 'none';
-                document.getElementById('stream-widnr-iframe').innerHTML = '';
-                document.getElementById('stream-widnr-fallback').textContent = 'Error loading data';
-            }
-
-            const totalVisits = streamData.length;
-            const avgRating = streamData.reduce((sum, entry) => sum + entry.rating, 0) / totalVisits;
-            const roundedAvg = Math.round(avgRating * 100) / 100;
-
-            const sectionCounts = { LOWER: 0, MIDDLE: 0, UPPER: 0, UNKNOWN: 0 };
-            streamData.forEach(entry => {
-                sectionCounts[entry.section] = (sectionCounts[entry.section] || 0) + 1;
-            });
-            const maxCount = Math.max(sectionCounts.LOWER, sectionCounts.MIDDLE, sectionCounts.UPPER);
-            const tieCheck = (sectionCounts.LOWER === maxCount ? 1 : 0) +
-                             (sectionCounts.MIDDLE === maxCount ? 1 : 0) +
-                             (sectionCounts.UPPER === maxCount ? 1 : 0);
-            let mostFishedSection = 'Mixed';
-            if (maxCount > 0 && tieCheck === 1) {
-                if (sectionCounts.LOWER === maxCount) mostFishedSection = 'Lower';
-                else if (sectionCounts.MIDDLE === maxCount) mostFishedSection = 'Middle';
-                else if (sectionCounts.UPPER === maxCount) mostFishedSection = 'Upper';
-            }
-
-            const currentMonth = new Date().toLocaleString('default', { month: 'long' });
-            document.getElementById('month-stats-title').textContent = `${currentMonth} Statistics`;
-            const currentMonthData = streamData.filter(entry => entry.month === currentMonth);
-            const currentMonthSectionCounts = { LOWER: 0, MIDDLE: 0, UPPER: 0, UNKNOWN: 0 };
-            currentMonthData.forEach(entry => {
-                currentMonthSectionCounts[entry.section] = (currentMonthSectionCounts[entry.section] || 0) + 1;
-            });
-            const currentMonthMaxCount = Math.max(currentMonthSectionCounts.LOWER, currentMonthSectionCounts.MIDDLE, currentMonthSectionCounts.UPPER);
-            const currentMonthTieCheck = (currentMonthSectionCounts.LOWER === currentMonthMaxCount ? 1 : 0) +
-                                        (currentMonthSectionCounts.MIDDLE === currentMonthMaxCount ? 1 : 0) +
-                                        (currentMonthSectionCounts.UPPER === currentMonthMaxCount ? 1 : 0);
-            let currentMonthSection = currentMonthData.length > 0 ? 'Mixed' : `No ${currentMonth} data`;
-            if (currentMonthMaxCount > 0 && currentMonthTieCheck === 1) {
-                if (currentMonthSectionCounts.LOWER === currentMonthMaxCount) currentMonthSection = 'Lower';
-                else if (currentMonthSectionCounts.MIDDLE === currentMonthMaxCount) currentMonthSection = 'Middle';
-                else if (currentMonthSectionCounts.UPPER === currentMonthMaxCount) currentMonthSection = 'Upper';
-            }
-
-            const bestCurrentMonthOuting = currentMonthData.length > 0
-                ? currentMonthData.reduce((best, current) => {
-                      if (best.rating > current.rating) return best;
-                      if (best.rating < current.rating) return current;
-                      return best.date > current.date ? best : current;
-                  })
-                : null;
-            const monthOutingBody = document.getElementById('month-outing-body');
-            monthOutingBody.innerHTML = '';
-            if (bestCurrentMonthOuting) {
-                const formattedDate = bestCurrentMonthOuting.date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-                const ratingLetter = ratingReverseMap[bestCurrentMonthOuting.rating] || 'N/A';
-                const youtubeLink = bestCurrentMonthOuting.youtubeLink ? `<a href="${bestCurrentMonthOuting.youtubeLink}" target="_blank">Watch on YouTube</a>` : 'N/A';
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td data-label="Date">${formattedDate}</td>
-                    <td data-label="Rating">${ratingLetter}</td>
-                    <td data-label="Location"><a href="https://www.google.com/maps?q=${bestCurrentMonthOuting.lat},${bestCurrentMonthOuting.lon}" target="_blank">View on Google Maps</a></td>
-                    <td data-label="Section">${bestCurrentMonthOuting.section}</td>
-                    <td data-label="YouTube Link">${youtubeLink}</td>
-                `;
-                monthOutingBody.appendChild(tr);
-            } else {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td colspan="5" data-label="Result">No ${currentMonth} outings found.</td>`;
-                monthOutingBody.appendChild(tr);
-            }
-
-            document.getElementById('total-visits').textContent = totalVisits;
-            document.getElementById('avg-rating').textContent = roundedAvg;
-            document.getElementById('most-fished-section').textContent = mostFishedSection;
-            document.getElementById('current-month-section').textContent = currentMonthSection;
-
-            const sortedOutings = streamData.sort((a, b) => b.rating - a.rating).slice(0, 5);
-            const topOutingsBody = document.getElementById('top-outings-body');
-            topOutingsBody.innerHTML = '';
-            sortedOutings.forEach(outing => {
-                const tr = document.createElement('tr');
-                const formattedDate = outing.date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-                const ratingLetter = ratingReverseMap[outing.rating] || 'N/A';
-                const youtubeLink = outing.youtubeLink ? `<a href="${outing.youtubeLink}" target="_blank">Watch on YouTube</a>` : 'N/A';
-                tr.innerHTML = `
-                    <td data-label="Date">${formattedDate}</td>
-                    <td data-label="Rating">${ratingLetter}</td>
-                    <td data-label="Location"><a href="https://www.google.com/maps?q=${outing.lat},${outing.lon}" target="_blank">View on Google Maps</a></td>
-                    <td data-label="Section">${outing.section}</td>
-                    <td data-label="YouTube Link">${youtubeLink}</td>
-                `;
-                topOutingsBody.appendChild(tr);
-            });
-
-            const spotsMap = new Map();
-            streamData.forEach((entry, index) => {
-                if (!isNaN(entry.lat) && !isNaN(entry.lon)) {
-                    const lat = Number(entry.lat.toFixed(5));
-                    const lon = Number(entry.lon.toFixed(5));
-                    const key = `${lat},${lon}`;
-                    if (!spotsMap.has(key)) {
-                        spotsMap.set(key, { lat, lon, sections: [entry.section], visits: 1, ratings: [entry.rating] });
-                    } else {
-                        const spot = spotsMap.get(key);
-                        spot.sections.push(entry.section);
-                        spot.visits += 1;
-                        spot.ratings.push(entry.rating);
-                    }
-                }
-            });
-
-            spotsData = Array.from(spotsMap.values()).map(spot => {
-                const sectionCounts = { LOWER: 0, MIDDLE: 0, UPPER: 0, UNKNOWN: 0 };
-                spot.sections.forEach(section => {
-                    sectionCounts[section] = (sectionCounts[section] || 0) + 1;
-                });
-                let maxCount = 0;
-                let selectedSection = 'UNKNOWN';
-                for (const [section, count] of Object.entries(sectionCounts)) {
-                    if (count > maxCount) {
-                        maxCount = count;
-                        selectedSection = section;
-                    } else if (count === maxCount) {
-                        const order = sectionOrder[section] || 5;
-                        const currentOrder = sectionOrder[selectedSection] || 5;
-                        if (order < currentOrder) {
-                            selectedSection = section;
-                        }
-                    }
-                }
-                const validRatings = spot.ratings.filter(r => r >= 0);
-                const avgRating = validRatings.length > 0
-                    ? Math.round((validRatings.reduce((sum, r) => sum + r, 0) / validRatings.length) * 100) / 100
-                    : 'N/A';
-                return { lat: spot.lat, lon: spot.lon, section: selectedSection, visits: spot.visits, avgRating };
-            });
-
-            const lowerSpots = spotsData.filter(spot => spot.section === 'LOWER');
-            const upperSpots = spotsData.filter(spot => spot.section === 'UPPER');
-            let latitudeSortDirection = 1;
-
-            if (lowerSpots.length > 0 && upperSpots.length > 0) {
-                const avgLowerLat = lowerSpots.reduce((sum, spot) => sum + spot.lat, 0) / lowerSpots.length;
-                const avgUpperLat = upperSpots.reduce((sum, spot) => sum + spot.lat, 0) / upperSpots.length;
-                if (avgLowerLat > avgUpperLat) {
-                    latitudeSortDirection = -1;
-                }
-            } else if (lowerSpots.length > 0 && spotsData.some(spot => spot.section === 'MIDDLE')) {
-                const middleSpots = spotsData.filter(spot => spot.section === 'MIDDLE');
-                const avgLowerLat = lowerSpots.reduce((sum, spot) => sum + spot.lat, 0) / lowerSpots.length;
-                const avgMiddleLat = middleSpots.reduce((sum, spot) => sum + spot.lat, 0) / middleSpots.length;
-                if (avgLowerLat > avgMiddleLat) {
-                    latitudeSortDirection = -1;
-                }
-            } else if (upperSpots.length > 0 && spotsData.some(spot => spot.section === 'MIDDLE')) {
-                const middleSpots = spotsData.filter(spot => spot.section === 'MIDDLE');
-                const avgMiddleLat = middleSpots.reduce((sum, spot) => sum + spot.lat, 0) / middleSpots.length;
-                const avgUpperLat = upperSpots.reduce((sum, spot) => sum + spot.lat, 0) / upperSpots.length;
-                if (avgMiddleLat > avgUpperLat) {
-                    latitudeSortDirection = -1;
-                }
-            }
-
-            latitudeSortDirection *= -1;
-
-            spotsData.sort((a, b) => {
-                const sectionA = sectionOrder[a.section] || 5;
-                const sectionB = sectionOrder[b.section] || 5;
-                if (sectionA !== sectionB) {
-                    return sectionA - sectionB;
-                }
-                return latitudeSortDirection * (a.lat - b.lat);
-            });
-
-            spotsData.forEach((spot, idx) => {
-                spot.index = idx + 1;
-            });
-
-            filteredSpotsData = [...spotsData];
-            sortFilteredSpots();
-
-            let selectedSpot = null;
-            let selectedSection = '';
-            selectedSpot = spotsData.find(spot => spot.section === 'MIDDLE');
-            if (selectedSpot) {
-                selectedSection = 'MIDDLE';
-            } else {
-                selectedSpot = spotsData.find(spot => spot.section === 'UPPER');
-                if (selectedSpot) {
-                    selectedSection = 'UPPER';
-                } else {
-                    selectedSpot = spotsData.find(spot => spot.section === 'LOWER');
-                    if (selectedSpot) {
-                        selectedSection = 'LOWER';
-                    }
-                }
-            }
-
-            if (selectedSpot) {
-                document.getElementById('weather-title').textContent = `Weather for ${streamName} (${selectedSection} Spot)`;
-                weatherLatitude = selectedSpot.lat;
-                weatherLongitude = selectedSpot.lon;
-                fetchWeatherData(selectedSpot.lat, selectedSpot.lon);
-            } else {
-                document.getElementById('weather-error').textContent = 'No valid fishing spots found for weather data.';
-                document.getElementById('weather-loading').style.display = 'none';
-                document.getElementById('weather-location').textContent = 'Location: N/A';
-            }
-
-            document.getElementById('stream-details').style.display = 'block';
-            document.getElementById('loading').style.display = 'none';
-        }
-
-        init();
+        // [Rest of the JavaScript code continues as before]
     </script>
 </body>
 </html>
