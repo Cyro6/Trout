@@ -798,7 +798,7 @@
 
         <div class="right-column">
             <div class="spots-section">
-                <h2>Fishing Spots (Upstream to Downstream)</h2>
+                <h2>Fishing Spots (Downstream to Upstream)</h2>
                 <button class="spots-toggle" data-toggle="spots-content" onclick="toggleSection('spots-content')">Collapse</button>
                 <div class="spots-content" id="spots-content">
                     <div class="filter-section">
@@ -1528,9 +1528,10 @@
                 return latitudeSortDirection * (a.lat - b.lat);
             });
 
+            // Assign originalIndex in reverse order: first spot (downstream) is Spot 1, last spot (upstream) is Spot N
             spotsData.forEach((spot, idx) => {
-                spot.originalIndex = idx + 1; // Assign original index
-                spot.index = idx + 1; // Assign initial index for sorting
+                spot.originalIndex = spotsData.length - idx; // Reverse index assignment
+                spot.index = spotsData.length - idx; // Initial index for sorting
             });
 
             filteredSpotsData = [...spotsData];
