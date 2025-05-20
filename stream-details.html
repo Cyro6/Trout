@@ -311,7 +311,22 @@
             padding: 25px;
             animation: pulse 1.5s infinite;
         }
+.youtube-header-icon {
+    width: 20px;
+    height: 20px;
+    fill: var(--youtube-red);
+    vertical-align: middle;
+    transition: transform 0.2s ease;
+}
 
+.youtube-header-icon:hover {
+    transform: scale(1.1);
+}
+
+.month-outing-table th:nth-child(5) .youtube-header-icon,
+.top-outings-table th:nth-child(5) .youtube-header-icon {
+    fill: var(--youtube-red);
+}
         @keyframes pulse {
             0% { opacity: 1; }
             50% { opacity: 0.5; }
@@ -888,7 +903,11 @@
                                     <th title="Rating"><div class="header-content"><span class="header-icon">⭐</span></div></th>
                                     <th title="Location"><div class="header-content"><span class="header-icon">🗺️</span></div></th>
                                     <th title="Section"><div class="header-content"><span class="header-icon">📍</span></div></th>
-                                    <th title="YouTube Link"><div class="header-content"><span class="header-icon">🎥</span></div></th>
+                                   <th title="YouTube Link"><div class="header-content">
+                <svg class="youtube-header-icon" viewBox="0 0 24 24">
+                    <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0C.488 3.45.029 5.804 0 12c.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0C23.512 20.55 23.971 18.196 24 12c-.029-6.185-.484-8.54-4.385-8.816zM9 16V8l8 4-8 4z"/>
+                </svg>
+            </div></th>
                                 </tr>
                             </thead>
                             <tbody id="month-outing-body"></tbody>
@@ -907,7 +926,11 @@
                                 <th title="Rating"><div class="header-content"><span class="header-icon">⭐</span></div></th>
                                 <th title="Location"><div class="header-content"><span class="header-icon">🗺️</span></div></th>
                                 <th title="Section"><div class="header-content"><span class="header-icon">📍</span></div></th>
-                                <th title="YouTube Link"><div class="header-content"><span class="header-icon">🎥</span></div></th>
+                                <th title="YouTube Link"><div class="header-content">
+                <svg class="youtube-header-icon" viewBox="0 0 24 24">
+                    <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0C.488 3.45.029 5.804 0 12c.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0C23.512 20.55 23.971 18.196 24 12c-.029-6.185-.484-8.54-4.385-8.816zM9 16V8l8 4-8 4z"/>
+                </svg>
+            </div></th>
                             </tr>
                         </thead>
                         <tbody id="top-outings-body"></tbody>
@@ -950,7 +973,7 @@
             'Mixed': 'MX'
         };
         const urlParams = new URLSearchParams(window.location.search);
-        const streamName = "urlParams.get('stream')";
+        const streamName = urlParams.get('stream');
 
         const weatherCodeMap = {
             0: "Clear sky",
