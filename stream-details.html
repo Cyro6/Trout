@@ -936,7 +936,7 @@
             'All': 'All'
         };
         const urlParams = new URLSearchParams(window.location.search);
-        const streamName = "Bear Creek";
+        const streamName = urlParams.get('stream');
 
         const weatherCodeMap = {
             0: "Clear sky",
