@@ -6,7 +6,6 @@
     <title>Stream Details</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Existing CSS remains unchanged */
         :root {
             --bg-primary: #D9ECEC;
             --bg-secondary: #e5e7eb;
@@ -25,6 +24,7 @@
             --footer-bg: #f8fafc;
             --shadow-color: rgba(0, 0, 0, 0.12);
             --shadow-hover-color: rgba(0, 0, 0, 0.2);
+            --youtube-red: #FF0000;
         }
 
         .dark-theme {
@@ -45,6 +45,7 @@
             --footer-bg: #2d3748;
             --shadow-color: rgba(0, 0, 0, 0.5);
             --shadow-hover-color: rgba(0, 0, 0, 0.7);
+            --youtube-red: #FF0000;
         }
 
         * {
@@ -250,6 +251,11 @@
             font-size: 1.2rem;
         }
 
+        .month-outing-table th:nth-child(5) .header-icon,
+        .top-outings-table th:nth-child(5) .header-icon {
+            color: var(--youtube-red);
+        }
+
         .spots-table th.sort-asc::after, .top-outings-table th.sort-asc::after, 
         .month-outing-table th.sort-asc::after, .weather-table th.sort-asc::after {
             content: ' ↑';
@@ -291,6 +297,7 @@
             height: 24px;
             vertical-align: middle;
             transition: transform 0.2s ease;
+            fill: var(--youtube-red);
         }
 
         .youtube-icon:hover {
@@ -935,8 +942,15 @@
             'UNK': 'UNKNOWN',
             'All': 'All'
         };
+        const sectionDisplayMap = {
+            'LOWER': 'L',
+            'MIDDLE': 'M',
+            'UPPER': 'U',
+            'UNKNOWN': 'UNK',
+            'Mixed': 'MX'
+        };
         const urlParams = new URLSearchParams(window.location.search);
-        const streamName = urlParams.get('stream');
+        const streamName = "urlParams.get('stream')";
 
         const weatherCodeMap = {
             0: "Clear sky",
@@ -993,7 +1007,7 @@
         }
 
         async function fetchWeatherData(latitude, longitude) {
-            const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=precipitation_sum,surface_pressure_max,temperature_2m_min,temperature_2m_max,weather_code,wind_direction_10m_dominant&current=temperature_2m,weather_code,surface_pressure,wind_direction_10m&timezone=America%2FChicago&past_days=4&forecast_days=5&wind_speed_unit=mph&temperature_unit=fahrenheit&precipitation_unit=inch`;
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=precipitation_sum,surface_pressure_max,temperature_2m_min,temperature_2m_max,weather_code,wind_direction_10m_dominant¤t=temperature_2m,weather_code,surface_pressure,wind_direction_10m&timezone=America%2FChicago&past_days=4&forecast_days=5&wind_speed_unit=mph&temperature_unit=fahrenheit&precipitation_unit=inch`;
             try {
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -1396,11 +1410,11 @@
             const tieCheck = (sectionCounts.LOWER === maxCount ? 1 : 0) +
                              (sectionCounts.MIDDLE === maxCount ? 1 : 0) +
                              (sectionCounts.UPPER === maxCount ? 1 : 0);
-            let mostFishedSection = 'Mixed';
+            let mostFishedSection = 'MX';
             if (maxCount > 0 && tieCheck === 1) {
-                if (sectionCounts.LOWER === maxCount) mostFishedSection = 'Lower';
-                else if (sectionCounts.MIDDLE === maxCount) mostFishedSection = 'Middle';
-                else if (sectionCounts.UPPER === maxCount) mostFishedSection = 'Upper';
+                if (sectionCounts.LOWER === maxCount) mostFishedSection = 'L';
+                else if (sectionCounts.MIDDLE === maxCount) mostFishedSection = 'M';
+                else if (sectionCounts.UPPER === maxCount) mostFishedSection = 'U';
             }
 
             const currentMonth = new Date().toLocaleString('default', { month: 'long' });
@@ -1414,11 +1428,11 @@
             const currentMonthTieCheck = (currentMonthSectionCounts.LOWER === currentMonthMaxCount ? 1 : 0) +
                                         (currentMonthSectionCounts.MIDDLE === currentMonthMaxCount ? 1 : 0) +
                                         (currentMonthSectionCounts.UPPER === currentMonthMaxCount ? 1 : 0);
-            let currentMonthSection = currentMonthData.length > 0 ? 'Mixed' : `No ${currentMonth} data`;
+            let currentMonthSection = currentMonthData.length > 0 ? 'MX' : `No ${currentMonth} data`;
             if (currentMonthMaxCount > 0 && currentMonthTieCheck === 1) {
-                if (currentMonthSectionCounts.LOWER === currentMonthMaxCount) currentMonthSection = 'Lower';
-                else if (currentMonthSectionCounts.MIDDLE === currentMonthMaxCount) currentMonthSection = 'Middle';
-                else if (currentMonthSectionCounts.UPPER === currentMonthMaxCount) currentMonthSection = 'Upper';
+                if (currentMonthSectionCounts.LOWER === currentMonthMaxCount) currentMonthSection = 'L';
+                else if (currentMonthSectionCounts.MIDDLE === currentMonthMaxCount) currentMonthSection = 'M';
+                else if (currentMonthSectionCounts.UPPER === currentMonthMaxCount) currentMonthSection = 'U';
             }
 
             const bestCurrentMonthOuting = currentMonthData.length > 0 
@@ -1434,9 +1448,10 @@
                 const formattedDate = bestCurrentMonthOuting.date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
                 const ratingLetter = ratingReverseMap[bestCurrentMonthOuting.rating] || 'N/A';
                 const googleMapsLink = `<a href="https://www.google.com/maps?q=${bestCurrentMonthOuting.lat},${bestCurrentMonthOuting.lon}" target="_blank" class="link-icon">🗺️</a>`;
+                const sectionAbbr = sectionDisplayMap[bestCurrentMonthOuting.section] || 'UNK';
                 const youtubeLink = bestCurrentMonthOuting.youtubeLink 
                     ? `<a href="${bestCurrentMonthOuting.youtubeLink}" target="_blank" class="link-icon">
-                         <svg class="youtube-icon" viewBox="0 0 24 24" fill="var(--link-color)">
+                         <svg class="youtube-icon" viewBox="0 0 24 24">
                            <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0C.488 3.45.029 5.804 0 12c.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0C23.512 20.55 23.971 18.196 24 12c-.029-6.185-.484-8.54-4.385-8.816zM9 16V8l8 4-8 4z"/>
                          </svg>
                        </a>` 
@@ -1446,7 +1461,7 @@
                     <td data-label="Date">${formattedDate}</td>
                     <td data-label="Rating">${ratingLetter}</td>
                     <td data-label="Location">${googleMapsLink}</td>
-                    <td data-label="Section">${bestCurrentMonthOuting.section}</td>
+                    <td data-label="Section">${sectionAbbr}</td>
                     <td data-label="YouTube Link">${youtubeLink}</td>
                 `;
                 monthOutingBody.appendChild(tr);
@@ -1469,9 +1484,10 @@
                 const formattedDate = outing.date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
                 const ratingLetter = ratingReverseMap[outing.rating] || 'N/A';
                 const googleMapsLink = `<a href="https://www.google.com/maps?q=${outing.lat},${outing.lon}" target="_blank" class="link-icon">🗺️</a>`;
+                const sectionAbbr = sectionDisplayMap[outing.section] || 'UNK';
                 const youtubeLink = outing.youtubeLink 
                     ? `<a href="${outing.youtubeLink}" target="_blank" class="link-icon">
-                         <svg class="youtube-icon" viewBox="0 0 24 24" fill="var(--link-color)">
+                         <svg class="youtube-icon" viewBox="0 0 24 24">
                            <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0C.488 3.45.029 5.804 0 12c.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0C23.512 20.55 23.971 18.196 24 12c-.029-6.185-.484-8.54-4.385-8.816zM9 16V8l8 4-8 4z"/>
                          </svg>
                        </a>` 
@@ -1480,7 +1496,7 @@
                     <td data-label="Date">${formattedDate}</td>
                     <td data-label="Rating">${ratingLetter}</td>
                     <td data-label="Location">${googleMapsLink}</td>
-                    <td data-label="Section">${outing.section}</td>
+                    <td data-label="Section">${sectionAbbr}</td>
                     <td data-label="YouTube Link">${youtubeLink}</td>
                 `;
                 topOutingsBody.appendChild(tr);
@@ -1592,7 +1608,7 @@
             }
 
             if (selectedSpot) {
-                document.getElementById('weather-title').textContent = `Weather for ${streamName} (${selectedSection} Spot)`;
+                document.getElementById('weather-title').textContent = `Weather for ${streamName} (${sectionDisplayMap[selectedSection] || 'UNK'} Spot)`;
                 weatherLatitude = selectedSpot.lat;
                 weatherLongitude = selectedSpot.lon;
                 fetchWeatherData(selectedSpot.lat, selectedSpot.lon);
