@@ -6,6 +6,7 @@
     <title>Stream Details</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
+        /* Existing CSS remains unchanged */
         :root {
             --bg-primary: #D9ECEC;
             --bg-secondary: #e5e7eb;
@@ -272,6 +273,30 @@
             transform: scale(1.01);
         }
 
+        .link-icon {
+            font-size: 1.2rem;
+            color: var(--link-color);
+            text-decoration: none;
+            transition: color 0.2s ease, transform 0.2s ease;
+            display: inline-block;
+        }
+
+        .link-icon:hover {
+            color: var(--link-hover-color);
+            transform: scale(1.1);
+        }
+
+        .youtube-icon {
+            width: 24px;
+            height: 24px;
+            vertical-align: middle;
+            transition: transform 0.2s ease;
+        }
+
+        .youtube-icon:hover {
+            transform: scale(1.1);
+        }
+
         .loading, .weather-loading {
             text-align: center;
             font-size: 1.2rem;
@@ -517,7 +542,7 @@
                 justify-content: flex-start;
             }
 
-            .filter-section div {
+            .filter-section divTM {
                 display: flex;
                 align-items: center;
             }
@@ -968,7 +993,7 @@
         }
 
         async function fetchWeatherData(latitude, longitude) {
-            const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=precipitation_sum,surface_pressure_max,temperature_2m_min,temperature_2m_max,weather_code,wind_direction_10m_dominant&current=temperature_2m,weather_code,surface_pressure,wind_direction_10m&timezone=America%2FChicago&past_days=4&forecast_days=5&wind_speed_unit=mph&temperature_unit=fahrenheit&precipitation_unit=inch`;
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=precipitation_sum,surface_pressure_max,temperature_2m_min,temperature_2m_max,weather_code,wind_direction_10m_dominant¤t=temperature_2m,weather_code,surface_pressure,wind_direction_10m&timezone=America%2FChicago&past_days=4&forecast_days=5&wind_speed_unit=mph&temperature_unit=fahrenheit&precipitation_unit=inch`;
             try {
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -1220,7 +1245,7 @@
             filteredSpotsData.sort((a, b) => {
                 let valueA, valueB;
                 if (sortSpotsColumn === 0) {
-                    valueA = a.originalIndex; // Sort by originalIndex for Spot column
+                    valueA = a.originalIndex;
                     valueB = b.originalIndex;
                     return sortSpotsDirection * (valueA - valueB);
                 } else if (sortSpotsColumn === 1) {
@@ -1239,9 +1264,8 @@
                 return 0;
             });
 
-            // Update index for display order, but preserve originalIndex
             filteredSpotsData.forEach((spot, idx) => {
-                spot.index = idx + 1; // Update index for sorting purposes
+                spot.index = idx + 1;
             });
 
             const spotsBody = document.getElementById('spots-body');
@@ -1261,7 +1285,7 @@
                         <td data-label="Section">${sectionAbbr}</td>
                         <td data-label="Visits">${spot.visits}</td>
                         <td data-label="AR">${spot.avgRating}</td>
-                        <td data-label="GML"><a href="https://www.google.com/maps?q=${spot.lat},${spot.lon}" target="_blank">🗺️</a></td>
+                        <td data-label="GML"><a href="https://www.google.com/maps?q=${spot.lat},${spot.lon}" target="_blank" class="link-icon">🗺️</a></td>
                     `;
                     spotsBody.appendChild(tr);
                 });
@@ -1409,12 +1433,19 @@
             if (bestCurrentMonthOuting) {
                 const formattedDate = bestCurrentMonthOuting.date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
                 const ratingLetter = ratingReverseMap[bestCurrentMonthOuting.rating] || 'N/A';
-                const youtubeLink = bestCurrentMonthOuting.youtubeLink ? `<a href="${bestCurrentMonthOuting.youtubeLink}" target="_blank">Watch on YouTube</a>` : 'N/A';
+                const googleMapsLink = `<a href="https://www.google.com/maps?q=${bestCurrentMonthOuting.lat},${bestCurrentMonthOuting.lon}" target="_blank" class="link-icon">🗺️</a>`;
+                const youtubeLink = bestCurrentMonthOuting.youtubeLink 
+                    ? `<a href="${bestCurrentMonthOuting.youtubeLink}" target="_blank" class="link-icon">
+                         <svg class="youtube-icon" viewBox="0 0 24 24" fill="var(--link-color)">
+                           <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0C.488 3.45.029 5.804 0 12c.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0C23.512 20.55 23.971 18.196 24 12c-.029-6.185-.484-8.54-4.385-8.816zM9 16V8l8 4-8 4z"/>
+                         </svg>
+                       </a>` 
+                    : 'N/A';
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td data-label="Date">${formattedDate}</td>
                     <td data-label="Rating">${ratingLetter}</td>
-                    <td data-label="Location"><a href="https://www.google.com/maps?q=${bestCurrentMonthOuting.lat},${bestCurrentMonthOuting.lon}" target="_blank">View on Google Maps</a></td>
+                    <td data-label="Location">${googleMapsLink}</td>
                     <td data-label="Section">${bestCurrentMonthOuting.section}</td>
                     <td data-label="YouTube Link">${youtubeLink}</td>
                 `;
@@ -1437,11 +1468,18 @@
                 const tr = document.createElement('tr');
                 const formattedDate = outing.date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
                 const ratingLetter = ratingReverseMap[outing.rating] || 'N/A';
-                const youtubeLink = outing.youtubeLink ? `<a href="${outing.youtubeLink}" target="_blank">Watch on YouTube</a>` : 'N/A';
+                const googleMapsLink = `<a href="https://www.google.com/maps?q=${outing.lat},${outing.lon}" target="_blank" class="link-icon">🗺️</a>`;
+                const youtubeLink = outing.youtubeLink 
+                    ? `<a href="${outing.youtubeLink}" target="_blank" class="link-icon">
+                         <svg class="youtube-icon" viewBox="0 0 24 24" fill="var(--link-color)">
+                           <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0C.488 3.45.029 5.804 0 12c.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0C23.512 20.55 23.971 18.196 24 12c-.029-6.185-.484-8.54-4.385-8.816zM9 16V8l8 4-8 4z"/>
+                         </svg>
+                       </a>` 
+                    : 'N/A';
                 tr.innerHTML = `
                     <td data-label="Date">${formattedDate}</td>
                     <td data-label="Rating">${ratingLetter}</td>
-                    <td data-label="Location"><a href="https://www.google.com/maps?q=${outing.lat},${outing.lon}" target="_blank">View on Google Maps</a></td>
+                    <td data-label="Location">${googleMapsLink}</td>
                     <td data-label="Section">${outing.section}</td>
                     <td data-label="YouTube Link">${youtubeLink}</td>
                 `;
@@ -1528,10 +1566,9 @@
                 return latitudeSortDirection * (a.lat - b.lat);
             });
 
-            // Assign originalIndex in reverse order: first spot (downstream) is Spot 1, last spot (upstream) is Spot N
             spotsData.forEach((spot, idx) => {
-                spot.originalIndex = spotsData.length - idx; // Reverse index assignment
-                spot.index = spotsData.length - idx; // Initial index for sorting
+                spot.originalIndex = spotsData.length - idx;
+                spot.index = spotsData.length - idx;
             });
 
             filteredSpotsData = [...spotsData];
