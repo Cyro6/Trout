@@ -4,76 +4,263 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resource Links</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            line-height: 1.6;
+        :root {
+            --bg-primary: #D9ECEC;
+            --bg-secondary: #e5e7eb;
+            --card-bg: white;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --header-bg: #008080;
+            --header-hover-bg: #00A0A0;
+            --button-bg: #008080;
+            --button-hover-bg: #00A0A0;
+            --link-color: #008080;
+            --link-hover-color: #00A0A0;
+            --error-bg: #d6dcf4;
+            --table-even-row-bg: #f9fafb;
+            --table-hover-bg: #dbeafe;
+            --footer-bg: #f8fafc;
+            --shadow-color: rgba(0, 0, 0, 0.12);
+            --shadow-hover-color: rgba(0, 0, 0, 0.2);
         }
+
+        .dark-theme {
+            --bg-primary: #1f2937;
+            --bg-secondary: #374151;
+            --card-bg: #2d3748;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --header-bg: #3a3c5a;
+            --header-hover-bg: #45476b;
+            --button-bg: linear-gradient(90deg, #4b5563, #6b7280);
+            --button-hover-bg: linear-gradient(90deg, #374151, #4b5563);
+            --link-color: #60a5fa;
+            --link-hover-color: #93c5fd;
+            --error-bg: #4b5563;
+            --table-even-row-bg: #374151;
+            --table-hover-bg: #4b5563;
+            --footer-bg: #2d3748;
+            --shadow-color: rgba(0, 0, 0, 0.5);
+            --shadow-hover-color: rgba(0, 0, 0, 0.7);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary), var(--bg-secondary));
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text-primary);
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        .back-link {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+        }
+
+        .back-link a {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--link-color);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .back-link a:hover {
+            color: var(--link-hover-color);
+            text-decoration: underline;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 10;
+        }
+
+        .theme-toggle button {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-primary);
+            transition: color 0.2s ease, transform 0.2s ease;
+        }
+
+        .theme-toggle button:hover {
+            transform: scale(1.1);
+            color: var(--link-hover-color);
+        }
+
         h1 {
             text-align: center;
-            color: #333;
+            font-size: 2.8rem;
+            font-weight: 700;
+            color: var(--link-color);
+            margin-bottom: 1.5rem;
+            text-shadow: 0 2px 6px var(--shadow-color);
+            animation: fadeIn 1s ease-in;
         }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 14px;
+            box-shadow: 0 6px 25px var(--shadow-color);
+            padding: 25px;
+            margin: 25px auto;
+            max-width: 800px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 40px var(--shadow-hover-color);
+        }
+
         ul {
             list-style-type: none;
             padding: 0;
         }
+
         li {
-            margin: 10px 0;
-        }
-        a {
-            color: #28a745;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-        .back-link {
-            display: flex;
-            align-items: center;
-            margin-bottom: 20px;
-            font-size: 14px;
-        }
-        .back-link a {
-            color: #28a745; /* Green color to match the image */
-        }
-        .back-link a:hover {
-            text-decoration: none;
-        }
-        .back-link::before {
-            content: "← "; /* Arrow before the text */
-            color: #28a745;
-            font-size: 18px;
-            margin-right: 5px;
+            margin: 15px 0;
+            font-size: 1.1rem;
+            font-weight: 500;
+            transition: transform 0.2s ease;
+            animation: slideIn 0.3s ease;
         }
 
+        li:hover {
+            transform: scale(1.02);
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        a {
+            color: var(--link-color);
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s ease;
+        }
+
+        a:hover {
+            color: var(--link-hover-color);
+            text-decoration: underline;
+        }
+
+        @media screen and (max-width: 600px) {
+            body {
+                padding: 12px;
+            }
+
+            .back-link, .theme-toggle {
+                top: 12px;
+                left: 12px;
+            }
+
+            .theme-toggle {
+                left: auto;
+                right: 12px;
+            }
+
+            .back-link a, .theme-toggle button {
+                font-size: 0.9rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .card {
+                padding: 15px;
+                margin: 15px auto;
+            }
+
+            li {
+                font-size: 0.95rem;
+            }
+        }
+
+        @media screen and (max-width: 360px) {
+            .card {
+                padding: 12px;
+                margin: 12px auto;
+            }
+
+            li {
+                font-size: 0.85rem;
+            }
+        }
     </style>
 </head>
 <body>
+    <div class="theme-toggle">
+        <button id="theme-toggle-btn" title="Toggle Theme">☀️</button>
+    </div>
     <div class="back-link">
         <a href="https://cyro6.github.io/Trout/index.html">Back to Dashboard</a>
     </div>
-    <h1>Resource Links</h1>
-    <ul>
-        <li><a href="https://docs.google.com/spreadsheets/d/1n9-99Fc3BzphLtOiZxukCQ5oKhvk1PecR8Ac6jOYyqM" target="_blank">Data</a></li>
-        <li><a href="https://docs.google.com/spreadsheets/d/1vcECD9ze_-VCWbade8bhmxBljLqOwPBQ2PPF6zMHySA/edit?usp=sharing" target="_blank">Gear Checklist</a></li>
-        <li><a href="https://docs.google.com/spreadsheets/d/1c-oRyFZJsyQWREVR0Zuj9zBTeqSvTZKLzOuIKydL8Ac" target="_blank">Spinner Info</a></li>
-        <li><a href="https://drive.google.com/drive/u/0/folders/1fLX0FkEsgD1y8TYtHUpElTZaAQX9pXwv" target="_blank">Logs</a></li>
-        <li><a href="https://dnrmaps.wi.gov/H5/?viewer=WFF" target="_blank">Wisconsin DNR Trout Streams</a></li>
-        <li><a href="https://www.accuweather.com/en/us/mondovi/54755/daily-weather-forecast/341485" target="_blank">Mondovi Weather</a></li>
-        <li><a href="https://www.accuweather.com/en/us/ellsworth/54011/daily-weather-forecast/336486" target="_blank">Ellsworth Weather</a></li>
-        <li><a href="https://www.accuweather.com/en/us/la-farge/54639/daily-weather-forecast/2248692" target="_blank">LaForge Weather</a></li>
-        <li><a href="https://www.accuweather.com/en/us/cavour/54511/daily-weather-forecast/2143304" target="_blank">Cavour Weather</a></li>
-        <li><a href="https://barometricpressure.app" target="_blank">Barometric Pressure Forecast and History</a></li>
-        <li><a href="https://dashboard.waterdata.usgs.gov/app/nwd/en" target="_blank">USGS | National Water Dashboard</a></li>
-        <li><a href="https://weatherstreet.com/models/gfs-slp-precip-forecast.php" target="_blank">Surface Pressure and Precipitation (GFS 10-day forecast)</a></li>
-        <li><a href="https://weatherstreet.com/models/gfs-acc-precip-forecast.php" target="_blank">Accumulated Precipitation (GFS 10-day Forecast)</a></li>
-        <li><a href="https://www.youtube.com/watch?v=Ns1s7It8NKI" target="_blank">Lure Making Part 1</a></li>
-        <li><a href="https://www.youtube.com/watch?v=avPYqM7NYEo" target="_blank">Lure Making Part 2</a></li>
-        <li><a href="https://www.youtube.com/watch?v=evMnbfZPjYY" target="_blank">Lure Making Part 3</a></li>
-       <!-- <li><a href="" target="_blank"></a></li> -->
-    </ul>
+    <div class="card">
+        <h1>Resource Links</h1>
+        <ul>
+            <li><a href="https://docs.google.com/spreadsheets/d/1n9-99Fc3BzphLtOiZxukCQ5oKhvk1PecR8Ac6jOYyqM" target="_blank">Data</a></li>
+            <li><a href="https://docs.google.com/spreadsheets/d/1vcECD9ze_-VCWbade8bhmxBljLqOwPBQ2PPF6zMHySA/edit?usp=sharing" target="_blank">Gear Checklist</a></li>
+            <li><a href="https://docs.google.com/spreadsheets/d/1c-oRyFZJsyQWREVR0Zuj9zBTeqSvTZKLzOuIKydL8Ac" target="_blank">Spinner Info</a></li>
+            <li><a href="https://drive.google.com/drive/u/0/folders/1fLX0FkEsgD1y8TYtHUpElTZaAQX9pXwv" target="_blank">Logs</a></li>
+            <li><a href="https://dnrmaps.wi.gov/H5/?viewer=WFF" target="_blank">Wisconsin DNR Trout Streams</a></li>
+            <li><a href="https://www.accuweather.com/en/us/mondovi/54755/daily-weather-forecast/341485" target="_blank">Mondovi Weather</a></li>
+            <li><a href="https://www.accuweather.com/en/us/ellsworth/54011/daily-weather-forecast/336486" target="_blank">Ellsworth Weather</a></li>
+            <li><a href="https://www.accuweather.com/en/us/la-farge/54639/daily-weather-forecast/2248692" target="_blank">LaForge Weather</a></li>
+            <li><a href="https://www.accuweather.com/en/us/cavour/54511/daily-weather-forecast/2143304" target="_blank">Cavour Weather</a></li>
+            <li><a href="https://barometricpressure.app" target="_blank">Barometric Pressure Forecast and History</a></li>
+            <li><a href="https://dashboard.waterdata.usgs.gov/app/nwd/en" target="_blank">USGS | National Water Dashboard</a></li>
+            <li><a href="https://weatherstreet.com/models/gfs-slp-precip-forecast.php" target="_blank">Surface Pressure and Precipitation (GFS 10-day forecast)</a></li>
+            <li><a href="https://weatherstreet.com/models/gfs-acc-precip-forecast.php" target="_blank">Accumulated Precipitation (GFS 10-day Forecast)</a></li>
+            <li><a href="https://www.youtube.com/watch?v=Ns1s7It8NKI" target="_blank">Lure Making Part 1</a></li>
+            <li><a href="https://www.youtube.com/watch?v=avPYqM7NYEo" target="_blank">Lure Making Part 2</a></li>
+            <li><a href="https://www.youtube.com/watch?v=evMnbfZPjYY" target="_blank">Lure Making Part 3</a></li>
+        </ul>
+    </div>
+
+    <script>
+        function toggleTheme() {
+            const body = document.body;
+            const themeButton = document.getElementById('theme-toggle-btn');
+            body.classList.toggle('dark-theme');
+            const isDark = body.classList.contains('dark-theme');
+            themeButton.textContent = isDark ? '☀️' : '🌙';
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme');
+            const themeButton = document.getElementById('theme-toggle-btn');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-theme');
+                themeButton.textContent = '☀️';
+            } else {
+                themeButton.textContent = '🌙';
+            }
+            themeButton.addEventListener('click', toggleTheme);
+        });
+    </script>
 </body>
 </html>
