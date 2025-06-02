@@ -609,8 +609,10 @@
                         <th title="Day"><div class="header-content"><span class="header-icon">🗓️</span></div></th>
                         <th title="Primary Stream"><div class="header-content"><span class="header-icon">🌊</span></div></th>
                         <th class="precipitation" title="Primary Precipitation (Past 3 Days)"><div class="header-content"><span class="header-icon">💧</span></div></th>
+                        <th class="precipitation" title="Primary Precipitation (Next 4 Days)"><div class="header-content"><span class="header-icon">🌦️</span></div></th>
                         <th title="Backup Stream"><div class="header-content"><span class="header-icon">🌊</span></div></th>
                         <th class="precipitation" title="Backup Precipitation (Past 3 Days)"><div class="header-content"><span class="header-icon">💧</span></div></th>
+                        <th class="precipitation" title="Backup Precipitation (Next 4 Days)"><div class="header-content"><span class="header-icon">🌦️</span></div></th>
                         <th title="Straight-Line Distance (miles)"><div class="header-content"><span class="header-icon">📏</span></div></th>
                         <th title="Est. Driving Distance (miles)"><div class="header-content"><span class="header-icon">🚗</span></div></th>
                     </tr>
@@ -656,6 +658,10 @@ const DRIVING_DISTANCE_FACTOR = 1.5;
 const MAX_DRIVING_DISTANCE = 30;
 let isStreamTableVisible = false;
 const precipitationCache = new Map();
+const REQUEST_DELAY = 100; // Delay between requests in ms
+const RETRY_DELAY = 1000; // Delay for retries in ms
+const MAX_RETRIES = 3; // Maximum number of retry attempts
+const BATCH_SIZE = 5; // Process 5 requests at a time
 
 function haversineDistance(lat1, lon1, lat2, lon2) {
     const R = 3958.8;
@@ -669,33 +675,50 @@ function haversineDistance(lat1, lon1, lat2, lon2) {
     return R * c;
 }
 
-function calculateTotalRainfall(data) {
+function calculateTotalRainfall(data, isPast) {
     let total = 0;
-    for (let i = 1; i < 4; i++) {
-        total += data.daily.precipitation_sum[i];
+    const start = isPast ? 1 : 4;
+    const end = isPast ? 4 : 8;
+    for (let i = start; i < end; i++) {
+        total += data.daily.precipitation_sum[i] || 0;
     }
     return total.toFixed(2);
 }
 
-async function fetchPrecipitationData(lat, lon) {
+async function rateLimit() {
+    return new Promise(resolve => setTimeout(resolve, REQUEST_DELAY));
+}
+
+async function fetchPrecipitationData(lat, lon, retryCount = 0) {
     const key = `${Number(lat).toFixed(5)},${Number(lon).toFixed(5)}`;
     if (precipitationCache.has(key)) {
         return precipitationCache.get(key);
     }
 
     try {
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=precipitation_sum&timezone=America%2FChicago&past_days=4&precipitation_unit=inch`;
+        await rateLimit();
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=precipitation_sum&timezone=America%2FChicago&past_days=4&forecast_days=4&precipitation_unit=inch`;
         const response = await fetch(url);
+        if (response.status === 429) {
+            if (retryCount < MAX_RETRIES) {
+                console.warn(`Rate limit hit for ${key}, retrying (${retryCount + 1}/${MAX_RETRIES})...`);
+                await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (retryCount + 1)));
+                return fetchPrecipitationData(lat, lon, retryCount + 1);
+            } else {
+                throw new Error(`HTTP 429: Too Many Requests after ${MAX_RETRIES} retries`);
+            }
+        }
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
-        const total = calculateTotalRainfall(data);
-        const result = `${total} in`;
+        const pastPrecip = calculateTotalRainfall(data, true);
+        const futurePrecip = calculateTotalRainfall(data, false);
+        const result = { past: `${pastPrecip} in`, future: `${futurePrecip} in` };
         precipitationCache.set(key, result);
         return result;
     } catch (error) {
         console.error(`Error fetching precipitation for ${key}: ${error.message}`);
-        precipitationCache.set(key, 'Error');
-        return 'Error';
+        precipitationCache.set(key, { past: 'Error', future: 'Error' });
+        return { past: 'Error', future: 'Error' };
     }
 }
 
@@ -999,9 +1022,11 @@ function generateTripPlan(filteredStreams, allStreams, numDays, maxDistance) {
             tripPlan.push({
                 day,
                 primary: { stream: 'None', gps: 'N/A' },
-                primaryPrecipitation: 'N/A',
+                primaryPrecipitationPast: 'N/A',
+                primaryPrecipitationFuture: 'N/A',
                 backup: { stream: 'None', gps: 'N/A' },
-                backupPrecipitation: 'N/A',
+                backupPrecipitationPast: 'N/A',
+                backupPrecipitationFuture: 'N/A',
                 straightDistance: 'N/A',
                 drivingDistance: 'N/A'
             });
@@ -1049,12 +1074,14 @@ function generateTripPlan(filteredStreams, allStreams, numDays, maxDistance) {
                 stream: primaryStream.stream,
                 gps: primaryStream.midpoint ? `${primaryStream.midpoint.lat.toFixed(4)}, ${primaryStream.midpoint.lon.toFixed(4)}` : 'N/A'
             },
-            primaryPrecipitation: primaryStream.midpoint ? 'Loading...' : 'N/A',
+            primaryPrecipitationPast: primaryStream.midpoint ? 'Loading...' : 'N/A',
+            primaryPrecipitationFuture: primaryStream.midpoint ? 'Loading...' : 'N/A',
             backup: {
                 stream: backupStream.stream,
                 gps: backupStream.midpoint ? `${backupStream.midpoint.lat.toFixed(4)}, ${backupStream.midpoint.lon.toFixed(4)}` : 'N/A'
             },
-            backupPrecipitation: backupStream.midpoint ? 'Loading...' : 'N/A',
+            backupPrecipitationPast: backupStream.midpoint ? 'Loading...' : 'N/A',
+            backupPrecipitationFuture: backupStream.midpoint ? 'Loading...' : 'N/A',
             straightDistance,
             drivingDistance
         });
@@ -1091,17 +1118,19 @@ function displayTripPlan(tripPlan) {
         [
             plan.day,
             plan.primary.stream,
-            plan.primaryPrecipitation,
+            plan.primaryPrecipitationPast,
+            plan.primaryPrecipitationFuture,
             plan.backup.stream,
-            plan.backupPrecipitation,
+            plan.backupPrecipitationPast,
+            plan.backupPrecipitationFuture,
             plan.straightDistance,
             plan.drivingDistance
         ].forEach((cell, index) => {
             const td = document.createElement('td');
-            if (index === 2 || index === 4) {
+            if (index === 2 || index === 3 || index === 5 || index === 6) {
                 td.classList.add('precipitation');
             }
-            if (index === 1 || index === 3) {
+            if (index === 1 || index === 4) {
                 const link = document.createElement('a');
                 link.href = `stream-details.html?stream=${encodeURIComponent(cell)}`;
                 link.textContent = cell;
@@ -1115,6 +1144,25 @@ function displayTripPlan(tripPlan) {
     });
 
     table.style.display = 'table';
+}
+
+async function processBatch(batch) {
+    const results = [];
+    for (const row of batch) {
+        if (row.midpoint) {
+            try {
+                const precip = await fetchPrecipitationData(row.midpoint.lat, row.midpoint.lon);
+                row.precipitationPast = precip.past;
+                row.precipitationFuture = precip.future;
+            } catch (error) {
+                console.error(`Failed to fetch precipitation for ${row.stream}: ${error.message}`);
+                row.precipitationPast = 'Error';
+                row.precipitationFuture = 'Error';
+            }
+        }
+        results.push(row);
+    }
+    return results;
 }
 
 async function applyFilters() {
@@ -1164,7 +1212,7 @@ async function applyFilters() {
             const [campLat, campLon] = selectedCampsite.split(',').map(coord => parseFloat(coord.trim()));
             distance = haversineDistance(row.midpoint.lat, row.midpoint.lon, campLat, campLon);
         }
-        return { ...row, distance: distance ? distance.toFixed(2) : 'N/A', precipitation: row.midpoint ? 'Loading...' : 'N/A' };
+        return { ...row, distance: distance ? distance.toFixed(2) : 'N/A', precipitationPast: row.midpoint ? 'Loading...' : 'N/A', precipitationFuture: row.midpoint ? 'Loading...' : 'N/A' };
     }).filter(row => {
         const stream = row.stream.toLowerCase();
         const visits = parseFloat(row.visits);
@@ -1191,30 +1239,30 @@ async function applyFilters() {
                (sectionFilterValue === 'All' || section === sectionFilterValue);
     });
 
-    const precipitationPromises = filteredData.map(async row => {
-        if (row.midpoint) {
-            try {
-                const precip = await fetchPrecipitationData(row.midpoint.lat, row.midpoint.lon);
-                row.precipitation = precip;
-            } catch (error) {
-                console.error(`Failed to fetch precipitation for ${row.stream}: ${error.message}`);
-                row.precipitation = 'Error';
-            }
-        }
-        return row;
-    });
+    // Process precipitation data in batches
+    const batches = [];
+    for (let i = 0; i < filteredData.length; i += BATCH_SIZE) {
+        batches.push(filteredData.slice(i, i + BATCH_SIZE));
+    }
 
     try {
-        filteredData = await Promise.all(precipitationPromises);
+        const batchResults = [];
+        for (const batch of batches) {
+            const result = await processBatch(batch);
+            batchResults.push(...result);
+        }
+        filteredData = batchResults;
         console.log('Filtered data with precipitation:', filteredData.map(row => ({
             stream: row.stream,
-            precipitation: row.precipitation
+            precipitationPast: row.precipitationPast,
+            precipitationFuture: row.precipitationFuture
         })));
     } catch (error) {
-        console.error('Error resolving precipitation promises:', error);
+        console.error('Error processing precipitation batches:', error);
         filteredData.forEach(row => {
-            if (row.precipitation === 'Loading...') {
-                row.precipitation = 'Error';
+            if (row.precipitationPast === 'Loading...') {
+                row.precipitationPast = 'Error';
+                row.precipitationFuture = 'Error';
             }
         });
     }
@@ -1226,7 +1274,8 @@ async function applyFilters() {
         'Section': 'section',
         'Midpoint': 'midpoint',
         'Distance': 'distance',
-        'Precipitation': 'precipitation'
+        'Precipitation (Past 3 Days)': 'precipitationPast',
+        'Precipitation (Next 4 Days)': 'precipitationFuture'
     };
 
     filteredData.sort((a, b) => {
@@ -1244,7 +1293,7 @@ async function applyFilters() {
             valueA = valueA ? `${a.midpoint.lat.toFixed(4)},${a.midpoint.lon.toFixed(4)}` : '';
             valueB = valueB ? `${b.midpoint.lat.toFixed(4)},${b.midpoint.lon.toFixed(4)}` : '';
             return sortDirection * valueA.localeCompare(valueB);
-        } else if (prop === 'precipitation') {
+        } else if (prop === 'precipitationPast' || prop === 'precipitationFuture') {
             valueA = valueA === 'N/A' || valueA === 'Error' || valueA === 'Loading...' ? -Infinity : parseFloat(valueA);
             valueB = valueB === 'N/A' || valueB === 'Error' || valueB === 'Loading...' ? -Infinity : parseFloat(valueB);
             return sortDirection * (valueA - valueB);
@@ -1253,8 +1302,8 @@ async function applyFilters() {
     });
 
     const headers = selectedMonth === 'ALL'
-        ? ['Stream', 'Visits', 'Rating', 'Section', 'Midpoint', 'Distance', 'Precipitation']
-        : ['Stream', 'Visits', 'Rating', 'Section', 'Midpoint', 'Distance', 'Precipitation'];
+        ? ['Stream', 'Visits', 'Rating', 'Section', 'Midpoint', 'Distance', 'Precipitation (Past 3 Days)', 'Precipitation (Next 4 Days)']
+        : ['Stream', 'Visits', 'Rating', 'Section', 'Midpoint', 'Distance', 'Precipitation (Past 3 Days)', 'Precipitation (Next 4 Days)'];
 
     const rows = filteredData.map(row => [
         row.stream,
@@ -1263,7 +1312,8 @@ async function applyFilters() {
         row.section,
         row.midpoint ? `${row.midpoint.lat.toFixed(4)}, ${row.midpoint.lon.toFixed(4)}` : 'N/A',
         row.distance,
-        row.precipitation || 'N/A'
+        row.precipitationPast,
+        row.precipitationFuture
     ]);
 
     console.log('Rows for displayData:', rows);
@@ -1272,19 +1322,32 @@ async function applyFilters() {
 
     const tripPlan = generateTripPlan(filteredData, backupStreamCandidates, numDays, maxBackupDistance);
 
-    const tripPlanPromises = tripPlan.map(async plan => {
-        if (plan.primary.gps !== 'N/A') {
-            const [lat, lon] = plan.primary.gps.split(',').map(coord => parseFloat(coord.trim()));
-            plan.primaryPrecipitation = await fetchPrecipitationData(lat, lon);
-        }
-        if (plan.backup.gps !== 'N/A') {
-            const [lat, lon] = plan.backup.gps.split(',').map(coord => parseFloat(coord.trim()));
-            plan.backupPrecipitation = await fetchPrecipitationData(lat, lon);
-        }
-        return plan;
-    });
+    const tripPlanBatches = [];
+    for (let i = 0; i < tripPlan.length; i += BATCH_SIZE) {
+        tripPlanBatches.push(tripPlan.slice(i, i + BATCH_SIZE));
+    }
 
-    const updatedTripPlan = await Promise.all(tripPlanPromises);
+    const updatedTripPlan = [];
+    for (const batch of tripPlanBatches) {
+        const batchPromises = batch.map(async plan => {
+            if (plan.primary.gps !== 'N/A') {
+                const [lat, lon] = plan.primary.gps.split(',').map(coord => parseFloat(coord.trim()));
+                const precip = await fetchPrecipitationData(lat, lon);
+                plan.primaryPrecipitationPast = precip.past;
+                plan.primaryPrecipitationFuture = precip.future;
+            }
+            if (plan.backup.gps !== 'N/A') {
+                const [lat, lon] = plan.backup.gps.split(',').map(coord => parseFloat(coord.trim()));
+                const precip = await fetchPrecipitationData(lat, lon);
+                plan.backupPrecipitationPast = precip.past;
+                plan.backupPrecipitationFuture = precip.future;
+            }
+            return plan;
+        });
+        const batchResults = await Promise.all(batchPromises);
+        updatedTripPlan.push(...batchResults);
+    }
+
     displayTripPlan(updatedTripPlan);
 }
 
@@ -1334,12 +1397,15 @@ function displayData({ headers, rows }, prefix) {
         'Section': '📍',
         'Midpoint': '🗺️',
         'Distance': '📏',
-        'Precipitation': '💧',
+        'Precipitation (Past 3 Days)': '💧',
+        'Precipitation (Next 4 Days)': '🌦️',
         'Day': '🗓️',
         'Primary Stream': '🌊',
         'Primary Precipitation (Past 3 Days)': '💧',
+        'Primary Precipitation (Next 4 Days)': '🌦️',
         'Backup Stream': '🌊',
         'Backup Precipitation (Past 3 Days)': '💧',
+        'Backup Precipitation (Next 4 Days)': '🌦️',
         'Straight-Line Distance (miles)': '📏',
         'Est. Driving Distance (miles)': '🚗'
     };
@@ -1347,7 +1413,7 @@ function displayData({ headers, rows }, prefix) {
     headers.forEach((header, index) => {
         const th = document.createElement('th');
         th.setAttribute('title', header);
-        if (header === 'Precipitation') {
+        if (header.includes('Precipitation')) {
             th.classList.add('precipitation');
         } else if (header === 'Midpoint') {
             th.classList.add('midpoint');
@@ -1388,26 +1454,26 @@ function displayData({ headers, rows }, prefix) {
         const tr = document.createElement('tr');
         row.forEach((cell, index) => {
             const td = document.createElement('td');
-            if (prefix === 'month' && index === 6) {
+            if (prefix === 'month' && (index === 6 || index === 7)) {
                 td.classList.add('precipitation');
                 td.textContent = cell;
             } else if (prefix === 'month' && index === 4) {
                 td.classList.add('midpoint');
                 if (cell !== 'N/A') {
                     const [lat, lon] = cell.split(',').map(coord => parseFloat(coord.trim()));
-                    const link = document.createElement('a');
-                    link.href = `https://www.google.com/maps?q=${lat},${lon}`;
-                    link.target = '_blank';
-                    link.textContent = '🗺️';
-                    td.appendChild(link);
+                    const i = document.createElement('a');
+                    i.href = `https://www.google.com/maps?q=${lat},${lon}`;
+                    i.target = '_blank';
+                    i.textContent = '🗺️';
+                    td.appendChild(i);
                 } else {
                     td.textContent = '-';
                 }
             } else if (prefix === 'month' && index === 0) {
-                const link = document.createElement('a');
-                link.href = `stream-details.html?stream=${encodeURIComponent(cell)}`;
-                link.textContent = cell;
-                td.appendChild(link);
+                const i = document.createElement('a');
+                i.href = `stream-details.html?stream=${encodeURIComponent(cell)}`;
+                i.textContent = cell;
+                td.appendChild(i);
             } else {
                 td.textContent = cell;
             }
